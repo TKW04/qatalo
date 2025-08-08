@@ -1,0 +1,2 @@
+# qatalo
+Catalogo de QR
