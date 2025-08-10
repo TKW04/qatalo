@@ -1,10 +1,12 @@
+import { Currency } from "lucide-react"
+
 const STORAGE_KEY = "catalog_app_data"
 
 const defaultData = {
   business: {
     name: "Mi Tienda",
     slug: "mi-tienda",
-    logoUrl: "",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/f9/Wikimedia_Brand_Guidelines_Update_2022_Wikimedia_Logo_Brandmark.png",
     phone: "18095551234",
     description: "Productos artesanales hechos a mano",
   },
@@ -18,6 +20,7 @@ const defaultData = {
       name: "Camisa de lino",
       description: "Camisa fresca 100% lino, perfecta para el verano.",
       price: 1850.0,
+      currency: "RD$",
       imageUrl: "https://qatalo.s3.us-east-1.amazonaws.com/demo/white-linen-shirt.png",
       categoryId: "cat-1",
       available: true,
@@ -28,6 +31,7 @@ const defaultData = {
       name: "Gafas de sol",
       description: "Gafas de sol con protección UV, estilo moderno.",
       price: 750.0,
+      currency: "RD$",
       imageUrl: "https://qatalo.s3.us-east-1.amazonaws.com/demo/black-sunglasses.png",
       categoryId: "cat-2",
       available: true,
@@ -38,6 +42,7 @@ const defaultData = {
       name: "Bolso de cuero",
       description: "Bolso artesanal de cuero genuino, hecho a mano.",
       price: 2500.0,
+      currency: "RD$",
       imageUrl: "https://qatalo.s3.us-east-1.amazonaws.com/demo/marron-leather-bag.png",
       categoryId: "cat-2",
       available: false,

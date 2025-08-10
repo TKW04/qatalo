@@ -1,6 +1,5 @@
-"use client"
-
 import { useEffect } from "react"
+import "../styles/components.css"
 
 function ProductModal({ product, business, onClose }) {
   useEffect(() => {

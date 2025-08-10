@@ -21,7 +21,7 @@ function Landing() {
               contactarte directamente por WhatsApp.
             </p>
             <div className="landing-actions">
-              <Link to="/demo/catalog/mi-tienda" className="btn btn-primary">
+              <Link to="/demo/catalog/mi-tienda" className="btn btn-primary" target="_blank">
                 Ver catálogo demo
               </Link>
               <Link to="/demo/admin" className="btn btn-outline">

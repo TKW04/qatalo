@@ -1,0 +1,404 @@
+import { useState } from "react";
+import { InputText } from "primereact/inputtext";
+import { Dropdown } from "primereact/dropdown";
+import { Card } from "primereact/card";
+import { Button } from "primereact/button";
+import { PencilIcon, Trash2 } from "lucide-react";
+
+const Products = ({
+  products,
+  editingProduct,
+  setEditingProduct,
+  handleProductSubmit,
+  handleEditProduct,
+  handleDeleteProduct,
+  newProduct,
+  setNewProduct,
+  productErrors,
+  categories,
+  setProductErrors,
+  getCategoryName,
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState({
+    code: "",
+    name: "",
+  });
+  const [selectedStatus, setSelectedStatus] = useState({
+    code: "",
+    name: "",
+  });
+  const statuses = [
+    { code: "available", name: "Disponible" },
+    { code: "unavailable", name: "Agotado" },
+  ];
+  const [selectedCurrency, setSelectedCurrency] = useState({
+    code: "",
+    name: "",
+    symbol: "",
+  });
+  const currencies = [
+    { code: "USD", name: "Dólar estadounidense", symbol: "$" },
+    { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
+  ];
+  const isMobile = window.innerWidth <= 480;
+  const onSubmit = (e) => {
+    e.preventDefault();
+    handleProductSubmit(e);
+    setSelectedCategory({
+      code: "",
+      name: "",
+    });
+    setSelectedStatus({
+      code: "",
+      name: "",
+    });
+    setSelectedCurrency({
+      code: "",
+      name: "",
+      symbol: "",
+    });
+  };
+
+  return (
+    <div>
+      <div className="admin-header">
+        <h1>Gestión de Productos</h1>
+        <p>Administra tu catálogo de productos</p>
+      </div>
+
+      <div className="admin-card">
+        <h2>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</h2>
+        <form onSubmit={onSubmit}>
+          <div className="form-group">
+            <label className="form-label">Nombre *</label>
+            <InputText
+              type="text"
+              className={`input ${productErrors.name ? "error" : ""}`}
+              value={newProduct.name}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, name: e.target.value })
+              }
+              placeholder="Camisa de lino"
+            />
+            {productErrors.name && (
+              <div className="error-message">{productErrors.name}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Descripción</label>
+            <InputText
+              type="text"
+              className="input"
+              value={newProduct.description}
+              onChange={(e) =>
+                setNewProduct({
+                  ...newProduct,
+                  description: e.target.value,
+                })
+              }
+              placeholder="Camisa fresca 100% lino"
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Moneda*</label>
+              <Dropdown
+                value={selectedCurrency}
+                className={`input ${productErrors.currency ? "error" : ""}`}
+                onChange={(e) => {
+                  setSelectedCurrency(e.value);
+                  setNewProduct({
+                    ...newProduct,
+                    currency: e.value.symbol,
+                  });
+                }}
+                options={currencies}
+                optionLabel="name"
+                placeholder="Seleccionar moneda"
+              />
+              {productErrors.currency && (
+                <div className="error-message">{productErrors.currency}</div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Precio * {selectedCurrency?.symbol || ""}
+              </label>
+              <InputText
+                className={`input ${productErrors.price ? "error" : ""}`}
+                value={newProduct.price}
+                onChange={(e) => {
+                  if (!isNaN(e.target.value)) {
+                    setNewProduct({ ...newProduct, price: e.target.value });
+                  }
+                }}
+                placeholder="1850.00"
+              />
+              {productErrors.price && (
+                <div className="error-message">{productErrors.price}</div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">URL de la imagen</label>
+              <InputText
+                type="url"
+                className={`input ${productErrors.imageUrl ? "error" : ""}`}
+                value={newProduct.imageUrl}
+                onChange={(e) =>
+                  setNewProduct({
+                    ...newProduct,
+                    imageUrl: e.target.value,
+                  })
+                }
+                placeholder="https://ejemplo.com/imagen.jpg"
+              />
+              {productErrors.imageUrl && (
+                <div className="error-message">{productErrors.imageUrl}</div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Categoría *</label>
+              <Dropdown
+                value={selectedCategory}
+                className={`input ${productErrors.categoryId ? "error" : ""}`}
+                onChange={(e) => {
+                  setSelectedCategory(e.value);
+                  setNewProduct({
+                    ...newProduct,
+                    categoryId: e.value.code,
+                  });
+                }}
+                options={categories}
+                optionLabel="name"
+                placeholder="Seleccionar categoría"
+              />
+              {productErrors.categoryId && (
+                <div className="error-message">{productErrors.categoryId}</div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Orden</label>
+              <InputText
+                className="input"
+                value={newProduct.order}
+                onChange={(e) => {
+                  if (!isNaN(e.target.value) && !e.target.value.includes(".")) {
+                    setNewProduct({ ...newProduct, order: e.target.value });
+                  }
+                }}
+                placeholder="1"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Estado</label>
+              <Dropdown
+                value={selectedStatus}
+                className={`input ${productErrors.categoryId ? "error" : ""}`}
+                onChange={(e) => {
+                  setSelectedStatus(e.value);
+                  setNewProduct({
+                    ...newProduct,
+                    categoryId: e.value.code,
+                  });
+                }}
+                options={statuses}
+                optionLabel="name"
+                placeholder="Seleccionar estado"
+              />
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <Button type="submit" className="btn btn-primary">
+              {editingProduct ? "Actualizar" : "Crear"} Producto
+            </Button>
+            {editingProduct && (
+              <Button
+                type="button"
+                label="Cancelar Edición"
+                className="btn btn-outline"
+                onClick={() => {
+                  setNewProduct({
+                    name: "",
+                    description: "",
+                    price: "",
+                    imageUrl: "",
+                    categoryId: "",
+                    available: true,
+                    order: 1,
+                  });
+                  setEditingProduct(null);
+                  setProductErrors({});
+                  setSelectedCategory({
+                    code: "",
+                    name: "",
+                  });
+                  setSelectedStatus({
+                    code: "",
+                    name: "",
+                  });
+                  setSelectedCurrency({
+                    code: "",
+                    name: "",
+                    symbol: "",
+                  });
+                }}
+              />
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div className="admin-card">
+        <h2>Productos Existentes</h2>
+        {products.length === 0 ? (
+          <p>No hay productos creados aún.</p>
+        ) : (
+          <>
+            {!isMobile && (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Orden</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products
+                    .sort((a, b) => a.order - b.order)
+                    .map((product) => (
+                      <tr key={product.id}>
+                        <td>{product.name}</td>
+                        <td>
+                          {" "}
+                          {product.currency}
+                          {product.price.toFixed(2)}
+                        </td>
+                        <td>{getCategoryName(product.categoryId)}</td>
+                        <td>
+                          <span
+                            className={`product-status ${
+                              product.available ? "available" : "unavailable"
+                            }`}
+                          >
+                            {product.available ? "Disponible" : "Agotado"}
+                          </span>
+                        </td>
+                        <td>{product.order}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              className="btn btn-small btn-outline"
+                              onClick={() => handleEditProduct(product)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="btn btn-small btn-danger"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            )}
+            {isMobile &&
+              products
+                .sort((a, b) => a.order - b.order)
+                .map((product) => (
+                  <Card
+                    key={product.id}
+                    style={{
+                      marginBottom: "1rem",
+                      padding: "1rem",
+                      borderRadius: "8px",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    <p style={{ marginBottom: "0.5rem", fontSize: "18px" }}>
+                      <strong style={{ marginRight: "0.5rem" }}>
+                        Producto:
+                      </strong>{" "}
+                      {product.name}
+                    </p>
+                    <p style={{ marginBottom: "0.5rem", fontSize: "18px" }}>
+                      <strong style={{ marginRight: "0.5rem" }}>Precio:</strong>{" "}
+                      {product.currency}
+                      {product.price.toFixed(2)}
+                    </p>
+                    <p style={{ marginBottom: "0.5rem", fontSize: "18px" }}>
+                      <strong style={{ marginRight: "0.5rem" }}>
+                        Categoría:
+                      </strong>{" "}
+                      {getCategoryName(product.categoryId)}
+                    </p>
+                    <p>
+                      <strong
+                        style={{ marginRight: "0.5rem", fontSize: "18px" }}
+                      >
+                        Estado:
+                      </strong>{" "}
+                      <span
+                        className={`product-status ${
+                          product.available ? "available" : "unavailable"
+                        }`}
+                      >
+                        {product.available ? "Disponible" : "Agotado"}
+                      </span>
+                    </p>
+                    <p
+                      style={{
+                        marginRight: "0.5rem",
+                        marginBottom: "0.5rem",
+                        fontSize: "18px",
+                      }}
+                    >
+                      Orden: {product.order}
+                    </p>
+                    <div className="table-actions">
+                      <Button
+                        icon={<PencilIcon />}
+                        label={isMobile ? "" : "Editar"}
+                        tooltip="Editar producto"
+                        className="btn btn-small btn-outline"
+                        onClick={() => {
+                          handleEditProduct(product);
+                        }}
+                      />
+                      <Button
+                        icon={<Trash2 />}
+                        label={isMobile ? "" : "Eliminar"}
+                        tooltip="Eliminar producto"
+                        className="btn btn-small btn-danger"
+                        onClick={() => handleDeleteProduct(product.id)}
+                      />
+                    </div>
+                  </Card>
+                ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Products;
