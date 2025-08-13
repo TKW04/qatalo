@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Library, Cog, Folder, Package, QrCode, House } from "lucide-react";
 import { Button } from "primereact/button";
+import { Image } from "primereact/image";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
   const menuItems = [
@@ -20,7 +21,12 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
   return (
     <aside className={`admin-sidebar ${isOpen ? "open" : ""}`}>
       <h2 style={{ marginRight: isOpen ? "20px" : "" }}>
-        <Library /> Qatalo - Admin
+        <Image
+          src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
+          alt="CatalogQR Logo"
+          width={isOpen ? 150 : 110}
+          style={{ marginLeft: isOpen ? "20px" : "40px" }}
+        />
       </h2>
       <nav>
         <ul className="admin-nav">

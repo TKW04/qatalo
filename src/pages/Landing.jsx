@@ -18,7 +18,6 @@ const Landing = () => {
           <div>
             <Image
               src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-              // src="https://qatalo.s3.us-east-1.amazonaws.com/image.png"
               alt="CatalogQR Logo"
               width={100}
             />
@@ -53,7 +52,7 @@ const Landing = () => {
             <a href="#" className="primary-btn pulse">
               Crear Mi Catálogo
             </a>
-            <a href="#" className="secondary-btn">
+            <a href="/demo/admin" className="secondary-btn">
               Ver Demo
             </a>
           </div>
