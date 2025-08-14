@@ -22,6 +22,30 @@ const CatalogPublicDemo = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const palettes = [
+    {
+      name: "Azul & Amarillo",
+      colors: ["#113F67", "#34699A", "#58A0C8", "#FDF5AA"], // https://colorhunt.co/palette/113f6734699a58a0c8fdf5aa
+    },
+    {
+      name: "Pastel Suave",
+      colors: ["#CADCAE", "#E1E9C9", "#EDA35A", "#FEE8D9"], // https://colorhunt.co/palette/cadcaee1e9c9eda35afee8d9
+    },
+    {
+      name: "Tierra & Verde",
+      colors: ["#4B352A", "#CA7842", "#B2CD9C", "#F0F2BD"], // https://colorhunt.co/palette/4b352aca7842b2cd9cf0f2bd
+    },
+  ];
+
+  const [currentPalette, setCurrentPalette] = useState(palettes[0]);
+
+  const applyPalette = (palette) => {
+    palette.colors.forEach((color, index) => {
+      document.documentElement.style.setProperty(`--color-${index + 1}`, color);
+    });
+    setCurrentPalette(palette);
+  };
+
   useEffect(() => {
     const loadData = () => {
       try {
@@ -176,6 +200,7 @@ const CatalogPublicDemo = () => {
           business={business}
           onClose={() => setSelectedProduct(null)}
         />
+        
       )}
     </div>
   );
