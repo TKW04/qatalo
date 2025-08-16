@@ -4,22 +4,14 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 
 import App from "./App.jsx";
-// import store from "./store/index.jsx";
+import store from "./store/index.jsx";
 import "./styles/globals.css";
 
-// const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
-// // wrap the application with AuthProvider
-// root.render(
-//   <BrowserRouter>
-//     <Provider store={store}>
-//       <App />
-//     </Provider>
-//   </BrowserRouter>
-// );
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+// wrap the application with AuthProvider
+root.render(
+    <Provider store={store}>
+      <App />
+    </Provider>
 );

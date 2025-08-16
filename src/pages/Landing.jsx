@@ -36,7 +36,7 @@ const Landing = () => {
               <a href="#precios">Precios</a>
             </li>
           </ul>
-          <a href="#" className="cta-button">
+          <a href="/register" className="cta-button">
             Comenzar Gratis
           </a>
         </nav>

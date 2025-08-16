@@ -24,7 +24,7 @@ header {
     color: white;
     padding: 1rem 0;
     position: fixed;
-    width: 100%;
+    width: 1020px;
     top: 0;
     z-index: 1000;
     backdrop-filter: blur(10px);
@@ -36,7 +36,7 @@ nav {
     justify-content: space-between;
     align-items: center;
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 0px;
     padding: 0 2rem;
 }
 
@@ -374,6 +374,11 @@ footer {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+    header {
+    
+    width: 100%;
+   
+}
     .nav-links {
         display: none;
     }

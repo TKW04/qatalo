@@ -13,6 +13,7 @@
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@fontsource/roboto": "^5.2.6",
     "@reduxjs/toolkit": "^2.8.2",
+    "amazon-cognito-identity-js": "^6.3.15",
     "lucide-react": "^0.539.0",
     "primereact": "^10.9.6",
     "qrcode": "^1.5.4",

@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
 import { Library, Cog, Folder, Package, QrCode, House } from "lucide-react";
-<<<<<<< HEAD
-=======
 import { Button } from "primereact/button";
 import { Image } from "primereact/image";
->>>>>>> 34fb62c942fb03a67a390734c392dd9e0fb49a62
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
   const menuItems = [
