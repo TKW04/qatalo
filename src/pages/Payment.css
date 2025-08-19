@@ -15,13 +15,13 @@
      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
      /* background: linear-gradient(135deg, var(--light-blue) 0%, var(--medium-blue) 100%); */
      min-height: 100vh;
-     padding: 20px; 
+     padding: 20px;
      width: 100% !important;
 
  }
 
  .container-payment {
-     width: 1200px!important;
+     width: 1200px !important;
      margin: 0 auto;
  }
 
@@ -129,6 +129,8 @@
      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
      gap: 30px;
      margin-top: 40px;
+     padding-left: 100px;
+     padding-right: 80px;
  }
 
  .plan-card {
@@ -141,6 +143,7 @@
      border: 1px solid rgba(255, 255, 255, 0.3);
      transition: all 0.3s ease;
      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+     max-width: 400px;
  }
 
  .plan-card:hover {
@@ -340,9 +343,11 @@
      font-size: 1.1rem;
  }
 
- @media (max-width: 768px) {
+ @media (max-width: 480px) {
      .plans-grid {
          grid-template-columns: 1fr;
+         margin: 0px;
+         padding: 10px;
      }
 
      .plan-card.featured {
@@ -356,8 +361,15 @@
      .faq-section {
          padding: 30px 20px;
      }
-      .container-payment {
+
+     .container-payment {
          width: 400px !important;
          margin: 0 auto;
+     }
+
+     .plan-card {
+
+         width: 400x;
+         max-width: 500px;
      }
  }

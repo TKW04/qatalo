@@ -15,7 +15,7 @@ const Login = () => {
   const user = useSelector((state) => state.user.user);
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
-   const { showWarning } = useNotification();
+  const { showWarning } = useNotification();
 
   const onChange = (id, value) => {
     dispatch(userActions.modifyPropertyValue({ id, value: value }));
@@ -23,21 +23,19 @@ const Login = () => {
 
   const handleLogin = (event) => {
     event.preventDefault();
-    console.log(user);
-    
+
     // setIsLoading(true);
     authenticate(user.email, user.password)
       .then(
         (data) => {
           setToken(data.idToken.jwtToken);
           const userInfo = getTokenInfo();
-          console.log(userInfo);
 
-          if(userInfo && userInfo["custom:transaction_status"]==="pending"){
-            window.location.href ="/payment"
-          }else{
+          if (userInfo && userInfo["custom:transaction_status"] === "pending") {
+            window.location.href = "/payment";
+          } else {
             // window.location.href = "/";
-         }
+          }
         },
         () => {
           showWarning("No autorizado!", "Usuario o contraseña incorrectos");

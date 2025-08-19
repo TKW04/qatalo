@@ -1,6 +1,22 @@
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Image } from "primereact/image";
+import { Button } from "primereact/button";
+import { useNotification } from "../components/UI/NotificationProvider";
 import "./Payment.css";
+
+import { Checkout, GetPlans } from "../store/payment-store/plan-actions";
 const Payment = () => {
+  const plans = useSelector((state) => state.plan.plans);
+  const dispatch = useDispatch();
+  const { showError } = useNotification();
+
+  useEffect(() => {
+    if (plans.length === 0) {
+      dispatch(GetPlans());
+    }
+  }, [dispatch, plans.length]);
+
   return (
     <div class="container-payment">
       <header>
@@ -19,35 +35,31 @@ const Payment = () => {
 
       <section class="pricing-section">
         <h1 class="section-title">Planes y Precios</h1>
-
         <div class="plans-grid">
-          <div class="plan-card">
-            <h3 class="plan-name">Básico</h3>
-            <p class="plan-description">
-              Perfect para equipos pequeños que están comenzando
-            </p>
-            <div class="plan-price">
-              <span class="currency">$</span>
-              <span id="basic-price">29</span>
+          {plans.map((plan) => (
+            <div class="plan-card" key={plan.price_id}>
+              <h3 class="plan-name">{plan.name}</h3>
+              <p class="plan-description">{plan.description}</p>
+              <div class="plan-price">
+                <span class="currency">$</span>
+                <span id="basic-price">{plan.unit_price}</span>
+              </div>
+              <div class="plan-period">por usuario/{plan.billing_cycle}</div>
+              <ul class="plan-features">
+                <li>1 catálogo</li>
+                <li>Categorías ilimitadas</li>
+                <li>Productos ilimitados</li>
+                <li>Manejo de clientes</li>
+                <li>Integración con Whatsapp</li>
+              </ul>
+              <Button
+                className="plan-button secondary"
+                label="Comenzar Gratis"
+                type="button"
+                onClick={() => dispatch(Checkout(plan.price_id, showError))}
+              />
             </div>
-            <div class="plan-period">por usuario/mes</div>
-            <ul class="plan-features">
-              <li>1 catálogo</li>
-              <li>Categorías ilimitadas</li>
-              <li>Productos ilimitados</li>
-              <li>Manejo de clientes</li>
-              <li>Integración con Whatsapp</li>
-            </ul>
-            <button class="plan-button secondary">Comenzar Gratis</button>
-          </div>
-        </div>
-
-        <div class="money-back">
-          <h3>🛡️ Garantía de 30 días</h3>
-          <p>
-            Si no estás completamente satisfecho, te devolvemos tu dinero sin
-            preguntas.
-          </p>
+          ))}
         </div>
       </section>
     </div>

@@ -29,10 +29,10 @@ const planSlice = createSlice({
         category: "",
       };
     },
-    setplans(state, actions) {
+    setPlans(state, actions) {
       state.plans = actions.payload.plans;
     },
-    setplan(state, actions) {
+    setPlan(state, actions) {
       state.plan = actions.payload.plan;
     },
     modifyPropertyValue(state, actions) {
