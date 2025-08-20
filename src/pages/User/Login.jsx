@@ -34,7 +34,7 @@ const Login = () => {
           if (userInfo && userInfo["custom:transaction_status"] === "pending") {
             window.location.href = "/payment";
           } else {
-            // window.location.href = "/";
+            window.location.href = "/";
           }
         },
         () => {
