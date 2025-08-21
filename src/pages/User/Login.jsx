@@ -31,7 +31,10 @@ const Login = () => {
           setToken(data.idToken.jwtToken);
           const userInfo = getTokenInfo();
 
-          if (userInfo && userInfo["custom:transaction_status"] === "pending") {
+          if (
+            (userInfo && userInfo["custom:transaction_status"] === "pending") ||
+            userInfo["custom:transaction_status"] === "canceled"
+          ) {
             window.location.href = "/payment";
           } else {
             window.location.href = "/";

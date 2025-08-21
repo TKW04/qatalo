@@ -2,25 +2,30 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Image } from "primereact/image";
 import { Button } from "primereact/button";
-import { useNotification } from "../components/UI/NotificationProvider";
+
+import PaddleCheckoutButton from "../components/PaddleCheckoutButton";
+
+// import { useNotification } from "../components/UI/NotificationProvider";
 import "./Payment.css";
 
 import { Checkout, GetPlans } from "../store/payment-store/plan-actions";
+import { getTokenInfo } from "../helpers/token";
 const Payment = () => {
+  const auth = getTokenInfo();
   const plans = useSelector((state) => state.plan.plans);
+
   const dispatch = useDispatch();
-  const { showError } = useNotification();
 
   useEffect(() => {
     if (plans.length === 0) {
       dispatch(GetPlans());
     }
-  }, [dispatch, plans.length]);
+  }, [dispatch, plans]);
 
   return (
-    <div class="container-payment">
+    <div className="container-payment">
       <header>
-        <div class="logo-payment">
+        <div className="logo-payment">
           <Image
             src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
             alt="CatalogQR Logo"
@@ -28,35 +33,40 @@ const Payment = () => {
             style={{ padding: "0rem" }}
           />
         </div>
-        <div class="subtitle">
+        <div className="subtitle">
           Automatiza tu flujo de trabajo con la plataforma más avanzada
         </div>
       </header>
 
-      <section class="pricing-section">
-        <h1 class="section-title">Planes y Precios</h1>
-        <div class="plans-grid">
+      <section className="pricing-section">
+        <h1 className="section-title">Planes y Precios</h1>
+        <div className="plans-grid">
           {plans.map((plan) => (
-            <div class="plan-card" key={plan.price_id}>
-              <h3 class="plan-name">{plan.name}</h3>
-              <p class="plan-description">{plan.description}</p>
-              <div class="plan-price">
-                <span class="currency">$</span>
+            <div className="plan-card" key={plan.price_id}>
+              <h3 className="plan-name">{plan.name}</h3>
+              <p className="plan-description">{plan.description}</p>
+              <div className="plan-price">
+                <span className="currency">$</span>
                 <span id="basic-price">{plan.unit_price}</span>
               </div>
-              <div class="plan-period">por usuario/{plan.billing_cycle}</div>
-              <ul class="plan-features">
+              <div className="plan-period">por usuario/{plan.billing_cycle}</div>
+              <ul className="plan-features">
                 <li>1 catálogo</li>
                 <li>Categorías ilimitadas</li>
                 <li>Productos ilimitados</li>
                 <li>Manejo de clientes</li>
                 <li>Integración con Whatsapp</li>
               </ul>
-              <Button
-                className="plan-button secondary"
-                label="Comenzar Gratis"
-                type="button"
-                onClick={() => dispatch(Checkout(plan.price_id, showError))}
+              <PaddleCheckoutButton
+                mode="price"
+                priceId={plan.price_id}
+                quantity={1}
+                email={auth.email}
+                customData={{ appUserId: auth.sub }}
+                locale="es"
+                successUrl="http://localhost:5173/payment"
+                onOpened={() => console.log("Checkout abierto")}
+                onClosed={() => console.log("Checkout cerrado")}
               />
             </div>
           ))}
