@@ -67,7 +67,7 @@ const AdminDemoDashboard = () => {
 
     if (!data.name.trim()) errors.name = "El nombre es requerido";
     if (!data.slug.trim()) errors.slug = "El slug es requerido";
-    else if ( !/^[a-z0-9-]+$/.test(data.slug)) {
+    else if (!/^[a-z0-9-]+$/.test(data.slug)) {
       errors.slug =
         "El slug solo puede contener letras minúsculas, números y guiones";
     }
@@ -278,6 +278,7 @@ const AdminDemoDashboard = () => {
             handleDeleteCategory={handleDeleteCategory}
             handleEditCategory={handleEditCategory}
             generateSlug={generateSlug}
+            isDemo={true}
           />
         )}
 

@@ -10,6 +10,7 @@ const Business = ({
   businessErrors,
   handleBusinessSubmit,
   isDemo,
+  isLoading,
 }) => {
   const dispatch = useDispatch();
 
@@ -186,6 +187,7 @@ const Business = ({
               type="submit"
               label="Guardar Configuración"
               className="btn btn-primary"
+              disabled={isLoading}
             />
             <Link
               to={

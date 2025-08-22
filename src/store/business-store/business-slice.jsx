@@ -32,10 +32,10 @@ const businessSlice = createSlice({
         logo: null,
       };
     },
-    setbusinesses(state, actions) {
+    setBusinesses(state, actions) {
       state.businesses = actions.payload.businesses;
     },
-    setbusiness(state, actions) {
+    setBusiness(state, actions) {
       state.business = actions.payload.business;
     },
     modifyPropertyValue(state, actions) {

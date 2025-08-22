@@ -1,32 +1,35 @@
 import { getToken } from "../../helpers/token";
+import { businessActions } from "./business-slice";
 
-
-export const CreateAccount = (user, showError, showWarning, showSuccess) => {
+export const CreateBusiness = (
+  business,
+  showError,
+  showWarning,
+  showSuccess
+) => {
   return async () => {
-    const RegisterUserInfo = async () => {
+    const RegisterBusinessInfo = async () => {
+      const businessForm = new FormData();
+      businessForm.append("name", business.name);
+      businessForm.append("slug", business.slug);
+      businessForm.append("phone", business.phone);
+      businessForm.append("description", business.description);
+      businessForm.append("logoUrl", business.logoUrl);
+      businessForm.append("logo", business.logo);
 
-      return await fetch(`${import.meta.env.VITE_APP_API_URL}users`, {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}businesses`, {
         method: "POST",
-        body: JSON.stringify({
-          given_name: user.given_name,
-          family_name: user.family_name,
-          email: user.email,
-          password: user.password,
-        }),
+        body: businessForm,
         headers: {
-          "Content-Type": "application/json",
-          // Authorization: getToken(),
+          Authorization: getToken(),
         },
       });
     };
 
     try {
-      const response = await RegisterUserInfo();
+      const response = await RegisterBusinessInfo();
       if (response.status === 200) {
-        showSuccess("Usuario creado", "Usuario creado con éxito");
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 4500);
+        showSuccess("Negocio guardado", "Negocio guardado con éxito");
       } else {
         showWarning(
           "No se pudo crear el usuario",
@@ -39,36 +42,66 @@ export const CreateAccount = (user, showError, showWarning, showSuccess) => {
     }
   };
 };
-export const UpdateUser = (user, showError, showWarning, showSuccess) => {
-  return async () => {
-    const UpdateUserInfo = async () => {
+export const GetBusiness = (user_id, showError) => {
+  return async (dispatch) => {
+    const FetchBusinessInfo = async () => {
       return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}users/${user.id}`,
+        `${import.meta.env.VITE_APP_API_URL}businesses/${user_id}`,
         {
-          method: "PUT",
+          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: getToken(),
           },
-          body: JSON.stringify({
-            given_name: user.given_name,
-            family_name: user.family_name,
-            role: user.role,
-            password: user.password,
-          }),
+        }
+      );
+    };
+
+    try {
+      const response = await FetchBusinessInfo();
+      if (response.status === 200) {
+        const data = await response.json();
+        dispatch(businessActions.setBusiness({ business: data }));
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los negocios");
+    }
+  };
+};
+
+export const UpdateBusiness = (
+  business,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const UpdateUserInfo = async () => {
+      const businessForm = new FormData();
+      businessForm.append("name", business.name);
+      businessForm.append("slug", business.slug);
+      businessForm.append("phone", business.phone);
+      businessForm.append("description", business.description);
+      businessForm.append("logoUrl", business.logoUrl);
+      businessForm.append("logo", business.logo);
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}businesses/${business.business_id}`,
+        {
+          method: "PUT",
+          body: businessForm,
+          headers: {
+            Authorization: getToken(),
+          },
         }
       );
     };
     try {
       const response = await UpdateUserInfo();
       if (response.status === 200) {
-        showSuccess("Usuario actualizado", "Usuario actualizado con éxito");
-        setTimeout(() => {
-          window.location.reload();
-        }, 4500);
+        showSuccess("Negocio actualizado", "Negocio actualizado con éxito");
       } else {
         showWarning(
-          "No se pudo actualizar el usuario",
+          "No se pudo actualizar el negocio",
           "Valide los datos ingresados"
         );
       }

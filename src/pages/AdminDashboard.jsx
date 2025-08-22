@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import AdminSidebar from "../components/AdminSidebar";
 import {
@@ -9,25 +9,31 @@ import {
   setProductsData,
 } from "../services/storage";
 import { showToast } from "../services/shareService";
-import "../styles/admin.css";
 
 import { useNotification } from "../components/UI/NotificationProvider";
 import Business from "../components/Tabs/Business";
+import {
+  CreateBusiness,
+  GetBusiness,
+  UpdateBusiness,
+} from "../store/business-store/business-actions";
+import Loading from "../components/UI/Loading";
+import "../styles/admin.css";
+import { getTokenInfo } from "../helpers/token";
+import Categories from "../components/Tabs/Categories";
 
+let business_once = true;
 const AdminDashboard = () => {
+  const auth = getTokenInfo();
+  const dispatch = useDispatch();
   const { showError, showWarning, showSuccess } = useNotification();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [activeTab, setActiveTab] = useState("business");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Business data
   const business = useSelector((state) => state.business.business);
-  // const [business, setBusiness] = useState({
-  //   name: "",
-  //   slug: "",
-  //   logoUrl: "",
-  //   phone: "",
-  //   description: "",
-  // });
   const [businessErrors, setBusinessErrors] = useState({});
 
   // Categories data
@@ -48,6 +54,24 @@ const AdminDashboard = () => {
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [productErrors, setProductErrors] = useState({});
+
+  useEffect(() => {
+    if (business_once && business.business_id === "") {
+      business_once = false;
+      setIsLoading(true);
+      dispatch(GetBusiness(auth.sub, showError));
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 4500);
+    }
+  }, [
+    auth.sub,
+    business.business_id,
+    dispatch,
+    showError,
+    showSuccess,
+    showWarning,
+  ]);
 
   useEffect(() => {
     loadData();
@@ -79,9 +103,19 @@ const AdminDashboard = () => {
   const handleBusinessSubmit = (e) => {
     e.preventDefault();
     const errors = validateBusiness(business);
-
     setBusinessErrors(errors);
-    console.log(business);
+
+    if (Object.keys(errors).length === 0) {
+      setIsLoading(true);
+      if (business.business_id === "") {
+        dispatch(CreateBusiness(business, showError, showWarning, showSuccess));
+      } else {
+        dispatch(UpdateBusiness(business, showError, showWarning, showSuccess));
+      }
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 4500);
+    }
   };
 
   // Category functions
@@ -247,120 +281,38 @@ const AdminDashboard = () => {
 
       <main className="admin-main">
         {activeTab === "business" && (
-          <Business
-            business={business}
-            businessErrors={businessErrors}
-            handleBusinessSubmit={handleBusinessSubmit}
-            isDemo={false}
-          />
+          <>
+            <Loading message="Cargando..." visible={isLoading} />
+            {!isLoading && (
+              <Business
+                business={business}
+                businessErrors={businessErrors}
+                handleBusinessSubmit={handleBusinessSubmit}
+                isDemo={false}
+                isLoading={isLoading}
+              />
+            )}
+          </>
         )}
 
         {activeTab === "categories" && (
-          <div>
-            <div className="admin-header">
-              <h1>Gestión de Categorías</h1>
-              <p>Organiza tus productos en categorías</p>
-            </div>
-
-            <div className="admin-card">
-              <h2>
-                {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
-              </h2>
-              <form onSubmit={handleCategorySubmit}>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Nombre *</label>
-                    <input
-                      type="text"
-                      className="input"
-                      value={newCategory.name}
-                      onChange={(e) =>
-                        setNewCategory({
-                          ...newCategory,
-                          name: e.target.value,
-                          slug: generateSlug(e.target.value),
-                        })
-                      }
-                      placeholder="Ropa"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Slug</label>
-                    <input
-                      type="text"
-                      className="input"
-                      value={newCategory.slug}
-                      onChange={(e) =>
-                        setNewCategory({ ...newCategory, slug: e.target.value })
-                      }
-                      placeholder="ropa"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    {editingCategory ? "Actualizar" : "Crear"} Categoría
-                  </button>
-                  {editingCategory && (
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={() => {
-                        setNewCategory({ name: "", slug: "" });
-                        setEditingCategory(null);
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-
-            <div className="admin-card">
-              <h2>Categorías Existentes</h2>
-              {categories.length === 0 ? (
-                <p>No hay categorías creadas aún.</p>
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Slug</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.map((category) => (
-                      <tr key={category.id}>
-                        <td>{category.name}</td>
-                        <td>{category.slug}</td>
-                        <td>
-                          <div className="table-actions">
-                            <button
-                              className="btn btn-small btn-outline"
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              className="btn btn-small btn-danger"
-                              onClick={() => handleDeleteCategory(category.id)}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
+          <>
+            <Loading message="Cargando..." visible={isLoading} />
+            {!isLoading && (
+              <Categories
+                categories={categories}
+                editingCategory={editingCategory}
+                setEditingCategory={setEditingCategory}
+                newCategory={newCategory}
+                setNewCategory={setNewCategory}
+                handleCategorySubmit={handleCategorySubmit}
+                handleDeleteCategory={handleDeleteCategory}
+                handleEditCategory={handleEditCategory}
+                generateSlug={generateSlug}
+                isDemo={false}
+              />
+            )}
+          </>
         )}
 
         {activeTab === "products" && (

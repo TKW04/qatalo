@@ -1,3 +1,4 @@
+import { useDispatch } from "react-redux";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { PencilIcon, Trash2 } from "lucide-react";
@@ -12,8 +13,10 @@ const Categories = ({
   handleDeleteCategory,
   handleEditCategory,
   generateSlug,
+  isDemo,
 }) => {
-  const isMobile = window.innerWidth <= 480;  
+  const isMobile = window.innerWidth <= 480;
+  const dispatch = useDispatch();
   return (
     <div>
       <div className="admin-header">
@@ -31,13 +34,17 @@ const Categories = ({
                 type="text"
                 className="input"
                 value={newCategory.name}
-                onChange={(e) =>
-                  setNewCategory({
-                    ...newCategory,
-                    name: e.target.value,
-                    slug: generateSlug(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  if (isDemo) {
+                    setNewCategory({
+                      ...newCategory,
+                      name: e.target.value,
+                      slug: generateSlug(e.target.value),
+                    });
+                  } else {
+                    // dispatch();
+                  }
+                }}
                 placeholder="Ropa"
                 required
               />
@@ -49,9 +56,13 @@ const Categories = ({
                 type="text"
                 className="input"
                 value={newCategory.slug}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, slug: e.target.value })
-                }
+                onChange={(e) => {
+                  if (isDemo) {
+                    setNewCategory({ ...newCategory, slug: e.target.value });
+                  } else {
+                    // dispatch();
+                  }
+                }}
                 placeholder="ropa"
               />
             </div>
@@ -103,14 +114,14 @@ const Categories = ({
                         icon={<PencilIcon />}
                         label={isMobile ? "" : "Editar"}
                         tooltip="Editar categoría"
-                     />
+                      />
                       <Button
                         className="btn btn-small btn-danger"
                         onClick={() => handleDeleteCategory(category.id)}
                         icon={<Trash2 />}
                         label={isMobile ? "" : "Eliminar"}
                         tooltip="Eliminar categoría"
-                     />
+                      />
                     </div>
                   </td>
                 </tr>
