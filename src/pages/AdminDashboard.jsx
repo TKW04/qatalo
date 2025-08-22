@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+
 import AdminSidebar from "../components/AdminSidebar";
 import {
-  getBusinessData,
-  setBusinessData,
   getCategoriesData,
   setCategoriesData,
   getProductsData,
@@ -11,18 +11,23 @@ import {
 import { showToast } from "../services/shareService";
 import "../styles/admin.css";
 
-function AdminDashboard() {
+import { useNotification } from "../components/UI/NotificationProvider";
+import Business from "../components/Tabs/Business";
+
+const AdminDashboard = () => {
+  const { showError, showWarning, showSuccess } = useNotification();
   const [activeTab, setActiveTab] = useState("business");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Business data
-  const [business, setBusiness] = useState({
-    name: "",
-    slug: "",
-    logoUrl: "",
-    phone: "",
-    description: "",
-  });
+  const business = useSelector((state) => state.business.business);
+  // const [business, setBusiness] = useState({
+  //   name: "",
+  //   slug: "",
+  //   logoUrl: "",
+  //   phone: "",
+  //   description: "",
+  // });
   const [businessErrors, setBusinessErrors] = useState({});
 
   // Categories data
@@ -49,7 +54,6 @@ function AdminDashboard() {
   }, []);
 
   const loadData = () => {
-    setBusiness(getBusinessData());
     setCategories(getCategoriesData());
     setProducts(getProductsData());
   };
@@ -75,12 +79,9 @@ function AdminDashboard() {
   const handleBusinessSubmit = (e) => {
     e.preventDefault();
     const errors = validateBusiness(business);
-    setBusinessErrors(errors);
 
-    if (Object.keys(errors).length === 0) {
-      setBusinessData(business);
-      showToast("Configuración guardada correctamente");
-    }
+    setBusinessErrors(errors);
+    console.log(business);
   };
 
   // Category functions
@@ -246,118 +247,12 @@ function AdminDashboard() {
 
       <main className="admin-main">
         {activeTab === "business" && (
-          <div>
-            <div className="admin-header">
-              <h1>Configuración del Negocio</h1>
-              <p>Configura la información básica de tu negocio</p>
-            </div>
-
-            <div className="admin-card">
-              <h2>Información General</h2>
-              <form onSubmit={handleBusinessSubmit}>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Nombre del negocio *</label>
-                    <input
-                      type="text"
-                      className={`input ${businessErrors.name ? "error" : ""}`}
-                      value={business.name}
-                      onChange={(e) =>
-                        setBusiness({ ...business, name: e.target.value })
-                      }
-                      placeholder="Mi Tienda"
-                    />
-                    {businessErrors.name && (
-                      <div className="error-message">{businessErrors.name}</div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Slug (URL) *</label>
-                    <input
-                      type="text"
-                      className={`input ${businessErrors.slug ? "error" : ""}`}
-                      value={business.slug}
-                      onChange={(e) =>
-                        setBusiness({ ...business, slug: e.target.value })
-                      }
-                      placeholder="mi-tienda"
-                    />
-                    {businessErrors.slug && (
-                      <div className="error-message">{businessErrors.slug}</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Teléfono (WhatsApp) *</label>
-                    <input
-                      type="tel"
-                      className={`input ${businessErrors.phone ? "error" : ""}`}
-                      value={business.phone}
-                      onChange={(e) =>
-                        setBusiness({ ...business, phone: e.target.value })
-                      }
-                      placeholder="18095551234"
-                    />
-                    {businessErrors.phone && (
-                      <div className="error-message">
-                        {businessErrors.phone}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">URL del Logo</label>
-                    <input
-                      type="url"
-                      className={`input ${
-                        businessErrors.logoUrl ? "error" : ""
-                      }`}
-                      value={business.logoUrl}
-                      onChange={(e) =>
-                        setBusiness({ ...business, logoUrl: e.target.value })
-                      }
-                      placeholder="https://ejemplo.com/logo.jpg"
-                    />
-                    {businessErrors.logoUrl && (
-                      <div className="error-message">
-                        {businessErrors.logoUrl}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Descripción</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={business.description}
-                    onChange={(e) =>
-                      setBusiness({ ...business, description: e.target.value })
-                    }
-                    placeholder="Productos artesanales hechos a mano"
-                  />
-                </div>
-
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    Guardar Configuración
-                  </button>
-                  <a
-                    href={`/catalog/${business.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-outline"
-                  >
-                    Ver Catálogo Público
-                  </a>
-                </div>
-              </form>
-            </div>
-          </div>
+          <Business
+            business={business}
+            businessErrors={businessErrors}
+            handleBusinessSubmit={handleBusinessSubmit}
+            isDemo={false}
+          />
         )}
 
         {activeTab === "categories" && (
@@ -742,6 +637,6 @@ function AdminDashboard() {
       </main>
     </div>
   );
-}
+};
 
 export default AdminDashboard;

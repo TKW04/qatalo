@@ -9,14 +9,16 @@ import {
   getProductsData,
   setProductsData,
 } from "../../services/storage";
-import { showToast } from "../../services/shareService";
 import "../../styles/admin.css";
 import QrTab from "../../components/Tabs/QRTab";
 import Business from "../../components/Tabs/Business";
 import Categories from "../../components/Tabs/Categories";
 import Products from "../../components/Tabs/Products";
+import { useNotification } from "../../components/UI/NotificationProvider";
 
 const AdminDemoDashboard = () => {
+  const { showSuccess } = useNotification();
+
   const [activeTab, setActiveTab] = useState("business");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -65,7 +67,7 @@ const AdminDemoDashboard = () => {
 
     if (!data.name.trim()) errors.name = "El nombre es requerido";
     if (!data.slug.trim()) errors.slug = "El slug es requerido";
-    else if (!/^[a-z0-9-]+$/.test(data.slug)) {
+    else if ( !/^[a-z0-9-]+$/.test(data.slug)) {
       errors.slug =
         "El slug solo puede contener letras minúsculas, números y guiones";
     }
@@ -80,11 +82,15 @@ const AdminDemoDashboard = () => {
   const handleBusinessSubmit = (e) => {
     e.preventDefault();
     const errors = validateBusiness(business);
+
     setBusinessErrors(errors);
 
     if (Object.keys(errors).length === 0) {
       setBusinessData(business);
-      showToast("Configuración guardada correctamente");
+      showSuccess(
+        "Negocio actualizado",
+        "Configuración guardada correctamente"
+      );
     }
   };
 
@@ -120,7 +126,7 @@ const AdminDemoDashboard = () => {
     setCategoriesData(updatedCategories);
     setNewCategory({ name: "", slug: "" });
     setEditingCategory(null);
-    showToast(editingCategory ? "Categoría actualizada" : "Categoría creada");
+    showSuccess(editingCategory ? "Categoría actualizada" : "Categoría creada");
   };
 
   const handleEditCategory = (category) => {
@@ -135,7 +141,7 @@ const AdminDemoDashboard = () => {
       );
       setCategories(updatedCategories);
       setCategoriesData(updatedCategories);
-      showToast("Categoría eliminada");
+      showSuccess("Categoría eliminada");
     }
   };
 
@@ -190,7 +196,7 @@ const AdminDemoDashboard = () => {
       });
       setEditingProduct(null);
       setProductErrors({});
-      showToast(editingProduct ? "Producto actualizado" : "Producto creado");
+      showSuccess(editingProduct ? "Producto actualizado" : "Producto creado");
     }
   };
 
@@ -212,7 +218,7 @@ const AdminDemoDashboard = () => {
       const updatedProducts = products.filter((prod) => prod.id !== productId);
       setProducts(updatedProducts);
       setProductsData(updatedProducts);
-      showToast("Producto eliminado");
+      showSuccess("Producto eliminado");
     }
   };
 

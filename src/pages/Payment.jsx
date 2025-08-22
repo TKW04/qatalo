@@ -5,7 +5,7 @@ import { Button } from "primereact/button";
 
 import PaddleCheckoutButton from "../components/PaddleCheckoutButton";
 
-// import { useNotification } from "../components/UI/NotificationProvider";
+import { useNotification } from "../components/UI/NotificationProvider";
 import "./Payment.css";
 
 import { Checkout, GetPlans } from "../store/payment-store/plan-actions";
@@ -13,14 +13,15 @@ import { getTokenInfo } from "../helpers/token";
 const Payment = () => {
   const auth = getTokenInfo();
   const plans = useSelector((state) => state.plan.plans);
+  const { showError } = useNotification();
 
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (plans.length === 0) {
-      dispatch(GetPlans());
+      dispatch(GetPlans(showError()));
     }
-  }, [dispatch, plans]);
+  }, [dispatch, plans, showError]);
 
   return (
     <div className="container-payment">
@@ -49,7 +50,9 @@ const Payment = () => {
                 <span className="currency">$</span>
                 <span id="basic-price">{plan.unit_price}</span>
               </div>
-              <div className="plan-period">por usuario/{plan.billing_cycle}</div>
+              <div className="plan-period">
+                por usuario/{plan.billing_cycle}
+              </div>
               <ul className="plan-features">
                 <li>1 catálogo</li>
                 <li>Categorías ilimitadas</li>
@@ -62,11 +65,15 @@ const Payment = () => {
                 priceId={plan.price_id}
                 quantity={1}
                 email={auth.email}
+                customerId={
+                  auth["custom:customer_id"] !== "" &&
+                  auth["custom:customer_id"]
+                    ? auth["custom:customer_id"]
+                    : null
+                }
                 customData={{ appUserId: auth.sub }}
                 locale="es"
-                successUrl="http://localhost:5173/payment"
-                onOpened={() => console.log("Checkout abierto")}
-                onClosed={() => console.log("Checkout cerrado")}
+                successUrl={import.meta.env.VITE_APP_LOGIN_REDIRECT_URL}
               />
             </div>
           ))}

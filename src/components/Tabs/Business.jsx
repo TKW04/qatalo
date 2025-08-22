@@ -1,6 +1,8 @@
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { businessActions } from "../../store/business-store/business-slice";
 
 const Business = ({
   business,
@@ -9,6 +11,15 @@ const Business = ({
   handleBusinessSubmit,
   isDemo,
 }) => {
+  const dispatch = useDispatch();
+
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .trim();
+  };
   return (
     <div>
       <div className="admin-header">
@@ -26,9 +37,29 @@ const Business = ({
                 value={business.name}
                 className={`input ${businessErrors.name ? "error" : ""}`}
                 placeholder="Mi Tienda"
-                onChange={(e) =>
-                  setBusiness({ ...business, name: e.target.value })
-                }
+                onChange={(e) => {
+                  const slug = generateSlug(e.target.value);
+                  if (isDemo) {
+                    setBusiness({
+                      ...business,
+                      name: e.target.value,
+                      slug: slug,
+                    });
+                  } else {
+                    dispatch(
+                      businessActions.modifyPropertyValue({
+                        id: "name",
+                        value: e.target.value,
+                      })
+                    );
+                    dispatch(
+                      businessActions.modifyPropertyValue({
+                        id: "slug",
+                        value: slug,
+                      })
+                    );
+                  }
+                }}
               />
               {businessErrors.name && (
                 <div className="error-message">{businessErrors.name}</div>
@@ -36,14 +67,28 @@ const Business = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Slug (URL) *</label>
+              <label className="form-label">
+                Slug ({window.location.origin}/
+                {isDemo ? "demo/catalog/" : "catalog/"}
+                <span style={{ color: "red" }}>{business.slug}</span>) *
+              </label>
               <InputText
                 value={business.slug}
                 className={`input ${businessErrors.slug ? "error" : ""}`}
                 placeholder="mi-tienda"
-                onChange={(e) =>
-                  setBusiness({ ...business, slug: e.target.value })
-                }
+                onChange={(e) => {
+                  const slug = generateSlug(e.target.value);
+                  if (isDemo) {
+                    setBusiness({ ...business, slug: slug });
+                  } else {
+                    dispatch(
+                      businessActions.modifyPropertyValue({
+                        id: "slug",
+                        value: slug,
+                      })
+                    );
+                  }
+                }}
               />
               {businessErrors.slug && (
                 <div className="error-message">{businessErrors.slug}</div>
@@ -59,7 +104,16 @@ const Business = ({
                 value={business.phone}
                 onChange={(e) => {
                   if (!isNaN(e.target.value)) {
-                    setBusiness({ ...business, phone: e.target.value });
+                    if (isDemo) {
+                      setBusiness({ ...business, phone: e.target.value });
+                    } else {
+                      dispatch(
+                        businessActions.modifyPropertyValue({
+                          id: "phone",
+                          value: e.target.value,
+                        })
+                      );
+                    }
                   }
                 }}
                 placeholder="18095551234"
@@ -70,17 +124,38 @@ const Business = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">URL del Logo</label>
-              <InputText
-                className={`input ${businessErrors.logoUrl ? "error" : ""}`}
-                value={business.logoUrl}
-                onChange={(e) =>
-                  setBusiness({ ...business, logoUrl: e.target.value })
-                }
-                placeholder="https://ejemplo.com/logo.jpg"
-              />
-              {businessErrors.logoUrl && (
-                <div className="error-message">{businessErrors.logoUrl}</div>
+              <label className="form-label">Logo</label>
+              <div className="card flex justify-content-center">
+                <input
+                  className={`input ${businessErrors.slug ? "error" : ""}`}
+                  // className="fileUploadBasic"
+                  accept="image/*"
+                  type="file"
+                  label="Seleccionar Imagen"
+                  onChange={(e) => {
+                    if (isDemo) {
+                      const urlLogo = URL.createObjectURL(e.target.files[0]);
+                      setBusiness({ ...business, logoUrl: urlLogo });
+                    } else {
+                      dispatch(
+                        businessActions.modifyPropertyValue({
+                          id: "logoUrl",
+                          value: URL.createObjectURL(e.target.files[0]),
+                        })
+                      );
+                      dispatch(
+                        businessActions.modifyPropertyValue({
+                          id: "logo",
+                          value: e.target.files[0],
+                        })
+                      );
+                    }
+                  }}
+                />
+              </div>
+
+              {businessErrors.logo && (
+                <div className="error-message">{businessErrors.logo}</div>
               )}
             </div>
           </div>
@@ -90,9 +165,18 @@ const Business = ({
             <InputText
               className="input"
               value={business.description}
-              onChange={(e) =>
-                setBusiness({ ...business, description: e.target.value })
-              }
+              onChange={(e) => {
+                if (isDemo) {
+                  setBusiness({ ...business, description: e.target.value });
+                } else {
+                  dispatch(
+                    businessActions.modifyPropertyValue({
+                      id: "description",
+                      value: e.target.value,
+                    })
+                  );
+                }
+              }}
               placeholder="Productos artesanales hechos a mano"
             />
           </div>
@@ -104,7 +188,11 @@ const Business = ({
               className="btn btn-primary"
             />
             <Link
-              to={isDemo?`/demo/catalog/${business.slug}`:`/catalog/${business.slug}`}
+              to={
+                isDemo
+                  ? `/demo/catalog/${business.slug}`
+                  : `/catalog/${business.slug}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-outline"

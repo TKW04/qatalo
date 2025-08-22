@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import CatalogPublicDemo from "./pages/demo/CatalogPublicDemo";
 import AdminDemoDashboard from "./pages/demo/AdminDemoDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminQR from "./pages/AdminQR";
 import Register from "./pages/User/Register";
 import Login from "./pages/User/Login";
@@ -20,6 +21,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/payment" element={<Payment />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </NotificationProvider>

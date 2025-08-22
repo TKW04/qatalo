@@ -37,7 +37,7 @@ const Login = () => {
           ) {
             window.location.href = "/payment";
           } else {
-            window.location.href = "/";
+            window.location.href = "/admin";
           }
         },
         () => {
