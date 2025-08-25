@@ -2,6 +2,7 @@ import { useDispatch } from "react-redux";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { PencilIcon, Trash2 } from "lucide-react";
+import { categoryActions } from "../../store/categories-store/category-slice";
 
 const Categories = ({
   categories,
@@ -17,6 +18,7 @@ const Categories = ({
 }) => {
   const isMobile = window.innerWidth <= 480;
   const dispatch = useDispatch();
+  
   return (
     <div>
       <div className="admin-header">
@@ -42,7 +44,23 @@ const Categories = ({
                       slug: generateSlug(e.target.value),
                     });
                   } else {
-                    // dispatch();
+                    
+                    dispatch(
+                      categoryActions.modifyPropertyValue(
+                        {
+                          id: "name",
+                          value: e.target.value
+                        }
+                      )
+                    );
+                    dispatch(
+                      categoryActions.modifyPropertyValue(
+                        {
+                          id: "slug",
+                          value: generateSlug(e.target.value)
+                        }
+                      )
+                    );
                   }
                 }}
                 placeholder="Ropa"
@@ -60,7 +78,14 @@ const Categories = ({
                   if (isDemo) {
                     setNewCategory({ ...newCategory, slug: e.target.value });
                   } else {
-                    // dispatch();
+                    dispatch(
+                      categoryActions.modifyPropertyValue(
+                        {
+                          id: "slug",
+                          value: generateSlug(e.target.value)
+                        }
+                      )
+                    );
                   }
                 }}
                 placeholder="ropa"
@@ -77,8 +102,12 @@ const Categories = ({
                 type="button"
                 className="btn btn-outline"
                 onClick={() => {
-                  setNewCategory({ name: "", slug: "" });
-                  setEditingCategory(null);
+                  if (isDemo === true) {
+                    setNewCategory({ name: "", slug: "" });
+                    setEditingCategory(null);
+                  } else {
+                    dispatch(categoryActions.startCategory(false));
+                  }
                 }}
               >
                 Cancelar

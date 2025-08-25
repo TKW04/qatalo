@@ -42,11 +42,11 @@ export const CreateBusiness = (
     }
   };
 };
-export const GetBusiness = (user_id, showError) => {
+export const GetBusiness = (showError) => {
   return async (dispatch) => {
     const FetchBusinessInfo = async () => {
       return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}businesses/${user_id}`,
+        `${import.meta.env.VITE_APP_API_URL}businesses`,
         {
           method: "GET",
           headers: {
@@ -102,71 +102,6 @@ export const UpdateBusiness = (
       } else {
         showWarning(
           "No se pudo actualizar el negocio",
-          "Valide los datos ingresados"
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      showError("Error!", "No se pudieron obtener los usuarios");
-    }
-  };
-};
-export const ActivateUser = (userId, showError, showWarning, showSuccess) => {
-  return async () => {
-    const UpdateUserInfo = async () => {
-      return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}users/active/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: getToken(),
-          },
-        }
-      );
-    };
-    try {
-      const response = await UpdateUserInfo();
-      if (response.status === 200) {
-        showSuccess("Usuario activado", "Usuario activado con éxito");
-        setTimeout(() => {
-          window.location.reload();
-        }, 4500);
-      } else {
-        showWarning(
-          "No se pudo actualizar el usuario",
-          "Valide los datos ingresados"
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      showError("Error!", "No se pudieron obtener los usuarios");
-    }
-  };
-};
-export const InactivateUser = (userId, showError, showWarning, showSuccess) => {
-  return async () => {
-    const UpdateUserInfo = async () => {
-      return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}users/inactive/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: getToken(),
-          },
-        }
-      );
-    };
-    try {
-      const response = await UpdateUserInfo();
-      if (response.status === 200) {
-        showSuccess("Usuario inactivado", "Usuario inactivado con éxito");
-        setTimeout(() => {
-          window.location.reload();
-        }, 4500);
-      } else {
-        showWarning(
-          "No se pudo actualizar el usuario",
           "Valide los datos ingresados"
         );
       }

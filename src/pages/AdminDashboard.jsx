@@ -2,12 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import AdminSidebar from "../components/AdminSidebar";
-import {
-  getCategoriesData,
-  setCategoriesData,
-  getProductsData,
-  setProductsData,
-} from "../services/storage";
+import { getProductsData, setProductsData } from "../services/storage";
 import { showToast } from "../services/shareService";
 
 import { useNotification } from "../components/UI/NotificationProvider";
@@ -18,11 +13,19 @@ import {
   UpdateBusiness,
 } from "../store/business-store/business-actions";
 import Loading from "../components/UI/Loading";
-import "../styles/admin.css";
+
 import { getTokenInfo } from "../helpers/token";
 import Categories from "../components/Tabs/Categories";
+import {
+  CreateCategory,
+  GetCategories,
+} from "../store/categories-store/category-actions";
+
+import "../styles/admin.css";
+import { categoryActions } from "../store/categories-store/category-slice";
 
 let business_once = true;
+let categories_once = true;
 const AdminDashboard = () => {
   const auth = getTokenInfo();
   const dispatch = useDispatch();
@@ -37,9 +40,9 @@ const AdminDashboard = () => {
   const [businessErrors, setBusinessErrors] = useState({});
 
   // Categories data
-  const [categories, setCategories] = useState([]);
-  const [newCategory, setNewCategory] = useState({ name: "", slug: "" });
-  const [editingCategory, setEditingCategory] = useState(null);
+  const categories = useSelector((state) => state.category.categories);
+  const category = useSelector((state) => state.category.category);
+  const [editingCategory, setEditingCategory] = useState(false);
 
   // Products data
   const [products, setProducts] = useState([]);
@@ -62,7 +65,7 @@ const AdminDashboard = () => {
       dispatch(GetBusiness(auth.sub, showError));
       setTimeout(() => {
         setIsLoading(false);
-      }, 4500);
+      }, 1500);
     }
   }, [
     auth.sub,
@@ -74,11 +77,22 @@ const AdminDashboard = () => {
   ]);
 
   useEffect(() => {
+    if (categories_once && categories.length === 0) {
+      categories_once = false;
+      setIsLoading(true);
+      dispatch(GetCategories(showError));
+      dispatch(categoryActions.startCategory());
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
+    }
+  }, [categories.length, dispatch, showError, showSuccess, showWarning]);
+
+  useEffect(() => {
     loadData();
   }, []);
 
   const loadData = () => {
-    setCategories(getCategoriesData());
     setProducts(getProductsData());
   };
 
@@ -129,43 +143,29 @@ const AdminDashboard = () => {
 
   const handleCategorySubmit = (e) => {
     e.preventDefault();
-    if (!newCategory.name.trim()) return;
-
-    const categoryData = {
-      ...newCategory,
-      id: editingCategory ? editingCategory.id : `cat-${Date.now()}`,
-      slug: newCategory.slug || generateSlug(newCategory.name),
-    };
-
-    let updatedCategories;
-    if (editingCategory) {
-      updatedCategories = categories.map((cat) =>
-        cat.id === editingCategory.id ? categoryData : cat
-      );
-    } else {
-      updatedCategories = [...categories, categoryData];
-    }
-
-    setCategories(updatedCategories);
-    setCategoriesData(updatedCategories);
-    setNewCategory({ name: "", slug: "" });
-    setEditingCategory(null);
-    showToast(editingCategory ? "Categoría actualizada" : "Categoría creada");
+    setIsLoading(true);
+    dispatch(CreateCategory(category, showError, showWarning, showSuccess));
+    setTimeout(() => {
+      setActiveTab("categories");
+      dispatch(GetCategories(showError));
+      dispatch(categoryActions.startCategory());
+      setIsLoading(false);
+    }, 1500);
   };
 
   const handleEditCategory = (category) => {
-    setNewCategory({ name: category.name, slug: category.slug });
-    setEditingCategory(category);
+    dispatch(categoryActions.setCategory(category));
+    setEditingCategory(true);
   };
 
   const handleDeleteCategory = (categoryId) => {
     if (confirm("¿Estás seguro de eliminar esta categoría?")) {
-      const updatedCategories = categories.filter(
-        (cat) => cat.id !== categoryId
-      );
-      setCategories(updatedCategories);
-      setCategoriesData(updatedCategories);
-      showToast("Categoría eliminada");
+      // const updatedCategories = categories.filter(
+      //   (cat) => cat.id !== categoryId
+      // );
+      // setCategories(updatedCategories);
+      // setCategoriesData(updatedCategories);
+      // showToast("Categoría eliminada");
     }
   };
 
@@ -280,9 +280,10 @@ const AdminDashboard = () => {
       />
 
       <main className="admin-main">
+        <Loading message="Guardando..." visible={isLoading} />
         {activeTab === "business" && (
           <>
-            <Loading message="Cargando..." visible={isLoading} />
+            {/* <Loading message="Guardando..." visible={isLoading} /> */}
             {!isLoading && (
               <Business
                 business={business}
@@ -297,14 +298,12 @@ const AdminDashboard = () => {
 
         {activeTab === "categories" && (
           <>
-            <Loading message="Cargando..." visible={isLoading} />
+            
             {!isLoading && (
               <Categories
                 categories={categories}
                 editingCategory={editingCategory}
-                setEditingCategory={setEditingCategory}
-                newCategory={newCategory}
-                setNewCategory={setNewCategory}
+                newCategory={category}
                 handleCategorySubmit={handleCategorySubmit}
                 handleDeleteCategory={handleDeleteCategory}
                 handleEditCategory={handleEditCategory}

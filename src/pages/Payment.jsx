@@ -8,7 +8,7 @@ import PaddleCheckoutButton from "../components/PaddleCheckoutButton";
 import { useNotification } from "../components/UI/NotificationProvider";
 import "./Payment.css";
 
-import { Checkout, GetPlans } from "../store/payment-store/plan-actions";
+import { GetPlans } from "../store/payment-store/plan-actions";
 import { getTokenInfo } from "../helpers/token";
 const Payment = () => {
   const auth = getTokenInfo();
