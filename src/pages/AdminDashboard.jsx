@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { Dialog } from "primereact/dialog";
+
 import AdminSidebar from "../components/AdminSidebar";
 import { getProductsData, setProductsData } from "../services/storage";
 import { showToast } from "../services/shareService";
@@ -18,11 +20,15 @@ import { getTokenInfo } from "../helpers/token";
 import Categories from "../components/Tabs/Categories";
 import {
   CreateCategory,
+  DeleteCategory,
   GetCategories,
+  UpdateCategory,
 } from "../store/categories-store/category-actions";
 
-import "../styles/admin.css";
 import { categoryActions } from "../store/categories-store/category-slice";
+import "../styles/admin.css";
+import { Button } from "primereact/button";
+import Products from "../components/Tabs/Products";
 
 let business_once = true;
 let categories_once = true;
@@ -31,6 +37,7 @@ const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { showError, showWarning, showSuccess } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Cargando...");
 
   const [activeTab, setActiveTab] = useState("business");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -57,6 +64,7 @@ const AdminDashboard = () => {
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [productErrors, setProductErrors] = useState({});
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (business_once && business.business_id === "") {
@@ -122,8 +130,10 @@ const AdminDashboard = () => {
     if (Object.keys(errors).length === 0) {
       setIsLoading(true);
       if (business.business_id === "") {
+        setLoadingMessage("Creando negocio...");
         dispatch(CreateBusiness(business, showError, showWarning, showSuccess));
       } else {
+        setLoadingMessage("Actualizando negocio...");
         dispatch(UpdateBusiness(business, showError, showWarning, showSuccess));
       }
       setTimeout(() => {
@@ -144,7 +154,13 @@ const AdminDashboard = () => {
   const handleCategorySubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
-    dispatch(CreateCategory(category, showError, showWarning, showSuccess));
+    if (category.category_id) {
+      setLoadingMessage("Actualizando categoría...");
+      dispatch(UpdateCategory(category, showError, showWarning, showSuccess));
+    } else {
+      setLoadingMessage("Creando categoría...");
+      dispatch(CreateCategory(category, showError, showWarning, showSuccess));
+    }
     setTimeout(() => {
       setActiveTab("categories");
       dispatch(GetCategories(showError));
@@ -154,20 +170,52 @@ const AdminDashboard = () => {
   };
 
   const handleEditCategory = (category) => {
-    dispatch(categoryActions.setCategory(category));
+    dispatch(categoryActions.setCategory({ category: category }));
     setEditingCategory(true);
   };
 
-  const handleDeleteCategory = (categoryId) => {
-    if (confirm("¿Estás seguro de eliminar esta categoría?")) {
-      // const updatedCategories = categories.filter(
-      //   (cat) => cat.id !== categoryId
-      // );
-      // setCategories(updatedCategories);
-      // setCategoriesData(updatedCategories);
-      // showToast("Categoría eliminada");
-    }
+  const handleDeleteCategory = (showDialog, category) => {
+    setShowDeleteDialog(showDialog);
+    dispatch(categoryActions.setCategory({ category: category }));
   };
+
+  const footerContent = (
+    <div>
+      <Button
+        className="btn btn-secondary"
+        label="No"
+        icon="pi pi-times"
+        onClick={() => setShowDeleteDialog(false)}
+        style={{ width: "100px", margin: "2px" }}
+      />
+      <Button
+        className="btn btn-danger"
+        label="Yes"
+        icon="pi pi-check"
+        onClick={() => {
+          setIsLoading(true);
+          setLoadingMessage("Eliminando categoría...");
+          dispatch(
+            DeleteCategory(
+              category.category_id,
+              showError,
+              showWarning,
+              showSuccess
+            )
+          );
+
+          setTimeout(() => {
+            setActiveTab("categories");
+            dispatch(GetCategories(showError));
+            dispatch(categoryActions.startCategory());
+            setIsLoading(false);
+            setShowDeleteDialog(false);
+          }, 1500);
+        }}
+        style={{ width: "100px", margin: "2px" }}
+      />
+    </div>
+  );
 
   // Product functions
   const validateProduct = (data) => {
@@ -238,7 +286,7 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteProduct = (productId) => {
-    if (confirm("¿Estás seguro de eliminar este producto?")) {
+    if (confirm()) {
       const updatedProducts = products.filter((prod) => prod.id !== productId);
       setProducts(updatedProducts);
       setProductsData(updatedProducts);
@@ -278,9 +326,23 @@ const AdminDashboard = () => {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-
+      <Dialog
+        header="Eliminar categoría"
+        visible={showDeleteDialog}
+        position={"center"}
+        style={{ width: "50vw" }}
+        onHide={() => {
+          if (!showDeleteDialog) return;
+          setShowDeleteDialog(false);
+        }}
+        footer={footerContent}
+        draggable={false}
+        resizable={false}
+      >
+        <p className="dialog">¿Estás seguro de eliminar esta Categoría?</p>
+      </Dialog>
       <main className="admin-main">
-        <Loading message="Guardando..." visible={isLoading} />
+        <Loading message={loadingMessage} visible={isLoading} />
         {activeTab === "business" && (
           <>
             {/* <Loading message="Guardando..." visible={isLoading} /> */}
@@ -298,7 +360,6 @@ const AdminDashboard = () => {
 
         {activeTab === "categories" && (
           <>
-            
             {!isLoading && (
               <Categories
                 categories={categories}
@@ -315,239 +376,23 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "products" && (
-          <div>
-            <div className="admin-header">
-              <h1>Gestión de Productos</h1>
-              <p>Administra tu catálogo de productos</p>
-            </div>
-
-            <div className="admin-card">
-              <h2>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</h2>
-              <form onSubmit={handleProductSubmit}>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Nombre *</label>
-                    <input
-                      type="text"
-                      className={`input ${productErrors.name ? "error" : ""}`}
-                      value={newProduct.name}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, name: e.target.value })
-                      }
-                      placeholder="Camisa de lino"
-                    />
-                    {productErrors.name && (
-                      <div className="error-message">{productErrors.name}</div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Precio *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      className={`input ${productErrors.price ? "error" : ""}`}
-                      value={newProduct.price}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, price: e.target.value })
-                      }
-                      placeholder="1850.00"
-                    />
-                    {productErrors.price && (
-                      <div className="error-message">{productErrors.price}</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Descripción</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={newProduct.description}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        description: e.target.value,
-                      })
-                    }
-                    placeholder="Camisa fresca 100% lino"
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">URL de la imagen</label>
-                    <input
-                      type="url"
-                      className={`input ${
-                        productErrors.imageUrl ? "error" : ""
-                      }`}
-                      value={newProduct.imageUrl}
-                      onChange={(e) =>
-                        setNewProduct({
-                          ...newProduct,
-                          imageUrl: e.target.value,
-                        })
-                      }
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                    {productErrors.imageUrl && (
-                      <div className="error-message">
-                        {productErrors.imageUrl}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Categoría *</label>
-                    <select
-                      className={`input ${
-                        productErrors.categoryId ? "error" : ""
-                      }`}
-                      value={newProduct.categoryId}
-                      onChange={(e) =>
-                        setNewProduct({
-                          ...newProduct,
-                          categoryId: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Seleccionar categoría</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                    {productErrors.categoryId && (
-                      <div className="error-message">
-                        {productErrors.categoryId}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Orden</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="input"
-                      value={newProduct.order}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, order: e.target.value })
-                      }
-                      placeholder="1"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Estado</label>
-                    <select
-                      className="input"
-                      value={newProduct.available}
-                      onChange={(e) =>
-                        setNewProduct({
-                          ...newProduct,
-                          available: e.target.value === "true",
-                        })
-                      }
-                    >
-                      <option value="true">Disponible</option>
-                      <option value="false">Agotado</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    {editingProduct ? "Actualizar" : "Crear"} Producto
-                  </button>
-                  {editingProduct && (
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={() => {
-                        setNewProduct({
-                          name: "",
-                          description: "",
-                          price: "",
-                          imageUrl: "",
-                          categoryId: "",
-                          available: true,
-                          order: 1,
-                        });
-                        setEditingProduct(null);
-                        setProductErrors({});
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-
-            <div className="admin-card">
-              <h2>Productos Existentes</h2>
-              {products.length === 0 ? (
-                <p>No hay productos creados aún.</p>
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Precio</th>
-                      <th>Categoría</th>
-                      <th>Estado</th>
-                      <th>Orden</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products
-                      .sort((a, b) => a.order - b.order)
-                      .map((product) => (
-                        <tr key={product.id}>
-                          <td>{product.name}</td>
-                          <td>${product.price.toFixed(2)}</td>
-                          <td>{getCategoryName(product.categoryId)}</td>
-                          <td>
-                            <span
-                              className={`product-status ${
-                                product.available ? "available" : "unavailable"
-                              }`}
-                            >
-                              {product.available ? "Disponible" : "Agotado"}
-                            </span>
-                          </td>
-                          <td>{product.order}</td>
-                          <td>
-                            <div className="table-actions">
-                              <button
-                                className="btn btn-small btn-outline"
-                                onClick={() => handleEditProduct(product)}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                className="btn btn-small btn-danger"
-                                onClick={() => handleDeleteProduct(product.id)}
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
+         <Products
+            products={products}
+            editingProduct={editingProduct}
+            setEditingProduct={setEditingProduct}
+            handleProductSubmit={handleProductSubmit}
+            handleEditProduct={handleEditProduct}
+            handleDeleteProduct={handleDeleteProduct}
+            newProduct={newProduct}
+            setNewProduct={setNewProduct}
+            productErrors={productErrors}
+            categories={categories.map((cat) => ({
+              code: cat.category_id,
+              name: cat.name,
+            }))}
+            setProductErrors={setProductErrors}
+            getCategoryName={getCategoryName}
+          />
         )}
 
         {activeTab === "qr" && (

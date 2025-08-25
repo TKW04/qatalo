@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
-import { PencilIcon, Trash2 } from "lucide-react";
+import { FileUpload } from "primereact/fileupload";
+import { BookImage, PencilIcon, Trash2, Upload } from "lucide-react";
+
 
 const Products = ({
   products,
@@ -18,7 +20,84 @@ const Products = ({
   categories,
   setProductErrors,
   getCategoryName,
+  isDemo
 }) => {
+  const fileUploadRef = useRef(null);
+
+  const headerTemplate = (options) => {
+    const { className, chooseButton } = options;
+
+    return (
+      <div
+        className={className}
+        style={{
+          backgroundColor: "transparent",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        {chooseButton}
+      </div>
+    );
+  };
+  const onTemplateRemove = (file, callback) => {
+    callback();
+  };
+
+  const itemTemplate = (file, props) => {
+    return (
+      <div className="flex align-items-center flex-wrap">
+        <div className="flex align-items-center" style={{ width: "40%" }}>
+          <img
+            alt={file.name}
+            role="presentation"
+            src={file.objectURL}
+            width={100}
+          />
+          <span className="flex flex-column text-left ml-3">
+            {file.name}
+            <small>{new Date().toLocaleDateString()}</small>
+          </span>
+        </div>
+        <Button
+          type="button"
+          icon={<Trash2 style={{ color: "red" }} />}
+          className="p-button-outlined p-button-rounded p-button-danger ml-auto"
+          onClick={() => onTemplateRemove(file, props.onRemove)}
+          style={{ border: "none", background: "transparent" }}
+        />
+      </div>
+    );
+  };
+
+  const emptyTemplate = () => {
+    return (
+      <div className="flex align-items-center flex-column">
+        <i
+          className="pi pi-image mt-3 p-5"
+          style={{
+            fontSize: "5em",
+            borderRadius: "50%",
+            backgroundColor: "var(--surface-b)",
+            color: "var(--surface-d)",
+          }}
+        ></i>
+        <span
+          style={{ fontSize: "1.2em", color: "var(--text-color-secondary)" }}
+          className="my-5"
+        >
+          Arrastra las imágenes aquí
+        </span>
+      </div>
+    );
+  };
+
+  const chooseOptions = {
+    icon: <BookImage />,
+    iconOnly: true,
+    className: "btn_image",
+  };
+
   const [selectedCategory, setSelectedCategory] = useState({
     code: "",
     name: "",
@@ -145,19 +224,39 @@ const Products = ({
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">URL de la imagen</label>
-              <InputText
-                type="url"
-                className={`input ${productErrors.imageUrl ? "error" : ""}`}
-                value={newProduct.imageUrl}
-                onChange={(e) =>
-                  setNewProduct({
-                    ...newProduct,
-                    imageUrl: e.target.value,
-                  })
-                }
-                placeholder="https://ejemplo.com/imagen.jpg"
-              />
+              <label className="form-label">Seleccionar imágenes</label>
+              <div>
+                <FileUpload
+                  ref={fileUploadRef}
+                  name="demo[]"
+                  url="/api/upload"
+                  multiple
+                  accept="image/*"
+                  maxFileSize={import.meta.env.VITE_MAX_IMAGE_SIZE || 1000000}
+                  headerTemplate={headerTemplate}
+                  itemTemplate={itemTemplate}
+                  emptyTemplate={emptyTemplate}
+                  chooseOptions={chooseOptions}
+                  onSelect={(e) => {
+                    const files = Array.from(e.files);
+                    if (files.length >= 1 && files.length <= import.meta.env.VITE_APP_MAX_FILE_QUANTITY) {
+                      if(isDemo){
+                        setNewProduct({ ...newProduct, images: files });
+                      }
+                      // setNewProduct({ ...newProduct, images: files });
+                    }
+                    else{
+                      fileUploadRef.current.clear();
+                      alert(`Debes seleccionar entre 1 y ${import.meta.env.VITE_APP_MAX_FILE_QUANTITY} imágenes.`);
+                    }
+                  }}
+                  style={{
+                    border:"1px dashed #ccc",
+                    padding: "10px",
+                    textAlign: "center",
+                  }}
+                />
+              </div>
               {productErrors.imageUrl && (
                 <div className="error-message">{productErrors.imageUrl}</div>
               )}
@@ -204,12 +303,12 @@ const Products = ({
               <label className="form-label">Estado</label>
               <Dropdown
                 value={selectedStatus}
-                className={`input ${productErrors.categoryId ? "error" : ""}`}
+                className={`input ${productErrors.available ? "error" : ""}`}
                 onChange={(e) => {
                   setSelectedStatus(e.value);
                   setNewProduct({
                     ...newProduct,
-                    categoryId: e.value.code,
+                    available: e.value.code,
                   });
                 }}
                 options={statuses}

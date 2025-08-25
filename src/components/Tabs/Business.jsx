@@ -129,7 +129,6 @@ const Business = ({
               <div className="card flex justify-content-center">
                 <input
                   className={`input ${businessErrors.slug ? "error" : ""}`}
-                  // className="fileUploadBasic"
                   accept="image/*"
                   type="file"
                   label="Seleccionar Imagen"

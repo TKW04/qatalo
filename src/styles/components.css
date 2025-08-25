@@ -61,6 +61,16 @@
   gap: 1rem;
   flex-wrap: wrap;
 }
+.p-carousel-prev{
+  height: 450px !important;
+  width: 35px;
+  margin-left: 5px !important;
+}
+.p-carousel-next{
+  height: 450px !important;
+  width: 35px;
+  margin-right: 5px !important;
+}
 
 /* QR Viewer */
 .qr-viewer {

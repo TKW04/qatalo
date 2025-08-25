@@ -154,9 +154,9 @@ const AdminDemoDashboard = () => {
       errors.price = "El precio debe ser un número mayor o igual a 0";
     }
     if (!data.categoryId) errors.categoryId = "La categoría es requerida";
-    if (data.imageUrl && !isValidUrl(data.imageUrl)) {
-      errors.imageUrl = "La URL de la imagen no es válida";
-    }
+    // if (data.imageUrl && !isValidUrl(data.imageUrl)) {
+    //   errors.imageUrl = "La URL de la imagen no es válida";
+    // }
 
     return errors;
   };
@@ -167,11 +167,18 @@ const AdminDemoDashboard = () => {
     setProductErrors(errors);
 
     if (Object.keys(errors).length === 0) {
+      const imagesUrl = [];
+      console.log(newProduct);
+
+      newProduct.images.forEach((image) => {
+        imagesUrl.push(URL.createObjectURL(image));
+      });
       const productData = {
         ...newProduct,
         id: editingProduct ? editingProduct.id : `prod-${Date.now()}`,
         price: Number.parseFloat(newProduct.price),
         order: Number.parseInt(newProduct.order) || 1,
+        imagesUrl: imagesUrl,
       };
 
       let updatedProducts;
@@ -189,7 +196,7 @@ const AdminDemoDashboard = () => {
         name: "",
         description: "",
         price: "",
-        imageUrl: "",
+        imagesUrl: [],
         categoryId: "",
         available: true,
         order: 1,
@@ -197,15 +204,20 @@ const AdminDemoDashboard = () => {
       setEditingProduct(null);
       setProductErrors({});
       showSuccess(editingProduct ? "Producto actualizado" : "Producto creado");
+      setTimeout(() => {
+        // window.location.reload();
+        setActiveTab("business");
+      }, 1000);
     }
   };
 
   const handleEditProduct = (product) => {
+    console.log(product);
+
     setNewProduct({
       name: product.name,
       description: product.description,
       price: product.price.toString(),
-      imageUrl: product.imageUrl,
       categoryId: product.categoryId,
       available: product.available,
       order: product.order,
@@ -299,6 +311,7 @@ const AdminDemoDashboard = () => {
             }))}
             setProductErrors={setProductErrors}
             getCategoryName={getCategoryName}
+            isDemo={true}
           />
         )}
 

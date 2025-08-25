@@ -18,7 +18,7 @@ const Categories = ({
 }) => {
   const isMobile = window.innerWidth <= 480;
   const dispatch = useDispatch();
-  
+
   return (
     <div>
       <div className="admin-header">
@@ -44,22 +44,17 @@ const Categories = ({
                       slug: generateSlug(e.target.value),
                     });
                   } else {
-                    
                     dispatch(
-                      categoryActions.modifyPropertyValue(
-                        {
-                          id: "name",
-                          value: e.target.value
-                        }
-                      )
+                      categoryActions.modifyPropertyValue({
+                        id: "name",
+                        value: e.target.value,
+                      })
                     );
                     dispatch(
-                      categoryActions.modifyPropertyValue(
-                        {
-                          id: "slug",
-                          value: generateSlug(e.target.value)
-                        }
-                      )
+                      categoryActions.modifyPropertyValue({
+                        id: "slug",
+                        value: generateSlug(e.target.value),
+                      })
                     );
                   }
                 }}
@@ -79,12 +74,10 @@ const Categories = ({
                     setNewCategory({ ...newCategory, slug: e.target.value });
                   } else {
                     dispatch(
-                      categoryActions.modifyPropertyValue(
-                        {
-                          id: "slug",
-                          value: generateSlug(e.target.value)
-                        }
-                      )
+                      categoryActions.modifyPropertyValue({
+                        id: "slug",
+                        value: generateSlug(e.target.value),
+                      })
                     );
                   }
                 }}
@@ -132,24 +125,30 @@ const Categories = ({
             </thead>
             <tbody>
               {categories.map((category) => (
-                <tr key={category.id}>
+                <tr key={category.category_id}>
                   <td>{category.name}</td>
                   <td>{category.slug}</td>
                   <td>
                     <div className="table-actions">
                       <Button
                         className="btn btn-small btn-outline"
-                        onClick={() => handleEditCategory(category)}
+                        onClick={() => {
+                          handleEditCategory(category);
+                        }}
                         icon={<PencilIcon />}
                         label={isMobile ? "" : "Editar"}
-                        tooltip="Editar categoría"
                       />
                       <Button
                         className="btn btn-small btn-danger"
-                        onClick={() => handleDeleteCategory(category.id)}
+                        onClick={() => {
+                          if (isDemo) {
+                            handleDeleteCategory(category.id);
+                          } else {
+                            handleDeleteCategory(true, category);
+                          }
+                        }}
                         icon={<Trash2 />}
                         label={isMobile ? "" : "Eliminar"}
-                        tooltip="Eliminar categoría"
                       />
                     </div>
                   </td>
