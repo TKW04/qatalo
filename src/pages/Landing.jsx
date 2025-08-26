@@ -9,8 +9,22 @@ import {
 import { Image } from "primereact/image";
 
 import "./Landing.css";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { GetPlans } from "../store/payment-store/plan-actions";
+import { useNotification } from "../components/UI/NotificationProvider";
+import PlanCard from "../components/PlanCard";
 
 const Landing = () => {
+  const plans = useSelector((state) => state.plan.plans);
+  const dispatch = useDispatch();
+  const { showError } = useNotification();
+
+  useEffect(() => {
+    if (plans.length === 0) {
+      dispatch(GetPlans(showError));
+    }
+  }, [dispatch, plans, showError]);
   return (
     <div className="landing">
       <header>
@@ -33,11 +47,14 @@ const Landing = () => {
               <a href="#como-funciona">Cómo Funciona</a>
             </li>
             <li>
-              <a href="#precios">Precios</a>
+              <a href="#planes-precios">Precios</a>
             </li>
           </ul>
           <a href="/register" className="cta-button">
             Comenzar Gratis
+          </a>
+          <a href="/login" className="cta-button">
+            Iniciar Sesión
           </a>
         </nav>
       </header>
@@ -49,11 +66,8 @@ const Landing = () => {
             directamente. Todo en una plataforma fácil de usar.
           </p>
           <div className="hero-cta">
-            <a href="#" className="primary-btn pulse">
+            <a href="/register" className="primary-btn pulse">
               Crear Mi Catálogo
-            </a>
-            <a href="/demo/admin" className="secondary-btn">
-              Ver Demo
             </a>
           </div>
         </div>
@@ -174,6 +188,14 @@ const Landing = () => {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+      <section className="pricing-section" id="planes-precios">
+        <h1 className="section-title">Planes y Precios</h1>
+        <div className="plans-grid">
+          {plans.map((plan) => (
+            <PlanCard plan={plan} key={plan.price_id} />
+          ))}
         </div>
       </section>
 

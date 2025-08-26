@@ -5,24 +5,24 @@ import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
 import { BookImage, PencilIcon, Trash2, Upload } from "lucide-react";
-
+import { useDispatch, useSelector } from "react-redux";
+import { productActions } from "../../store/product-store/product-slice";
 
 const Products = ({
-  products,
   editingProduct,
   setEditingProduct,
   handleProductSubmit,
   handleEditProduct,
   handleDeleteProduct,
-  newProduct,
   setNewProduct,
   productErrors,
-  categories,
-  setProductErrors,
-  getCategoryName,
-  isDemo
 }) => {
+  const products = useSelector((state) => state.product.products);
+  const product = useSelector((state) => state.product.product);
+  const categories = useSelector((state) => state.category.categories);
+
   const fileUploadRef = useRef(null);
+  const dispatch = useDispatch();
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -119,6 +119,10 @@ const Products = ({
     { code: "USD", name: "Dólar estadounidense", symbol: "$" },
     { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
   ];
+  const getCategoryName = (categoryId) => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category ? category.name : "Sin categoría";
+  };
   const isMobile = window.innerWidth <= 480;
   const onSubmit = (e) => {
     e.preventDefault();
@@ -153,10 +157,15 @@ const Products = ({
             <InputText
               type="text"
               className={`input ${productErrors.name ? "error" : ""}`}
-              value={newProduct.name}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, name: e.target.value })
-              }
+              value={product.name}
+              onChange={(e) => {
+                dispatch(
+                  productActions.modifyPropertyValue({
+                    id: "name",
+                    value: e.target.value,
+                  })
+                );
+              }}
               placeholder="Camisa de lino"
             />
             {productErrors.name && (
@@ -169,13 +178,15 @@ const Products = ({
             <InputText
               type="text"
               className="input"
-              value={newProduct.description}
-              onChange={(e) =>
-                setNewProduct({
-                  ...newProduct,
-                  description: e.target.value,
-                })
-              }
+              value={product.description}
+              onChange={(e) => {
+                dispatch(
+                  productActions.modifyPropertyValue({
+                    id: "description",
+                    value: e.target.value,
+                  })
+                );
+              }}
               placeholder="Camisa fresca 100% lino"
             />
           </div>
@@ -188,10 +199,12 @@ const Products = ({
                 className={`input ${productErrors.currency ? "error" : ""}`}
                 onChange={(e) => {
                   setSelectedCurrency(e.value);
-                  setNewProduct({
-                    ...newProduct,
-                    currency: e.value.symbol,
-                  });
+                  dispatch(
+                    productActions.modifyPropertyValue({
+                      id: "currency",
+                      value: e.value.symbol,
+                    })
+                  );
                 }}
                 options={currencies}
                 optionLabel="name"
@@ -208,10 +221,15 @@ const Products = ({
               </label>
               <InputText
                 className={`input ${productErrors.price ? "error" : ""}`}
-                value={newProduct.price}
+                value={product.price}
                 onChange={(e) => {
                   if (!isNaN(e.target.value)) {
-                    setNewProduct({ ...newProduct, price: e.target.value });
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "price",
+                        value: e.target.value,
+                      })
+                    );
                   }
                 }}
                 placeholder="1850.00"
@@ -239,19 +257,29 @@ const Products = ({
                   chooseOptions={chooseOptions}
                   onSelect={(e) => {
                     const files = Array.from(e.files);
-                    if (files.length >= 1 && files.length <= import.meta.env.VITE_APP_MAX_FILE_QUANTITY) {
-                      if(isDemo){
-                        setNewProduct({ ...newProduct, images: files });
-                      }
-                      // setNewProduct({ ...newProduct, images: files });
-                    }
-                    else{
+                    if (
+                      files.length >= 1 &&
+                      files.length <= import.meta.env.VITE_APP_MAX_FILE_QUANTITY
+                    ) {
+                      files.forEach((file, index) => {
+                        dispatch(
+                          productActions.modifyPropertyValue({
+                            id: `image${index + 1}`,
+                            value: file,
+                          })
+                        );
+                      });
+                    } else {
                       fileUploadRef.current.clear();
-                      alert(`Debes seleccionar entre 1 y ${import.meta.env.VITE_APP_MAX_FILE_QUANTITY} imágenes.`);
+                      alert(
+                        `Debes seleccionar entre 1 y ${
+                          import.meta.env.VITE_APP_MAX_FILE_QUANTITY
+                        } imágenes.`
+                      );
                     }
                   }}
                   style={{
-                    border:"1px dashed #ccc",
+                    border: "1px dashed #ccc",
                     padding: "10px",
                     textAlign: "center",
                   }}
@@ -266,20 +294,22 @@ const Products = ({
               <label className="form-label">Categoría *</label>
               <Dropdown
                 value={selectedCategory}
-                className={`input ${productErrors.categoryId ? "error" : ""}`}
+                className={`input ${productErrors.category_id ? "error" : ""}`}
                 onChange={(e) => {
                   setSelectedCategory(e.value);
-                  setNewProduct({
-                    ...newProduct,
-                    categoryId: e.value.code,
-                  });
+                  dispatch(
+                    productActions.modifyPropertyValue({
+                      id: "category_id",
+                      value: e.value.code,
+                    })
+                  );
                 }}
                 options={categories}
                 optionLabel="name"
                 placeholder="Seleccionar categoría"
               />
-              {productErrors.categoryId && (
-                <div className="error-message">{productErrors.categoryId}</div>
+              {productErrors.category_id && (
+                <div className="error-message">{productErrors.category_id}</div>
               )}
             </div>
           </div>
@@ -289,10 +319,15 @@ const Products = ({
               <label className="form-label">Orden</label>
               <InputText
                 className="input"
-                value={newProduct.order}
+                value={product.order}
                 onChange={(e) => {
                   if (!isNaN(e.target.value) && !e.target.value.includes(".")) {
-                    setNewProduct({ ...newProduct, order: e.target.value });
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "order",
+                        value: e.target.value,
+                      })
+                    );
                   }
                 }}
                 placeholder="1"
@@ -305,11 +340,12 @@ const Products = ({
                 value={selectedStatus}
                 className={`input ${productErrors.available ? "error" : ""}`}
                 onChange={(e) => {
-                  setSelectedStatus(e.value);
-                  setNewProduct({
-                    ...newProduct,
-                    available: e.value.code,
-                  });
+                  dispatch(
+                    productActions.modifyPropertyValue({
+                      id: "available",
+                      value: e.value.code,
+                    })
+                  );
                 }}
                 options={statuses}
                 optionLabel="name"
@@ -338,7 +374,6 @@ const Products = ({
                     order: 1,
                   });
                   setEditingProduct(null);
-                  setProductErrors({});
                   setSelectedCategory({
                     code: "",
                     name: "",

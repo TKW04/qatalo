@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Dialog } from "primereact/dialog";
 
 import AdminSidebar from "../components/AdminSidebar";
-import { getProductsData, setProductsData } from "../services/storage";
-import { showToast } from "../services/shareService";
+import { getProductsData } from "../services/storage";
+
 
 import { useNotification } from "../components/UI/NotificationProvider";
 import Business from "../components/Tabs/Business";
@@ -29,9 +29,12 @@ import { categoryActions } from "../store/categories-store/category-slice";
 import "../styles/admin.css";
 import { Button } from "primereact/button";
 import Products from "../components/Tabs/Products";
+import { CreateProduct, GetProducts } from "../store/product-store/product-actions";
+import { productActions } from "../store/product-store/product-slice";
 
 let business_once = true;
 let categories_once = true;
+let products_once = true;
 const AdminDashboard = () => {
   const auth = getTokenInfo();
   const dispatch = useDispatch();
@@ -52,16 +55,8 @@ const AdminDashboard = () => {
   const [editingCategory, setEditingCategory] = useState(false);
 
   // Products data
-  const [products, setProducts] = useState([]);
-  const [newProduct, setNewProduct] = useState({
-    name: "",
-    description: "",
-    price: "",
-    imageUrl: "",
-    categoryId: "",
-    available: true,
-    order: 1,
-  });
+ 
+  
   const [editingProduct, setEditingProduct] = useState(null);
   const [productErrors, setProductErrors] = useState({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -69,7 +64,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (business_once && business.business_id === "") {
       business_once = false;
-      setIsLoading(true);
       dispatch(GetBusiness(auth.sub, showError));
       setTimeout(() => {
         setIsLoading(false);
@@ -87,22 +81,19 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (categories_once && categories.length === 0) {
       categories_once = false;
-      setIsLoading(true);
       dispatch(GetCategories(showError));
       dispatch(categoryActions.startCategory());
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1500);
     }
   }, [categories.length, dispatch, showError, showSuccess, showWarning]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (products.length === 0 && products_once) {
+      products_once = false;
+      dispatch(GetProducts(showError));
+      dispatch(productActions.startProduct());
+    }
+  }, [dispatch, products, showError]);
 
-  const loadData = () => {
-    setProducts(getProductsData());
-  };
 
   // Business functions
   const validateBusiness = (data) => {
@@ -216,7 +207,7 @@ const AdminDashboard = () => {
       />
     </div>
   );
-
+  
   // Product functions
   const validateProduct = (data) => {
     const errors = {};
@@ -225,9 +216,9 @@ const AdminDashboard = () => {
     if (!data.price || isNaN(data.price) || Number.parseFloat(data.price) < 0) {
       errors.price = "El precio debe ser un número mayor o igual a 0";
     }
-    if (!data.categoryId) errors.categoryId = "La categoría es requerida";
-    if (data.imageUrl && !isValidUrl(data.imageUrl)) {
-      errors.imageUrl = "La URL de la imagen no es válida";
+    if (!data.category_id) errors.category_id = "La categoría es requerida";
+    if (!data.image1 || !data.image2 || !data.image3 || !data.image4 || !data.image5) {
+      errors.imageUrl = "Debe seleccionar al menos 1 imagen";
     }
 
     return errors;
@@ -235,63 +226,43 @@ const AdminDashboard = () => {
 
   const handleProductSubmit = (e) => {
     e.preventDefault();
-    const errors = validateProduct(newProduct);
+    const errors = validateProduct(product);
     setProductErrors(errors);
 
-    if (Object.keys(errors).length === 0) {
-      const productData = {
-        ...newProduct,
-        id: editingProduct ? editingProduct.id : `prod-${Date.now()}`,
-        price: Number.parseFloat(newProduct.price),
-        order: Number.parseInt(newProduct.order) || 1,
-      };
-
-      let updatedProducts;
-      if (editingProduct) {
-        updatedProducts = products.map((prod) =>
-          prod.id === editingProduct.id ? productData : prod
-        );
-      } else {
-        updatedProducts = [...products, productData];
-      }
-
-      setProducts(updatedProducts);
-      setProductsData(updatedProducts);
-      setNewProduct({
-        name: "",
-        description: "",
-        price: "",
-        imageUrl: "",
-        categoryId: "",
-        available: true,
-        order: 1,
-      });
-      setEditingProduct(null);
-      setProductErrors({});
-      showToast(editingProduct ? "Producto actualizado" : "Producto creado");
+    if(product.product_id) {
+      // Update existing product
+    } else {
+      setIsLoading(true);
+      dispatch(CreateProduct(product, showError, showWarning, showSuccess));
     }
+    setTimeout(() => {
+      setActiveTab("products");
+      dispatch(getProductsData(showError));
+      dispatch(productActions.startProduct());
+      setIsLoading(false);
+    }, 1500);
   };
 
   const handleEditProduct = (product) => {
-    setNewProduct({
-      name: product.name,
-      description: product.description,
-      price: product.price.toString(),
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      available: product.available,
-      order: product.order,
-    });
-    setEditingProduct(product);
+    // setNewProduct({
+    //   name: product.name,
+    //   description: product.description,
+    //   price: product.price.toString(),
+    //   imageUrl: product.imageUrl,
+    //   categoryId: product.categoryId,
+    //   available: product.available,
+    //   order: product.order,
+    // });
+    // setEditingProduct(product);
   };
 
   const handleDeleteProduct = (productId) => {
-    if (confirm()) {
-      const updatedProducts = products.filter((prod) => prod.id !== productId);
-      setProducts(updatedProducts);
-      setProductsData(updatedProducts);
-      showToast("Producto eliminado");
-    }
+    // if (confirm()) {
+    //   const updatedProducts = products.filter((prod) => prod.id !== productId);
+    //   setProducts(updatedProducts);
+    //   setProductsData(updatedProducts);
+    //   showToast("Producto eliminado");
+    // }
   };
 
   const isValidUrl = (string) => {
@@ -305,10 +276,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const getCategoryName = (categoryId) => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    return category ? category.name : "Sin categoría";
-  };
+ 
 
   return (
     <div className="admin-layout">
@@ -383,15 +351,13 @@ const AdminDashboard = () => {
             handleProductSubmit={handleProductSubmit}
             handleEditProduct={handleEditProduct}
             handleDeleteProduct={handleDeleteProduct}
-            newProduct={newProduct}
-            setNewProduct={setNewProduct}
+            product={product}
             productErrors={productErrors}
             categories={categories.map((cat) => ({
               code: cat.category_id,
               name: cat.name,
             }))}
             setProductErrors={setProductErrors}
-            getCategoryName={getCategoryName}
           />
         )}
 
