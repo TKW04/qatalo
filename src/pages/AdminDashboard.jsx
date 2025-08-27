@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import AdminSidebar from "../components/AdminSidebar";
 
@@ -8,10 +8,28 @@ import Categories from "../components/Tabs/Categories";
 
 import "../styles/admin.css";
 import Products from "../components/Tabs/Products";
+import { isNotValidToken, removeToken, setToken } from "../helpers/token";
+import { getCurrentSession } from "../services/authenticate";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const notValidToken = isNotValidToken();
+
+  useEffect(() => {
+    if (notValidToken) {
+      getCurrentSession()
+        .then((data) => {
+          setToken(data.idToken.jwtToken);
+          window.location.reload();
+        })
+        .catch(() => {
+          removeToken();
+          window.location.href = "/login";
+        });
+    }
+  }, [notValidToken]);
 
   return (
     <div className="admin-layout">

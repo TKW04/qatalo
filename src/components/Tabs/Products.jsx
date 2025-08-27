@@ -15,6 +15,7 @@ import {
 } from "../../store/product-store/product-actions";
 import Loading from "../UI/Loading";
 
+let once = true;
 const Products = ({ setActiveTab }) => {
   const dispatch = useDispatch();
   const products = useSelector((state) => state.product.products);
@@ -28,20 +29,26 @@ const Products = ({ setActiveTab }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
-  console.log(categories);
-
   useEffect(() => {
-    if (categories && categories.length === 0) {
+    if (categories.length === 0 && once) {
       dispatch(GetCategories(showError));
     }
   }, [categories, dispatch, showError]);
 
   useEffect(() => {
-    if (products && products.length === 0) {
+    if (products && products.length === 0 && once) {
       dispatch(GetProducts(showError));
       dispatch(productActions.startProduct());
+      setIsLoading(true);
+      setLoadingMessage("Cargando productos...");
+      once = false;
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
     }
   }, [dispatch, products, showError]);
+
+  console.log(products);
 
   const fileUploadRef = useRef(null);
 
@@ -173,7 +180,6 @@ const Products = ({ setActiveTab }) => {
     setProductErrors(errors);
 
     if (product.product_id) {
-      // Update existing product
       setLoadingMessage("Actualizando producto...");
     } else {
       setIsLoading(true);
@@ -375,9 +381,6 @@ const Products = ({ setActiveTab }) => {
                     }}
                   />
                 </div>
-                {productErrors.imageUrl && (
-                  <div className="error-message">{productErrors.imageUrl}</div>
-                )}
               </div>
 
               <div className="form-group">
@@ -396,7 +399,10 @@ const Products = ({ setActiveTab }) => {
                       })
                     );
                   }}
-                  options={categories}
+                  options={categories.map((cat) => ({
+                    code: cat.id,
+                    name: cat.name,
+                  }))}
                   optionLabel="name"
                   placeholder="Seleccionar categoría"
                 />
@@ -405,6 +411,23 @@ const Products = ({ setActiveTab }) => {
                     {productErrors.category_id}
                   </div>
                 )}
+                <label className="form-label">Estado</label>
+                <Dropdown
+                  value={selectedStatus}
+                  className={`input ${productErrors.available ? "error" : ""}`}
+                  onChange={(e) => {
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "available",
+                        value: e.value.code,
+                      })
+                    );
+                    setSelectedStatus(e.value);
+                  }}
+                  options={statuses}
+                  optionLabel="name"
+                  placeholder="Seleccionar estado"
+                />
               </div>
             </div>
 
@@ -432,21 +455,24 @@ const Products = ({ setActiveTab }) => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Estado</label>
-                <Dropdown
-                  value={selectedStatus}
-                  className={`input ${productErrors.available ? "error" : ""}`}
+                <label className="form-label">Cantidad</label>
+                <InputText
+                  className="input"
+                  value={product.quantity}
                   onChange={(e) => {
-                    dispatch(
-                      productActions.modifyPropertyValue({
-                        id: "available",
-                        value: e.value.code,
-                      })
-                    );
+                    if (
+                      !isNaN(e.target.value) &&
+                      !e.target.value.includes(".")
+                    ) {
+                      dispatch(
+                        productActions.modifyPropertyValue({
+                          id: "quantity",
+                          value: e.target.value,
+                        })
+                      );
+                    }
                   }}
-                  options={statuses}
-                  optionLabel="name"
-                  placeholder="Seleccionar estado"
+                  placeholder="1"
                 />
               </div>
             </div>

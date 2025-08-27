@@ -4,6 +4,7 @@ const initialState = {
   categories: [],
   category: {
     category_id: "",
+    business_id: "",
     name: "",
     slug: "",
   },
@@ -20,6 +21,7 @@ const categorySlice = createSlice({
     startCategory(state) {
       state.category = {
         category_id: "",
+        business_id: "",
         name: "",
         slug: "",
       };

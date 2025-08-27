@@ -16,12 +16,15 @@ import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
 
+let once = true;
 const Categories = ({ setActiveTab }) => {
   const isMobile = window.innerWidth <= 480;
   const dispatch = useDispatch();
 
   const categories = useSelector((state) => state.category.categories);
   const category = useSelector((state) => state.category.category);
+  const business = useSelector((state) => state.business.business);
+
   const [editingCategory, setEditingCategory] = useState(false);
   const { showError, showWarning, showSuccess } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,19 +32,23 @@ const Categories = ({ setActiveTab }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
-    if (categories.length === 0) {
+    if (categories.length === 0 && once) {
+      setIsLoading(true);
+      setLoadingMessage("Cargando categorías...");
       dispatch(GetCategories(showError));
       dispatch(categoryActions.startCategory());
+      once = false;
+      dispatch(
+        categoryActions.modifyPropertyValue({
+          id: "business_id",
+          value: business.business_id,
+        })
+      );
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
     }
-  }, [categories.length, dispatch, showError]);
-
-  const generateSlug = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .trim();
-  };
+  }, [business.business_id, categories, dispatch, showError]);
 
   const handleCategorySubmit = (e) => {
     e.preventDefault();
@@ -51,6 +58,8 @@ const Categories = ({ setActiveTab }) => {
       dispatch(UpdateCategory(category, showError, showWarning, showSuccess));
     } else {
       setLoadingMessage("Creando categoría...");
+      // console.log(category);
+
       dispatch(CreateCategory(category, showError, showWarning, showSuccess));
     }
     setTimeout(() => {
@@ -129,49 +138,23 @@ const Categories = ({ setActiveTab }) => {
         <div className="admin-card">
           <h2>{editingCategory ? "Editar Categoría" : "Nueva Categoría"}</h2>
           <form onSubmit={handleCategorySubmit}>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Nombre *</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={category.name}
-                  onChange={(e) => {
-                    dispatch(
-                      categoryActions.modifyPropertyValue({
-                        id: "name",
-                        value: e.target.value,
-                      })
-                    );
-                    dispatch(
-                      categoryActions.modifyPropertyValue({
-                        id: "slug",
-                        value: generateSlug(e.target.value),
-                      })
-                    );
-                  }}
-                  placeholder="Ropa"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Slug</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={category.slug}
-                  onChange={(e) => {
-                    dispatch(
-                      categoryActions.modifyPropertyValue({
-                        id: "slug",
-                        value: generateSlug(e.target.value),
-                      })
-                    );
-                  }}
-                  placeholder="ropa"
-                />
-              </div>
+            <div className="form-group">
+              <label className="form-label">Nombre *</label>
+              <InputText
+                type="text"
+                className="input"
+                value={category.name}
+                onChange={(e) => {
+                  dispatch(
+                    categoryActions.modifyPropertyValue({
+                      id: "name",
+                      value: e.target.value,
+                    })
+                  );
+                }}
+                placeholder="Ropa"
+                required
+              />
             </div>
 
             <div className="form-actions">
@@ -203,7 +186,6 @@ const Categories = ({ setActiveTab }) => {
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Slug</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -211,7 +193,6 @@ const Categories = ({ setActiveTab }) => {
                 {categories.map((category) => (
                   <tr key={category.category_id}>
                     <td>{category.name}</td>
-                    <td>{category.slug}</td>
                     <td>
                       <div className="table-actions">
                         <Button

@@ -14,7 +14,7 @@ import {
 } from "../../store/business-store/business-actions";
 import { getTokenInfo } from "../../helpers/token";
 import Loading from "../UI/Loading";
-
+let once = true;
 const Business = () => {
   const auth = getTokenInfo();
   const business = useSelector((state) => state.business.business);
@@ -24,12 +24,16 @@ const Business = () => {
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
   const [businessErrors, setBusinessErrors] = useState({});
 
+
   useEffect(() => {
-    if (business !== null && business.business_id === "") {
+    if (business !== null && business.business_id === "" && once) {
       dispatch(GetBusiness(auth.sub, showError));
+      once = false;
       setTimeout(() => {
         setIsLoading(false);
       }, 1500);
+    }else{
+      setIsLoading(false);
     }
   }, [
     auth.sub,
