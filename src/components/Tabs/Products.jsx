@@ -1,11 +1,15 @@
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
+
+import { InputNumber } from "primereact/inputnumber";
+
 import { BookImage, PencilIcon, Trash2, Upload } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+
 import { productActions } from "../../store/product-store/product-slice";
 import { GetCategories } from "../../store/categories-store/category-actions";
 import { useNotification } from "../UI/NotificationProvider";
@@ -21,6 +25,7 @@ const Products = ({ setActiveTab }) => {
   const products = useSelector((state) => state.product.products);
   const product = useSelector((state) => state.product.product);
   const categories = useSelector((state) => state.category.categories);
+  const business = useSelector((state) => state.business.business);
   const { showError, showWarning, showSuccess } = useNotification();
 
   const [editingProduct, setEditingProduct] = useState(null);
@@ -47,10 +52,22 @@ const Products = ({ setActiveTab }) => {
       }, 1500);
     }
   }, [dispatch, products, showError]);
-
-  console.log(products);
-
   const fileUploadRef = useRef(null);
+
+  useEffect(() => {
+    if (
+      product.business_id === undefined ||
+      product.business_id === null ||
+      product.business_id === ""
+    ) {
+      dispatch(
+        productActions.modifyPropertyValue({
+          id: "business_id",
+          value: business.business_id,
+        })
+      );
+    }
+  }, [business.business_id, dispatch, product.business_id, showError]);
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -139,9 +156,9 @@ const Products = ({ setActiveTab }) => {
     { code: "unavailable", name: "Agotado" },
   ];
   const [selectedCurrency, setSelectedCurrency] = useState({
-    code: "",
-    name: "",
-    symbol: "",
+    code: "DOP",
+    name: "Peso dominicano",
+    symbol: "RD$",
   });
   const currencies = [
     { code: "USD", name: "Dólar estadounidense", symbol: "$" },
@@ -160,14 +177,23 @@ const Products = ({ setActiveTab }) => {
     if (!data.price || isNaN(data.price) || Number.parseFloat(data.price) < 0) {
       errors.price = "El precio debe ser un número mayor o igual a 0";
     }
+
     if (!data.category_id) errors.category_id = "La categoría es requerida";
+    if (!data.currency) errors.currency = "La moneda es requerida";
+    if (!data.available || data.available === "")
+      errors.available = "El estado es requerido";
+    if (!data.orden || isNaN(data.orden) || Number.parseInt(data.orden) < 0) {
+      errors.orden = "El orden debe ser un número mayor o igual a 0";
+    }
     if (
-      !data.image1 ||
-      !data.image2 ||
-      !data.image3 ||
-      !data.image4 ||
-      !data.image5
+      !data.quantity ||
+      isNaN(data.quantity) ||
+      Number.parseInt(data.quantity) < 1
     ) {
+      errors.quantity = "La cantidad debe ser un número mayor o igual a 1";
+    }
+
+    if (data.image1 === undefined || data.image1 === null) {
       errors.imageUrl = "Debe seleccionar al menos 1 imagen";
     }
 
@@ -179,19 +205,26 @@ const Products = ({ setActiveTab }) => {
     const errors = validateProduct(product);
     setProductErrors(errors);
 
-    if (product.product_id) {
-      setLoadingMessage("Actualizando producto...");
-    } else {
-      setIsLoading(true);
-      dispatch(CreateProduct(product, showError, showWarning, showSuccess));
-      setLoadingMessage("Creando producto...");
+    if (Object.keys(errors).length === 0) {
+      if (product.product_id) {
+        setLoadingMessage("Actualizando producto...");
+      } else {
+        setIsLoading(true);
+        dispatch(CreateProduct(product, showError, showWarning, showSuccess));
+        setLoadingMessage("Creando producto...");
+      }
+      setTimeout(() => {
+        setActiveTab("products");
+        dispatch(GetProducts(showError));
+        dispatch(productActions.startProduct());
+        setSelectedCurrency({
+          code: "DOP",
+          name: "Peso dominicano",
+          symbol: "RD$",
+        });
+        setIsLoading(false);
+      }, 1500);
     }
-    setTimeout(() => {
-      setActiveTab("products");
-      dispatch(GetProducts(showError));
-      dispatch(productActions.startProduct());
-      setIsLoading(false);
-    }, 1500);
   };
 
   const handleEditProduct = (product) => {
@@ -235,6 +268,8 @@ const Products = ({ setActiveTab }) => {
     });
   };
 
+  console.log(products);
+  
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
@@ -314,19 +349,20 @@ const Products = ({ setActiveTab }) => {
                 <label className="form-label">
                   Precio * {selectedCurrency?.symbol || ""}
                 </label>
-                <InputText
+                <InputNumber
                   className={`input ${productErrors.price ? "error" : ""}`}
                   value={product.price}
                   onChange={(e) => {
-                    if (!isNaN(e.target.value)) {
-                      dispatch(
-                        productActions.modifyPropertyValue({
-                          id: "price",
-                          value: e.target.value,
-                        })
-                      );
-                    }
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "price",
+                        value: e.value,
+                      })
+                    );
                   }}
+                  min={1}
+                  minFractionDigits={2}
+                  maxFractionDigits={2}
                   placeholder="1850.00"
                 />
                 {productErrors.price && (
@@ -380,6 +416,12 @@ const Products = ({ setActiveTab }) => {
                       textAlign: "center",
                     }}
                   />
+
+                  {productErrors.imageUrl && (
+                    <div className="error-message">
+                      {productErrors.imageUrl}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -400,7 +442,7 @@ const Products = ({ setActiveTab }) => {
                     );
                   }}
                   options={categories.map((cat) => ({
-                    code: cat.id,
+                    code: cat.category_id,
                     name: cat.name,
                   }))}
                   optionLabel="name"
@@ -428,52 +470,51 @@ const Products = ({ setActiveTab }) => {
                   optionLabel="name"
                   placeholder="Seleccionar estado"
                 />
+                {productErrors.available && (
+                  <div className="error-message">{productErrors.available}</div>
+                )}
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Orden</label>
-                <InputText
+                <InputNumber
                   className="input"
-                  value={product.order}
+                  value={product.orden}
                   onChange={(e) => {
-                    if (
-                      !isNaN(e.target.value) &&
-                      !e.target.value.includes(".")
-                    ) {
-                      dispatch(
-                        productActions.modifyPropertyValue({
-                          id: "order",
-                          value: e.target.value,
-                        })
-                      );
-                    }
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "orden",
+                        value: e.value,
+                      })
+                    );
                   }}
-                  placeholder="1"
+                  min={0}
                 />
+                {productErrors.orden && (
+                  <div className="error-message">{productErrors.orden}</div>
+                )}
               </div>
 
               <div className="form-group">
                 <label className="form-label">Cantidad</label>
-                <InputText
+                <InputNumber
                   className="input"
                   value={product.quantity}
                   onChange={(e) => {
-                    if (
-                      !isNaN(e.target.value) &&
-                      !e.target.value.includes(".")
-                    ) {
-                      dispatch(
-                        productActions.modifyPropertyValue({
-                          id: "quantity",
-                          value: e.target.value,
-                        })
-                      );
-                    }
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "quantity",
+                        value: e.value,
+                      })
+                    );
                   }}
-                  placeholder="1"
+                  min={1}
                 />
+                {productErrors.quantity && (
+                  <div className="error-message">{productErrors.quantity}</div>
+                )}
               </div>
             </div>
 
@@ -526,7 +567,7 @@ const Products = ({ setActiveTab }) => {
                           <td>
                             {" "}
                             {product.currency}
-                            {product.price.toFixed(2)}
+                            {product.price}
                           </td>
                           <td>{getCategoryName(product.categoryId)}</td>
                           <td>

@@ -12,8 +12,8 @@ export const CreateProduct = (product, showError, showWarning, showSuccess) => {
       productForm.append("quantity", product.quantity);
       productForm.append("currency", product.currency);
       productForm.append("category_id", product.category_id);
-      productForm.append("available", product.available);
-      productForm.append("order", product.order);
+      productForm.append("is_available", product.available);
+      productForm.append("orden", product.orden);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
       if (product.image3) productForm.append("image3", product.image3);

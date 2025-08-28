@@ -24,7 +24,6 @@ const Business = () => {
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
   const [businessErrors, setBusinessErrors] = useState({});
 
-
   useEffect(() => {
     if (business !== null && business.business_id === "" && once) {
       dispatch(GetBusiness(auth.sub, showError));
@@ -32,11 +31,11 @@ const Business = () => {
       setTimeout(() => {
         setIsLoading(false);
       }, 1500);
-    }else{
+    } else {
       setIsLoading(false);
     }
   }, [
-    auth.sub,
+    auth,
     business,
     business.business_id,
     dispatch,
