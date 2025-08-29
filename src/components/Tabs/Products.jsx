@@ -40,6 +40,8 @@ const Products = ({ setActiveTab }) => {
   const business = useSelector((state) => state.business.business);
   const { showError, showWarning, showSuccess } = useNotification();
 
+  const fileUploadRef = useRef(null);
+
   const [editingProduct, setEditingProduct] = useState(null);
   const [productErrors, setProductErrors] = useState({});
   const [showDialog, setShowDialog] = useState(false);
@@ -115,9 +117,6 @@ const Products = ({ setActiveTab }) => {
 
 
 
-  const fileUploadRef = useRef(null);
-
-
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
 
@@ -191,7 +190,6 @@ const Products = ({ setActiveTab }) => {
     iconOnly: true,
     className: "btn_image",
   };
-
 
   const currencies = [
     { code: "USD", name: "Dólar estadounidense", symbol: "$" },

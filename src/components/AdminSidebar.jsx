@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Cog, Folder, Package, QrCode, House } from "lucide-react";
+import { Cog, Folder, Package, QrCode, House, DollarSign } from "lucide-react";
 import { Image } from "primereact/image";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
@@ -7,6 +7,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
     { id: "business", label: "Configuración", icon: <Cog /> },
     { id: "categories", label: "Categorías", icon: <Folder /> },
     { id: "products", label: "Productos", icon: <Package /> },
+    { id: "paymentMethods", label: "Métodos de Pago", icon: <DollarSign /> },
     { id: "qr", label: "Código QR", icon: <QrCode /> },
   ];
 
@@ -18,7 +19,8 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
   };
 
   return (
-    <aside className={`admin-sidebar ${isOpen ? "open" : ""}`}>
+    <aside className={`admin-sidebar ${isOpen ? "open" : ""}`} 
+    style={{ width: "250px" }}>
       <h2 style={{ marginRight: isOpen ? "20px" : "" }}>
         <Image
           src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
@@ -27,8 +29,8 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
           style={{ marginLeft: isOpen ? "20px" : "40px" }}
         />
       </h2>
-      <nav>
-        <ul className="admin-nav">
+      <nav style={{padding: "0px"}}>
+        <ul className="admin-nav" style={{ width: "100%" , marginLeft: "0px" }}>
           {menuItems.map((item) => (
             <li key={item.id}>
               <Link

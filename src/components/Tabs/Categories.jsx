@@ -21,13 +21,14 @@ let once = true;
 const Categories = ({ setActiveTab }) => {
   const isMobile = window.innerWidth <= 480;
   const dispatch = useDispatch();
+  const { showError, showWarning, showSuccess } = useNotification();
 
   const categories = useSelector((state) => state.category.categories);
   const category = useSelector((state) => state.category.category);
   const business = useSelector((state) => state.business.business);
 
   const [editingCategory, setEditingCategory] = useState(false);
-  const { showError, showWarning, showSuccess } = useNotification();
+
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -54,13 +55,16 @@ const Categories = ({ setActiveTab }) => {
   const handleCategorySubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
+    if (category.name.trim() === "") {
+      showWarning("Valide su información", "El nombre de la categoría es obligatorio");
+      setIsLoading(false);
+      return;
+    }
     if (category.category_id) {
       setLoadingMessage("Actualizando categoría...");
       dispatch(UpdateCategory(category, showError, showWarning, showSuccess));
     } else {
       setLoadingMessage("Creando categoría...");
-      // console.log(category);
-
       dispatch(CreateCategory(category, showError, showWarning, showSuccess));
     }
     setTimeout(() => {
@@ -202,7 +206,7 @@ const Categories = ({ setActiveTab }) => {
                             handleEditCategory(category);
                           }}
                           icon={<PencilIcon />}
-                          
+
                         />
                         <Button
                           className="btn btn-small btn-danger"

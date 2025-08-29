@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 
 import AdminSidebar from "../components/AdminSidebar";
-
 import Business from "../components/Tabs/Business";
-
 import Categories from "../components/Tabs/Categories";
-
-import "../styles/admin.css";
 import Products from "../components/Tabs/Products";
+import PaymentMethods from "../components/Tabs/PaymentMethods";
+
 import { isNotValidToken, removeToken, setToken } from "../helpers/token";
 import { getCurrentSession } from "../services/authenticate";
+
+import "../styles/admin.css";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
@@ -56,6 +56,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "products" && <Products setActiveTab={setActiveTab} />}
+        {activeTab === "paymentMethods" && <PaymentMethods setActiveTab={setActiveTab} />}
 
         {activeTab === "qr" && (
           <div>
