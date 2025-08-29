@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+
 import { BookImage, PencilIcon, Trash2, Upload } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+
 import { productActions } from "../../store/product-store/product-slice";
 import { GetCategories } from "../../store/categories-store/category-actions";
 import { useNotification } from "../UI/NotificationProvider";
@@ -29,6 +34,8 @@ const Products = ({ setActiveTab }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
+  const [expandedRows, setExpandedRows] = useState(null);
+
   useEffect(() => {
     if (categories.length === 0 && once) {
       dispatch(GetCategories(showError));
@@ -48,9 +55,9 @@ const Products = ({ setActiveTab }) => {
     }
   }, [dispatch, products, showError]);
 
+  const fileUploadRef = useRef(null);
   console.log(products);
 
-  const fileUploadRef = useRef(null);
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -235,6 +242,43 @@ const Products = ({ setActiveTab }) => {
     });
   };
 
+  const onRowExpand = (event) => {
+    alert("hola");
+  };
+
+  const onRowCollapse = (event) => {
+    toast.current.show({ severity: 'success', summary: 'Product Collapsed', detail: event.data.name, life: 3000 });
+  };
+
+  const expandAll = () => {
+    let _expandedRows = {};
+
+    products.forEach((p) => (_expandedRows[`${p.product_id}`] = true));
+
+    setExpandedRows(_expandedRows);
+  };
+
+  const collapseAll = () => {
+    setExpandedRows(null);
+  };
+
+
+  const rowExpansionTemplate = (data) => {
+    console.log(data);
+
+    return (
+      <div className="p-3">
+        <DataTable value={data.imagesUrl}>
+          <Column field="image" header="Imagenes"></Column>
+
+        </DataTable>
+      </div>
+    );
+  };
+
+
+
+
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
@@ -355,7 +399,7 @@ const Products = ({ setActiveTab }) => {
                       if (
                         files.length >= 1 &&
                         files.length <=
-                          import.meta.env.VITE_APP_MAX_FILE_QUANTITY
+                        import.meta.env.VITE_APP_MAX_FILE_QUANTITY
                       ) {
                         files.forEach((file, index) => {
                           dispatch(
@@ -368,8 +412,7 @@ const Products = ({ setActiveTab }) => {
                       } else {
                         fileUploadRef.current.clear();
                         alert(
-                          `Debes seleccionar entre 1 y ${
-                            import.meta.env.VITE_APP_MAX_FILE_QUANTITY
+                          `Debes seleccionar entre 1 y ${import.meta.env.VITE_APP_MAX_FILE_QUANTITY
                           } imágenes.`
                         );
                       }
@@ -387,9 +430,8 @@ const Products = ({ setActiveTab }) => {
                 <label className="form-label">Categoría *</label>
                 <Dropdown
                   value={selectedCategory}
-                  className={`input ${
-                    productErrors.category_id ? "error" : ""
-                  }`}
+                  className={`input ${productErrors.category_id ? "error" : ""
+                    }`}
                   onChange={(e) => {
                     setSelectedCategory(e.value);
                     dispatch(
@@ -506,59 +548,78 @@ const Products = ({ setActiveTab }) => {
           ) : (
             <>
               {!isMobile && (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Precio</th>
-                      <th>Categoría</th>
-                      <th>Estado</th>
-                      <th>Orden</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products
-                      .sort((a, b) => a.order - b.order)
-                      .map((product) => (
-                        <tr key={product.id}>
-                          <td>{product.name}</td>
-                          <td>
-                            {" "}
-                            {product.currency}
-                            {product.price.toFixed(2)}
-                          </td>
-                          <td>{getCategoryName(product.categoryId)}</td>
-                          <td>
-                            <span
-                              className={`product-status ${
-                                product.available ? "available" : "unavailable"
-                              }`}
-                            >
-                              {product.available ? "Disponible" : "Agotado"}
-                            </span>
-                          </td>
-                          <td>{product.order}</td>
-                          <td>
-                            <div className="table-actions">
-                              <button
-                                className="btn btn-small btn-outline"
-                                onClick={() => handleEditProduct(product)}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                className="btn btn-small btn-danger"
-                                onClick={() => handleDeleteProduct(product.id)}
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+                <div className="card">
+                  <DataTable value={products} expandedRows={expandedRows} onRowToggle={(e) => setExpandedRows(e.data)}
+                    rowExpansionTemplate={rowExpansionTemplate}
+                    dataKey="product_id" tableStyle={{ minWidth: '60rem' }}>
+                    <Column field="name" header="Nombre"></Column>
+                    <Column header="Precio" body={(rowData) => {
+                      return (
+                        <>
+                          {rowData.currency}
+                          {rowData.price}
+                        </>
+                      );
+                    }}></Column>
+                    <Column field="categoryId" header="Categoría" body={(rowData) => getCategoryName(rowData.categoryId)}></Column>
+                    <Column field="available" header="Estado" body={(rowData) => (rowData.is_available ? 'Disponible' : 'Agotado')}></Column>
+                    <Column field="order" header="Orden"></Column>
+                    <Column field="quantity" header="Cantidad"></Column>
+                    <Column expander style={{ width: '3em' }} />
+                  </DataTable>
+                </div>
+                // <table className="data-table">
+                //   <thead>
+                //     <tr>
+                //       <th>Nombre</th>
+                //       <th>Precio</th>
+                //       <th>Categoría</th>
+                //       <th>Estado</th>
+                //       <th>Orden</th>
+                //       <th>Acciones</th>
+                //     </tr>
+                //   </thead>
+                //   <tbody>
+                //     {products
+                //       .sort((a, b) => a.order - b.order)
+                //       .map((product) => (
+                //         <tr key={product.id}>
+                //           <td>{product.name}</td>
+                //           <td>
+                //             {" "}
+                //             {product.currency}
+                //             {product.price.toFixed(2)}
+                //           </td>
+                //           <td>{getCategoryName(product.categoryId)}</td>
+                //           <td>
+                //             <span
+                //               className={`product-status ${product.available ? "available" : "unavailable"
+                //                 }`}
+                //             >
+                //               {product.available ? "Disponible" : "Agotado"}
+                //             </span>
+                //           </td>
+                //           <td>{product.order}</td>
+                //           <td>
+                //             <div className="table-actions">
+                //               <button
+                //                 className="btn btn-small btn-outline"
+                //                 onClick={() => handleEditProduct(product)}
+                //               >
+                //                 Editar
+                //               </button>
+                //               <button
+                //                 className="btn btn-small btn-danger"
+                //                 onClick={() => handleDeleteProduct(product.id)}
+                //               >
+                //                 Eliminar
+                //               </button>
+                //             </div>
+                //           </td>
+                //         </tr>
+                //       ))}
+                //   </tbody>
+                // </table>
               )}
               {isMobile &&
                 products
@@ -599,9 +660,8 @@ const Products = ({ setActiveTab }) => {
                           Estado:
                         </strong>{" "}
                         <span
-                          className={`product-status ${
-                            product.available ? "available" : "unavailable"
-                          }`}
+                          className={`product-status ${product.available ? "available" : "unavailable"
+                            }`}
                         >
                           {product.available ? "Disponible" : "Agotado"}
                         </span>
