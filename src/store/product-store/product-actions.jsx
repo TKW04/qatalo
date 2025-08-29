@@ -12,8 +12,8 @@ export const CreateProduct = (product, showError, showWarning, showSuccess) => {
       productForm.append("quantity", product.quantity);
       productForm.append("currency", product.currency);
       productForm.append("category_id", product.category_id);
-      productForm.append("available", product.available);
-      productForm.append("order", product.order);
+      productForm.append("is_available", product.is_available);
+      productForm.append("orden", product.orden);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
       if (product.image3) productForm.append("image3", product.image3);
@@ -76,14 +76,16 @@ export const UpdateProduct = (product, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateProductInfo = async () => {
       const productForm = new FormData();
+      productForm.append("business_id", product.business_id);
       productForm.append("name", product.name);
       productForm.append("description", product.description);
       productForm.append("price", product.price);
       productForm.append("quantity", product.quantity);
       productForm.append("currency", product.currency);
       productForm.append("category_id", product.category_id);
-      productForm.append("available", product.available);
-      productForm.append("order", product.order);
+      productForm.append("is_available", product.is_available);
+      productForm.append("orden", product.orden);
+      productForm.append("imagesUrl", product.imagesUrl);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
       if (product.image3) productForm.append("image3", product.image3);
@@ -165,7 +167,7 @@ export const DeleteImage = (
         `${import.meta.env.VITE_APP_API_URL}products/delete/image`,
         {
           method: "DELETE",
-          body: JSON.stringify({ product_id: productId, image_url: imageUrl }),
+          body: JSON.stringify({ "product_id": productId, "file_url": imageUrl }),
           headers: {
             Authorization: getToken(),
           },

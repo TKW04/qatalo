@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
-import { PencilIcon, Trash2 } from "lucide-react";
+import { PencilIcon, Trash2, X } from "lucide-react";
 import { categoryActions } from "../../store/categories-store/category-slice";
 
 import {
@@ -15,6 +15,7 @@ import {
 import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
+import "../../styles/catalog.css";
 
 let once = true;
 const Categories = ({ setActiveTab }) => {
@@ -85,14 +86,14 @@ const Categories = ({ setActiveTab }) => {
       <Button
         className="btn btn-secondary"
         label="No"
-        icon="pi pi-times"
+        icon={<X />}
         onClick={() => setShowDeleteDialog(false)}
         style={{ width: "100px", margin: "2px" }}
       />
       <Button
         className="btn btn-danger"
-        label="Yes"
-        icon="pi pi-check"
+        label="Si"
+        icon={<Trash2 />}
         onClick={() => {
           setIsLoading(true);
           setLoadingMessage("Eliminando categoría...");
@@ -201,7 +202,7 @@ const Categories = ({ setActiveTab }) => {
                             handleEditCategory(category);
                           }}
                           icon={<PencilIcon />}
-                          label={isMobile ? "" : "Editar"}
+                          
                         />
                         <Button
                           className="btn btn-small btn-danger"
@@ -209,7 +210,6 @@ const Categories = ({ setActiveTab }) => {
                             handleDeleteCategory(true, category);
                           }}
                           icon={<Trash2 />}
-                          label={isMobile ? "" : "Eliminar"}
                         />
                       </div>
                     </td>

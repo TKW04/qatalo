@@ -5,6 +5,7 @@ import AdminQR from "./pages/AdminQR";
 import Register from "./pages/User/Register";
 import Login from "./pages/User/Login";
 import Payment from "./pages/Payment";
+import CatalogPublic from "./pages/CatalogPublic";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 
 function App() {
@@ -13,8 +14,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          {/* <Route path="/demo/catalog/:slug" element={<CatalogPublicDemo />} />
-          <Route path="/demo/admin" element={<AdminDemoDashboard />} />
+          <Route path="/catalog/:slug" element={<CatalogPublic />} />
+          {/* <Route path="/demo/admin" element={<AdminDemoDashboard />} />
           <Route path="/demo/admin/qr" element={<AdminQR />} /> */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />

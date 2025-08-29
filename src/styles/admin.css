@@ -124,9 +124,9 @@
 }
 
 .btn-small {
-  padding: 0.375rem 0.75rem;
+  padding:5px !important;
   font-size: 0.875rem;
-  width: 140px !important;
+  width: 60px !important;
 }
 
 .btn-danger {
@@ -136,6 +136,10 @@
 
 .btn-danger:hover {
   background-color: #c0392b;
+}
+.btn-secundary {
+  background-color: #3498db;
+  color: white;
 }
 
 .mobile-sidebar-toggle {
@@ -153,9 +157,20 @@
   border-radius: var(--border-radius);
 }
 
-.p-inputnumber-input,
 .input {
   padding-left: 15px;
+}
+
+.p-inputnumber-input {
+  border: none !important;
+  margin: 3px !important;
+  padding: 0px !important;
+
+}
+
+.p-inputnumber-input:focus {
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .search-input::placeholder {
@@ -202,6 +217,10 @@
   visibility: hidden;
 }
 
+
+
+
+
 @media (max-width: 480px) {
   .admin-card {
     background: white;
@@ -213,9 +232,9 @@
   }
 
   .btn-small {
-    padding: 5px !important;
+    /* padding: 10px !important; */
     padding-right: 1px !important;
-    width: 100% !important;
+    width: 40px !important;
   }
 }
 

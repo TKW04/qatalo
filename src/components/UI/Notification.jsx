@@ -36,6 +36,7 @@ const Notification = ({ status, title, message, onClose }) => {
     // Auto remove after 4.5 seconds
     const timeoutId = setTimeout(() => {
       removeNotification(id)
+      onClose()
     }, 4500)
 
     timeoutRefs.current.set(id, timeoutId)
