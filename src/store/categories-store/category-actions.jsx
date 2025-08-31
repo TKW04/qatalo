@@ -30,10 +30,10 @@ export const GetCategories = (showError) => {
     }
   };
 };
-export const GetCategory = (id, showError) => {
+export const GetCategoriesByBusinessId = (businessId, showError) => {
   return async (dispatch) => {
     const RegisterCategoryInfo = async () => {
-      return await fetch(`${import.meta.env.VITE_APP_API_URL}categories/${id}`, {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}categories/${businessId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -46,15 +46,16 @@ export const GetCategory = (id, showError) => {
       const response = await RegisterCategoryInfo();
       if (response.status === 200) {
         const data = await response.json();
+
         dispatch(
-          categoryActions.setCategory({
-            category: data,
+          categoryActions.setCategories({
+            categories: data,
           })
         );
       }
     } catch (error) {
       console.log(error);
-      showError("Error!", "No se pudo obtener la categoría");
+      showError("Error!", "No se pudieron obtener las categorías");
     }
   };
 };
@@ -112,7 +113,6 @@ export const UpdateCategory = (category, showError, showWarning, showSuccess) =>
     }
   };
 };
-
 export const DeleteCategory = (id, showError, showWarning, showSuccess) => {
   return async () => {
     const RegisterCategoryInfo = async () => {

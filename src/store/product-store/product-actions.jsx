@@ -72,6 +72,33 @@ export const GetProducts = (showError) => {
     }
   };
 };
+export const GetProductsByBusinessId = (businessId, showError) => {
+  return async (dispatch) => {
+    const FetchProductInfo = async () => {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}products/${businessId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getToken(),
+        },
+      });
+    };
+
+    try {
+      const response = await FetchProductInfo();
+      if (response.status === 200) {
+        const data = await response.json();
+
+        dispatch(
+          productActions.setProducts({ products: data !== null ? data : [] })
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los productos");
+    }
+  };
+};
 export const UpdateProduct = (product, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateProductInfo = async () => {

@@ -1,5 +1,11 @@
 import { Dialog } from "primereact/dialog";
-const DialogModal = ({ title, children, footer, visible, onHide }) => {
+const DialogModal = ({
+  title,
+  children,
+  footer,
+  visible,
+  onHide
+}) => {
   return (
     <Dialog
       header={title}

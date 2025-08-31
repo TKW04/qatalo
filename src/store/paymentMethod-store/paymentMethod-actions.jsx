@@ -30,6 +30,35 @@ export const GetPaymentMethods = (showError) => {
     }
   };
 };
+export const GetPaymentMethodsByBusinessId = (businessId, showError) => {
+  return async (dispatch) => {
+    const PaymentMethodInfo = async () => {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}payment_methods/${businessId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getToken(),
+        },
+      });
+    };
+
+    try {
+      const response = await PaymentMethodInfo();
+      if (response.status === 200) {
+        const data = await response.json();
+
+        dispatch(
+          paymentMethodActions.setPaymentMethods({
+            paymentMethods: data !== null ? data : [],
+          })
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los métodos de pago");
+    }
+  };
+};
 
 export const CreatePaymentMethod = (
   paymentMethod,

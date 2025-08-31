@@ -69,6 +69,33 @@ export const GetBusiness = (showError) => {
   };
 };
 
+export const GetBusinessBySlug = (slug, showError) => {
+  return async (dispatch) => {
+    const FetchBusinessInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}businesses/${slug}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+
+    try {
+      const response = await FetchBusinessInfo();
+      if (response.status === 200) {
+        const data = await response.json();
+        dispatch(businessActions.setBusiness({ business: data }));
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los negocios");
+    }
+  };
+};
+
 export const UpdateBusiness = (
   business,
   showError,

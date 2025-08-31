@@ -1,32 +1,4 @@
-let toastTimeout = null
-
-export const showToast = (message, duration = 3000) => {
-  // Remove existing toast
-  const existingToast = document.querySelector(".toast")
-  if (existingToast) {
-    existingToast.remove()
-  }
-
-  // Clear existing timeout
-  if (toastTimeout) {
-    clearTimeout(toastTimeout)
-  }
-
-  // Create new toast
-  const toast = document.createElement("div")
-  toast.className = "toast"
-  toast.textContent = message
-  document.body.appendChild(toast)
-
-  // Remove toast after duration
-  toastTimeout = setTimeout(() => {
-    if (toast.parentNode) {
-      toast.remove()
-    }
-  }, duration)
-}
-
-export const shareContent = async (text, url) => {
+export const shareContent = async (text, url, showSuccess,showWarning) => {
   // Try Web Share API first
   if (navigator.share) {
     try {
@@ -45,7 +17,7 @@ export const shareContent = async (text, url) => {
   // Fallback to clipboard
   try {
     await navigator.clipboard.writeText(url)
-    showToast("Enlace copiado al portapapeles")
+    showSuccess("Enlace copiado al portapapeles")
   } catch (error) {
     // Final fallback for older browsers
     const textArea = document.createElement("textarea")
@@ -59,9 +31,9 @@ export const shareContent = async (text, url) => {
 
     try {
       document.execCommand("copy")
-      showToast("Enlace copiado al portapapeles")
+      showSuccess("Enlace copiado al portapapeles")
     } catch (err) {
-      showToast("No se pudo copiar el enlace")
+      showWarning("No se pudo copiar el enlace")
     }
 
     document.body.removeChild(textArea)

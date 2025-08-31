@@ -1,48 +1,54 @@
-import { useState, useEffect, useMemo } from "react"
-import { useParams } from "react-router-dom"
-import { getBusinessData, getCategoriesData, getProductsData } from "../services/storage"
-import HeaderPublic from "../components/HeaderPublic"
-import SearchBar from "../components/SearchBar"
-import CategoryFilter from "../components/CategoryFilter"
-import ProductGrid from "../components/ProductGrid"
-import ProductModal from "../components/ProductModal"
-import "../styles/catalog.css"
+import { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import {
+  getBusinessData,
+  getCategoriesData,
+  getProductsData,
+} from "../services/storage";
+import HeaderPublic from "../components/HeaderPublic";
+import SearchBar from "../components/SearchBar";
+import CategoryFilter from "../components/CategoryFilter";
+import ProductGrid from "../components/ProductGrid";
+import ProductModal from "../components/ProductModal";
+import "../styles/catalog.css";
+import { useDispatch, useSelector } from "react-redux";
+import { GetCategoriesByBusinessId } from "../store/categories-store/category-actions";
+import { useNotification } from "../components/UI/NotificationProvider";
+import { GetProductsByBusinessId } from "../store/product-store/product-actions";
+import Loading from "../components/UI/Loading";
 
-function CatalogPublic() {
-  const { slug } = useParams()
-  const [business, setBusiness] = useState(null)
-  const [categories, setCategories] = useState([])
-  const [products, setProducts] = useState([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
+const CatalogPublic = () => {
+  const { slug } = useParams();
+  const business = useSelector((state) => state.business.business);
+  const categories = useSelector((state) => state.category.categories);
+  const products = useSelector((state) => state.product.products);
+  const dispatch = useDispatch();
+  const { showError } = useNotification();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const loadData = () => {
-      try {
-        const businessData = getBusinessData()
-        const categoriesData = getCategoriesData()
-        const productsData = getProductsData()
-
-        // Verificar si el slug coincide
-        if (businessData.slug !== slug) {
-          // En un caso real, mostrarías un 404
-          console.warn("Business slug does not match")
-        }
-
-        setBusiness(businessData)
-        setCategories(categoriesData)
-        setProducts(productsData)
-      } catch (error) {
-        console.error("Error loading catalog data:", error)
-      } finally {
-        setLoading(false)
+    if (
+      business &&
+      business.business_id !== undefined &&
+      business.business_id !== null &&
+      business.business_id !== ""
+    ) {
+      setIsLoading(true);
+      if (categories.length === 0) {
+        dispatch(GetCategoriesByBusinessId(business.business_id, showError));
       }
+      if (products.length === 0) {
+        dispatch(GetProductsByBusinessId(business.business_id, showError));
+      }
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     }
-
-    loadData()
-  }, [slug])
+  }, [business, categories, products]);
 
   // Filtrar productos
   const filteredProducts = useMemo(() => {
@@ -51,98 +57,73 @@ function CatalogPublic() {
         const matchesSearch =
           searchTerm === "" ||
           product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase())
+          product.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory
+        const matchesCategory =
+          selectedCategory === "all" ||
+          product.category_id === selectedCategory;
 
-        return matchesSearch && matchesCategory
+        return matchesSearch && matchesCategory;
       })
-      .sort((a, b) => a.order - b.order)
-  }, [products, searchTerm, selectedCategory])
+      .sort((a, b) => a.order - b.order);
+  }, [products, searchTerm, selectedCategory]);
 
-  // Meta tags para SEO
-  useEffect(() => {
-    if (business) {
-      document.title = `${business.name} - Catálogo`
-
-      // Meta description
-      const metaDescription = document.querySelector('meta[name="description"]')
-      if (metaDescription) {
-        metaDescription.setAttribute("content", business.description || `Catálogo de productos de ${business.name}`)
-      }
-
-      // Open Graph
-      const ogTitle = document.querySelector('meta[property="og:title"]') || document.createElement("meta")
-      ogTitle.setAttribute("property", "og:title")
-      ogTitle.setAttribute("content", business.name)
-      if (!document.querySelector('meta[property="og:title"]')) {
-        document.head.appendChild(ogTitle)
-      }
-
-      const ogDescription = document.querySelector('meta[property="og:description"]') || document.createElement("meta")
-      ogDescription.setAttribute("property", "og:description")
-      ogDescription.setAttribute("content", business.description || `Catálogo de productos de ${business.name}`)
-      if (!document.querySelector('meta[property="og:description"]')) {
-        document.head.appendChild(ogDescription)
-      }
-
-      if (business.logoUrl) {
-        const ogImage = document.querySelector('meta[property="og:image"]') || document.createElement("meta")
-        ogImage.setAttribute("property", "og:image")
-        ogImage.setAttribute("content", business.logoUrl)
-        if (!document.querySelector('meta[property="og:image"]')) {
-          document.head.appendChild(ogImage)
-        }
-      }
-    }
-  }, [business])
-
-  if (loading) {
-    return (
-      <div className="catalog">
-        <div className="container" style={{ padding: "4rem 1rem", textAlign: "center" }}>
-          <div className="loading-spinner"></div>
-          <p style={{ marginTop: "1rem" }}>Cargando catálogo...</p>
-        </div>
-      </div>
-    )
+  if (isLoading) {
+    return <Loading message="Cargando..." visible={isLoading} />;
   }
 
   if (!business) {
     return (
       <div className="catalog">
-        <div className="container" style={{ padding: "4rem 1rem", textAlign: "center" }}>
+        <div
+          className="container"
+          style={{ padding: "4rem 1rem", textAlign: "center" }}
+        >
           <h1>Catálogo no encontrado</h1>
           <p>El catálogo que buscas no existe o no está disponible.</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="catalog">
-      <HeaderPublic business={business} />
+    <>
+      {!isLoading && (
+        <div className="catalog">
+          <HeaderPublic />
+          <main className="catalog-main">
+            <div className="container">
+              <div className="catalog-controls">
+                <SearchBar
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Buscar productos..."
+                />
+                <CategoryFilter
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                />
+              </div>
 
-      <main className="catalog-main">
-        <div className="container">
-          <div className="catalog-controls">
-            <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar productos..." />
-            <CategoryFilter
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
+              <ProductGrid
+                products={filteredProducts}
+                onProductClick={setSelectedProduct}
+              />
+            </div>
+          </main>
+
+          {selectedProduct && (
+            <ProductModal
+              product={selectedProduct}
+              business={business}
+              onClose={() => setSelectedProduct(null)}
             />
-          </div>
-
-          <ProductGrid products={filteredProducts} onProductClick={setSelectedProduct} />
+          )}
         </div>
-      </main>
-
-      {selectedProduct && (
-        <ProductModal product={selectedProduct} business={business} onClose={() => setSelectedProduct(null)} />
       )}
-    </div>
-  )
-}
+    </>
+  );
+};
 
-export default CatalogPublic
+export default CatalogPublic;

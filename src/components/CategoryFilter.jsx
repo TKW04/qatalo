@@ -1,22 +1,21 @@
-"use client"
+import { Button } from "primereact/button"
 
-function CategoryFilter({ categories, selectedCategory, onCategoryChange }) {
+const CategoryFilter = ({ categories, selectedCategory, onCategoryChange }) => {
+
   return (
     <div className="category-filters">
-      <button
+      <Button
         className={`category-filter ${selectedCategory === "all" ? "active" : ""}`}
         onClick={() => onCategoryChange("all")}
-      >
-        Todas
-      </button>
+        label="Todas"
+      />
       {categories.map((category) => (
-        <button
-          key={category.id}
-          className={`category-filter ${selectedCategory === category.id ? "active" : ""}`}
-          onClick={() => onCategoryChange(category.id)}
-        >
-          {category.name}
-        </button>
+        <Button
+          key={category.category_id}
+          className={`category-filter ${selectedCategory === category.category_id ? "active" : ""}`}
+          onClick={() => onCategoryChange(category.category_id)}
+          label={category.name}
+        />
       ))}
     </div>
   )

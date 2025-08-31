@@ -5,6 +5,7 @@ import businessSlice from "./business-store/business-slice";
 import categorySlice from "./categories-store/category-slice";
 import productSlice from "./product-store/product-slice";
 import paymentMethodSlice from "./paymentMethod-store/paymentMethod-slice";
+import customerSlice from "./customer-store/customer-slice";
 
 const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ const store = configureStore({
     category: categorySlice.reducer,
     product: productSlice.reducer,
     paymentMethod: paymentMethodSlice.reducer,
+    customer: customerSlice.reducer
   },
 });
 export default store;

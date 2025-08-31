@@ -19,7 +19,6 @@ import { Dropdown } from "primereact/dropdown";
 import { getTokenInfo } from "../../helpers/token";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { GetProducts } from "../../store/product-store/product-actions";
 
 let once = true;
 const PaymentMethods = ({ setActiveTab }) => {
@@ -77,18 +76,6 @@ const PaymentMethods = ({ setActiveTab }) => {
       dispatch(paymentMethodActions.startPaymentMethod());
       once = false;
 
-      dispatch(
-        paymentMethodActions.modifyPropertyValue({
-          id: "business_id",
-          value: business.business_id,
-        })
-      );
-      dispatch(
-        paymentMethodActions.modifyPropertyValue({
-          id: "owner_email",
-          value: auth.email,
-        })
-      );
       setTimeout(() => {
         setIsLoading(false);
       }, 1500);
@@ -109,6 +96,28 @@ const PaymentMethods = ({ setActiveTab }) => {
       );
     }
   }, [dispatch, paymentMethod, selectedPaymentType]);
+
+  useEffect(() => {
+    if (business.business_id && paymentMethod.business_id === "") {
+      dispatch(
+        paymentMethodActions.modifyPropertyValue({
+          id: "business_id",
+          value: business.business_id,
+        })
+      );
+    }
+  }, [dispatch, paymentMethod, business]);
+
+  useEffect(() => {
+    if (auth.email && paymentMethod.owner_email === "") {
+      dispatch(
+        paymentMethodActions.modifyPropertyValue({
+          id: "owner_email",
+          value: auth.email,
+        })
+      );
+    }
+  }, [dispatch, paymentMethod, auth]);
 
   const validatePaymentMethod = (data) => {
     const errors = {};

@@ -1,8 +1,10 @@
 /* Product Modal */
 .product-modal-content {
   padding: 0;
+  padding-bottom: 10px;
   width: 100%;
-  height: 750px;
+  height: 600px;
+  overflow: hidden;
 }
 
 .product-modal-header {
@@ -60,13 +62,14 @@
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  
 }
-.p-carousel-prev{
+.p-carousel-prev {
   height: 450px !important;
   width: 35px;
   margin-left: 5px !important;
 }
-.p-carousel-next{
+.p-carousel-next {
   height: 450px !important;
   width: 35px;
   margin-right: 5px !important;
@@ -148,9 +151,17 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
+  .product-modal-content {
+    padding: 0;
+    padding-bottom: 10px;
+    width: 100%;
+    height: 600px;
+    
+  }
   .product-modal-actions {
     flex-direction: column;
+    margin-bottom: 10px;
   }
 
   .qr-actions {

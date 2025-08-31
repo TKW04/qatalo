@@ -1,11 +1,31 @@
-import { shareContent } from "../services/shareService";
+import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Share } from "lucide-react";
+import { Button } from "primereact/button";
 
-function HeaderPublic({ business }) {
+import { shareContent } from "../services/shareService";
+import { useNotification } from "./UI/NotificationProvider";
+import { GetBusinessBySlug } from "../store/business-store/business-actions";
+
+let once = true;
+const HeaderPublic = () => {
+  const business = useSelector((state) => state.business.business);
+  const { showError, showSuccess, showWarning } = useNotification();
+  const dispatch = useDispatch();
+  const { slug } = useParams();
+
+  useEffect(() => {
+    if (once) {
+      dispatch(GetBusinessBySlug(slug, showError));
+      once = false;
+    }
+  }, [dispatch, slug, showError]);
+
   const handleShare = () => {
     const url = window.location.href;
     const text = `Mira el catálogo de ${business.name}`;
-    shareContent(text, url);
+    shareContent(text, url, showSuccess, showWarning);
   };
 
   return (
@@ -13,9 +33,9 @@ function HeaderPublic({ business }) {
       <div className="container">
         <div className="catalog-header-content">
           <div className="catalog-business-info">
-            {business.logoUrl && (
+            {business.logo_url && (
               <img
-                src={business.logoUrl || "/placeholder.svg"}
+                src={business.logo_url || "/placeholder.svg"}
                 alt={`Logo de ${business.name}`}
                 className="catalog-logo"
               />
@@ -26,17 +46,17 @@ function HeaderPublic({ business }) {
             </div>
           </div>
 
-          <button
+          <Button
             onClick={handleShare}
-            className="btn btn-secondary"
+            className="btn btn-share"
             aria-label="Compartir catálogo"
-          >
-            <Share /> Compartir
-          </button>
+            label="Compartir"
+            icon={<Share />}
+          />
         </div>
       </div>
     </header>
   );
-}
+};
 
 export default HeaderPublic;
