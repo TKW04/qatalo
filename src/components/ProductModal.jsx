@@ -141,7 +141,7 @@ const ProductModal = ({ product, business, onClose }) => {
         product_name: product.name,
         quantity: customer.transaction_quantity,
         price: product.price,
-        status: "pending",
+        status: "Pendiente de pago",
         payment_method: {
           payment_method_id: paymentMethods.find(
             (pm) => pm.payment_method_id === paymentMethod.code
@@ -266,7 +266,7 @@ const ProductModal = ({ product, business, onClose }) => {
                 className="btn btn-danger"
                 label="Cancelar"
                 icon={<X />}
-                onClick={() => setShowDialog(false)}
+                onClick={() => setShowCustomerDialog(false)}
                 style={{ width: "100px", margin: "2px" }}
               />
             </div>

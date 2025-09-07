@@ -270,7 +270,10 @@ const Products = ({ setActiveTab }) => {
       if (product.quantity < 1) {
         modifiedProduct.is_available = "unavailable";
       }
-      if (modifiedProduct.quantity > 0 && product.is_available === "unavailable") {
+      if (
+        modifiedProduct.quantity > 0 &&
+        product.is_available === "unavailable"
+      ) {
         modifiedProduct.is_available = "available";
       }
       if (modifiedProduct.product_id) {
@@ -866,17 +869,35 @@ const Products = ({ setActiveTab }) => {
                           <div className="table-actions">
                             <Button
                               icon={<PencilIcon />}
-                              className="btn btn-small btn-outline"
+                              outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "var(--color-blue)",
+                                borderColor: "var(--color-blue)",
+                              }}
                               onClick={() => handleEditProduct(rowData)}
                             />
                             <Button
                               icon={<Trash2 />}
-                              className="btn btn-small btn-danger"
+                              outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#e74c3c",
+                                borderColor: "#e74c3c",
+                              }}
                               onClick={() => handleDeleteProduct(rowData)}
                             />
                             <Button
                               icon={<Info />}
-                              className="btn btn-small btn-secundary"
+                              outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#3498db",
+                                borderColor: "#3498db",
+                              }}
                               onClick={() => handleViewProduct(rowData)}
                             />
                           </div>
@@ -921,12 +942,24 @@ const Products = ({ setActiveTab }) => {
                                   />
                                   <Button
                                     icon={<Trash2 />}
-                                    className="btn btn-small btn-danger"
+                                    outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#e74c3c",
+                                borderColor: "#e74c3c",
+                              }}
                                     onClick={() => handleDeleteProduct(rowData)}
                                   />
                                   <Button
                                     icon={<Info />}
-                                    className="btn btn-small btn-secundary"
+                                    outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#3498db",
+                                borderColor: "#3498db",
+                              }}
                                     onClick={() => handleViewProduct(rowData)}
                                   />
                                 </div>

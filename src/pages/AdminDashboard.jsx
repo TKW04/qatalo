@@ -10,6 +10,7 @@ import { isNotValidToken, removeToken, setToken } from "../helpers/token";
 import { getCurrentSession } from "../services/authenticate";
 
 import "../styles/admin.css";
+import Customers from "../components/Tabs/Customers";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
 
         {activeTab === "products" && <Products setActiveTab={setActiveTab} />}
         {activeTab === "paymentMethods" && <PaymentMethods setActiveTab={setActiveTab} />}
-
+        {activeTab === "customers" && <Customers setActiveTab={setActiveTab} />}
         {activeTab === "qr" && (
           <div>
             <div className="admin-header">

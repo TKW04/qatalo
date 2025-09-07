@@ -34,11 +34,10 @@ const customerSlice = createSlice({
       state.customer = {};
       state.customers = [];
     },
-    startUser(state) {
+    startCustomer(state) {
       state.customer = {
         business_id: "",
         customer_id: "",
-        user_id: "",
         email: "",
         given_name: "",
         family_name: "",
@@ -58,10 +57,10 @@ const customerSlice = createSlice({
         transactions: [],
       };
     },
-    setcustomers(state, actions) {
+    setCustomers(state, actions) {
       state.customers = actions.payload.customers;
     },
-    setcustomer(state, actions) {
+    setCustomer(state, actions) {
       state.customer = actions.payload.customer;
     },
     modifyPropertyValue(state, actions) {

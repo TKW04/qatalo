@@ -1,5 +1,68 @@
-import { getToken } from "../../helpers/token";
+import { getToken, getTokenInfo } from "../../helpers/token";
+import { customerActions } from "./customer-slice";
 
+export const GetCustomers = (showError) => {
+  return async (dispatch) => {
+    const CustomersInfo = async () => {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}customers`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getToken(),
+        },
+      });
+    };
+
+    console.log(getTokenInfo());
+    
+
+    try {
+      const response = await CustomersInfo();
+      if (response.status === 200) {
+        const data = await response.json();
+        console.log(data);
+        
+        dispatch(
+          customerActions.setCustomers({
+            customers: data,
+          })
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};
+export const GetCustomerTransaction=(customer_id, showError)=>{
+  return async (dispatch) => {
+    const CustomerTransactionInfo = async () => {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}customers/${customer_id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    };
+
+    try {
+      const response = await CustomerTransactionInfo();
+      
+      if (response.status === 200) {
+        const data = await response.json();
+        
+        dispatch(
+          customerActions.setCustomer({
+            customer: data,
+          })
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};
 export const CreateCustomer = (
   customer,
   showWarning,
@@ -39,11 +102,11 @@ export const CreateCustomer = (
     }
   };
 };
-export const UpdateUser = (user, showError, showWarning, showSuccess) => {
+export const UpdateCustomer = (customer, showError, showWarning, showSuccess) => {
   return async () => {
-    const UpdateUserInfo = async () => {
+    const UpdateCustomerInfo = async () => {
       return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}users/${user.id}`,
+        `${import.meta.env.VITE_APP_API_URL}customers/${customer.customer_id}`,
         {
           method: "PUT",
           headers: {
@@ -51,18 +114,18 @@ export const UpdateUser = (user, showError, showWarning, showSuccess) => {
             Authorization: getToken(),
           },
           body: JSON.stringify({
-            given_name: user.given_name,
-            family_name: user.family_name,
-            role: user.role,
-            password: user.password,
+            given_name: customer.given_name,
+            family_name: customer.family_name,
+            email: customer.email,
+            phone: customer.phone,
           }),
         }
       );
     };
     try {
-      const response = await UpdateUserInfo();
+      const response = await UpdateCustomerInfo();
       if (response.status === 200) {
-        showSuccess("Usuario actualizado", "Usuario actualizado con éxito");
+        showSuccess("Cliente actualizado", "Cliente actualizado con éxito");
         setTimeout(() => {
           window.location.reload();
         }, 4500);
@@ -78,45 +141,13 @@ export const UpdateUser = (user, showError, showWarning, showSuccess) => {
     }
   };
 };
-export const ActivateUser = (userId, showError, showWarning, showSuccess) => {
+export const DeleteCustomer = (customer_id, showError, showWarning, showSuccess) => {
   return async () => {
-    const UpdateUserInfo = async () => {
+    const DeleteCustomerInfo = async () => {
       return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}users/active/${userId}`,
+        `${import.meta.env.VITE_APP_API_URL}customers/${customer_id}`,
         {
-          method: "PUT",
-          headers: {
-            Authorization: getToken(),
-          },
-        }
-      );
-    };
-    try {
-      const response = await UpdateUserInfo();
-      if (response.status === 200) {
-        showSuccess("Usuario activado", "Usuario activado con éxito");
-        setTimeout(() => {
-          window.location.reload();
-        }, 4500);
-      } else {
-        showWarning(
-          "No se pudo actualizar el usuario",
-          "Valide los datos ingresados"
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      showError("Error!", "No se pudieron obtener los usuarios");
-    }
-  };
-};
-export const InactivateUser = (userId, showError, showWarning, showSuccess) => {
-  return async () => {
-    const UpdateUserInfo = async () => {
-      return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}users/inactive/${userId}`,
-        {
-          method: "PUT",
+          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: getToken(),
@@ -125,21 +156,19 @@ export const InactivateUser = (userId, showError, showWarning, showSuccess) => {
       );
     };
     try {
-      const response = await UpdateUserInfo();
+      const response = await DeleteCustomerInfo();
       if (response.status === 200) {
-        showSuccess("Usuario inactivado", "Usuario inactivado con éxito");
-        setTimeout(() => {
-          window.location.reload();
-        }, 4500);
+        showSuccess("Cliente eliminado", "Cliente eliminado con éxito");
       } else {
         showWarning(
-          "No se pudo actualizar el usuario",
+          "No se pudo eliminar el cliente",
           "Valide los datos ingresados"
         );
       }
     } catch (error) {
       console.log(error);
-      showError("Error!", "No se pudieron obtener los usuarios");
+      showError("Error!", "No se pudieron obtener los clientes");
     }
   };
 };
+

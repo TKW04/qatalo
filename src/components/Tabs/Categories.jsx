@@ -19,7 +19,6 @@ import "../../styles/catalog.css";
 
 let once = true;
 const Categories = ({ setActiveTab }) => {
-  const isMobile = window.innerWidth <= 480;
   const dispatch = useDispatch();
   const { showError, showWarning, showSuccess } = useNotification();
 
@@ -56,7 +55,10 @@ const Categories = ({ setActiveTab }) => {
     e.preventDefault();
     setIsLoading(true);
     if (category.name.trim() === "") {
-      showWarning("Valide su información", "El nombre de la categoría es obligatorio");
+      showWarning(
+        "Valide su información",
+        "El nombre de la categoría es obligatorio"
+      );
       setIsLoading(false);
       return;
     }
@@ -201,15 +203,26 @@ const Categories = ({ setActiveTab }) => {
                     <td>
                       <div className="table-actions">
                         <Button
-                          className="btn btn-small btn-outline"
+                          icon={<PencilIcon />}
+                          outlined
+                          style={{
+                            height: "40px",
+                            width: "40px",
+                            color: "var(--color-blue)",
+                            borderColor: "var(--color-blue)",
+                          }}
                           onClick={() => {
                             handleEditCategory(category);
                           }}
-                          icon={<PencilIcon />}
-
                         />
                         <Button
-                          className="btn btn-small btn-danger"
+                          outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#e74c3c",
+                                borderColor: "#e74c3c",
+                              }}
                           onClick={() => {
                             handleDeleteCategory(true, category);
                           }}

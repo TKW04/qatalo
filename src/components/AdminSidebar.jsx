@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Cog, Folder, Package, QrCode, House, DollarSign } from "lucide-react";
+import { Cog, Folder, Package, QrCode, House, DollarSign,Users } from "lucide-react";
 import { Image } from "primereact/image";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
@@ -8,6 +8,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
     { id: "categories", label: "Categorías", icon: <Folder /> },
     { id: "products", label: "Productos", icon: <Package /> },
     { id: "paymentMethods", label: "Métodos de Pago", icon: <DollarSign /> },
+    { id: "customers", label: "Clientes", icon: <Users /> },
     { id: "qr", label: "Código QR", icon: <QrCode /> },
   ];
 

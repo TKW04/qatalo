@@ -7,6 +7,7 @@ import Login from "./pages/User/Login";
 import Payment from "./pages/Payment";
 import CatalogPublic from "./pages/CatalogPublic";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
+import PaymentValidation from "./pages/PaymentValidation";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/payment" element={<Payment />} />
+          <Route path="/paymentValidation/:customer_id/" element={<PaymentValidation />} />
           <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </Router>

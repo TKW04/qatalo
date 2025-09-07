@@ -736,17 +736,35 @@ const PaymentMethods = ({ setActiveTab }) => {
                           <div className="table-actions">
                             <Button
                               icon={<PencilIcon />}
-                              className="btn btn-small btn-outline"
+                              outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "var(--color-blue)",
+                                borderColor: "var(--color-blue)",
+                              }}
                               onClick={() => handleEditPaymentMethod(rowData)}
                             />
                             <Button
                               icon={<Trash2 />}
-                              className="btn btn-small btn-danger"
+                              outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#e74c3c",
+                                borderColor: "#e74c3c",
+                              }}
                               onClick={() => handleDeletePaymentMethod(rowData)}
                             />
                             <Button
                               icon={<Info />}
-                              className="btn btn-small btn-secundary"
+                              outlined
+                              style={{
+                                height: "40px",
+                                width: "40px",
+                                color: "#3498db",
+                                borderColor: "#3498db",
+                              }}
                               onClick={() => handleViewPaymentMethod(rowData)}
                             />
                           </div>
@@ -782,21 +800,39 @@ const PaymentMethods = ({ setActiveTab }) => {
                                 <div className="table-actions">
                                   <Button
                                     icon={<PencilIcon />}
-                                    className="btn btn-small btn-outline"
+                                    outlined
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "var(--color-blue)",
+                                      borderColor: "var(--color-blue)",
+                                    }}
                                     onClick={() =>
                                       handleEditPaymentMethod(rowData)
                                     }
                                   />
                                   <Button
                                     icon={<Trash2 />}
-                                    className="btn btn-small btn-danger"
+                                    outlined
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "#e74c3c",
+                                      borderColor: "#e74c3c",
+                                    }}
                                     onClick={() =>
                                       handleDeletePaymentMethod(rowData)
                                     }
                                   />
                                   <Button
                                     icon={<Info />}
-                                    className="btn btn-small btn-secundary"
+                                    outlined
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "#3498db",
+                                      borderColor: "#3498db",
+                                    }}
                                     onClick={() =>
                                       handleViewPaymentMethod(rowData)
                                     }
