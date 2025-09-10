@@ -1,3 +1,6 @@
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+
 import {
   Building2,
   FolderOpen,
@@ -5,20 +8,26 @@ import {
   QrCode,
   MessageCircle,
   ChartNoAxesCombined,
+  Menu,
 } from "lucide-react";
 import { Image } from "primereact/image";
 
 import "./Landing.css";
-import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+
 import { GetPlans } from "../store/payment-store/plan-actions";
 import { useNotification } from "../components/UI/NotificationProvider";
 import PlanCard from "../components/PlanCard";
+
+import "primereact/resources/themes/lara-light-cyan/theme.css";
+import "primereact/resources/primereact.min.css";
+import LandingSidebar from "../components/LandingSideBar";
 
 const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
   const dispatch = useDispatch();
   const { showError } = useNotification();
+  const [showMenu, setShowMenu] = useState(false);
+  const isMobile = window.innerWidth <= 480;
 
   useEffect(() => {
     if (plans.length === 0) {
@@ -26,197 +35,320 @@ const Landing = () => {
     }
   }, [dispatch, plans, showError]);
   return (
-    <div className="landing">
-      <header>
-        <nav>
-          <div>
-            <Image
-              src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-              alt="CatalogQR Logo"
-              width={100}
-            />
+    <>
+      <div
+        class="flex align-items-center justify-content-start"
+        style={{
+          width: "100%",
+          height: "100px",
+          paddingTop: "20px",
+          background:
+            "linear-gradient(135deg, var(--color-navy) 0%, var(--color-blue) 100%)",
+          color: "white",
+          zIndex: 1001,
+          marginBottom: "20px",
+          marginTop: "0px",
+          left: "0",
+          top: "0",
+          gap: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          position: "fixed",
+        }}
+      >
+        {!isMobile && (
+          <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+            <div className="flex">
+              <Image
+                src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
+                alt="CatalogQR Logo"
+                width={130}
+              />
+            </div>
+
+            <>
+              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+                <a
+                  href="#inicio"
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    marginRight: "auto",
+                    fontWeight: "bold",
+                    fontSize: "24px",
+                  }}
+                >
+                  Inicio
+                </a>
+              </div>
+              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+                <a
+                  href="#caracteristicas"
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    marginRight: "auto",
+                    fontWeight: "bold",
+                    fontSize: "24px",
+                  }}
+                >
+                  Características
+                </a>
+              </div>
+              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+                <a
+                  href="#como-funciona"
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    marginRight: "auto",
+                    fontWeight: "bold",
+                    fontSize: "24px",
+                  }}
+                >
+                  Cómo Funciona
+                </a>
+              </div>
+              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+                <a
+                  href="#planes-precios"
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    marginRight: "auto",
+                    fontWeight: "bold",
+                    fontSize: "24px",
+                  }}
+                >
+                  Precios
+                </a>
+              </div>
+              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+                <a
+                  href="/register"
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    marginRight: "auto",
+                    fontWeight: "bold",
+                    fontSize: "24px",
+                  }}
+                >
+                  Comenzar Gratis
+                </a>
+              </div>
+              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+                <a
+                  href="/login"
+                  style={{
+                    color: "white",
+                    textDecoration: "none",
+                    marginRight: "auto",
+                    fontWeight: "bold",
+                    fontSize: "24px",
+                  }}
+                >
+                  Iniciar Sesión
+                </a>
+              </div>
+            </>
           </div>
-          <ul className="nav-links">
-            <li>
-              <a href="#inicio">Inicio</a>
-            </li>
-            <li>
-              <a href="#caracteristicas">Características</a>
-            </li>
-            <li>
-              <a href="#como-funciona">Cómo Funciona</a>
-            </li>
-            <li>
-              <a href="#planes-precios">Precios</a>
-            </li>
-          </ul>
-          <a href="/register" className="cta-button">
-            Comenzar Gratis
-          </a>
-          <a href="/login" className="cta-button">
-            Iniciar Sesión
-          </a>
-        </nav>
-      </header>
-      <section className="hero" id="inicio">
-        <div className="hero-content" style={{ paddingTop: "100px" }}>
-          <h1>Tu Catálogo Digital con QR</h1>
-          <p>
-            Crea catálogos interactivos, conecta con WhatsApp y recibe pedidos
-            directamente. Todo en una plataforma fácil de usar.
-          </p>
-          <div className="hero-cta">
-            <a href="/register" className="primary-btn pulse">
-              Crear Mi Catálogo
+        )}
+        {isMobile && (
+          <>
+            <div className="flex-auto flex align-items-center justify-content-start bg-primary font-bold  border-round">
+              <div className="flex">
+                <Image
+                  src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
+                  alt="CatalogQR Logo"
+                  width={130}
+                />
+              </div>
+            </div>
+            <div className="flex-auto flex align-items-center justify-content-end bg-primary m-3 font-bold  border-round">
+              <div className="flex">
+                <a href="#">
+                  <Menu
+                    color="white"
+                    size={40}
+                    onClick={() => setShowMenu(!showMenu)}
+                  />
+                </a>
+              </div>
+            </div>
+          </>
+        )}
+        {showMenu && (
+          <LandingSidebar
+            isOpen={showMenu}
+            onClose={() => setShowMenu(false)}
+          />
+        )}
+      </div>
+
+      <div>
+        <section className="hero" id="inicio">
+          <div className="hero-content" style={{ paddingTop: "0px" }}>
+            <h1>Tu Catálogo Digital con QR</h1>
+            <p>
+              Crea catálogos interactivos, conecta con WhatsApp y recibe pedidos
+              directamente. Todo en una plataforma fácil de usar.
+            </p>
+            <div className="hero-cta">
+              <a href="/register" className="primary-btn pulse">
+                Crear Mi Catálogo
+              </a>
+            </div>
+          </div>
+        </section>
+        <section className="features" id="caracteristicas">
+          <div className="container">
+            <div className="section-title-1">
+              <h2>Todo lo que necesitas para vender más</h2>
+              <p>Una plataforma completa para digitalizar tu negocio</p>
+            </div>
+
+            <div className="features-grid">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <Building2 />
+                </div>
+                <h3>Crea tu Empresa</h3>
+                <p>
+                  Configura tu perfil empresarial con logo, información de
+                  contacto y datos de tu negocio en minutos.
+                </p>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <FolderOpen />
+                </div>
+                <h3>Organiza Categorías</h3>
+                <p>
+                  Estructura tu catálogo con categorías personalizadas para que
+                  tus clientes encuentren fácilmente lo que buscan.
+                </p>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <Package />
+                </div>
+                <h3>Gestiona Productos</h3>
+                <p>
+                  Añade productos con fotos, descripciones, precios y
+                  variaciones. Todo desde una interfaz intuitiva.
+                </p>
+              </div>
+
+              <div className="feature-card ">
+                <div className="feature-icon">
+                  <QrCode />
+                </div>
+                <h3>Códigos QR</h3>
+                <p>
+                  Genera códigos QR únicos para tu catálogo y compártelos en
+                  físico o digital para acceso instantáneo.
+                </p>
+              </div>
+
+              <div className="feature-card ">
+                <div className="feature-icon">
+                  <MessageCircle />
+                </div>
+                <h3>Integración WhatsApp</h3>
+                <p>
+                  Conecta tu WhatsApp Business y recibe pedidos directamente.
+                  Automatiza el proceso de ventas.
+                </p>
+              </div>
+
+              <div className="feature-card ">
+                <div className="feature-icon">
+                  <ChartNoAxesCombined />
+                </div>
+                <h3>Analytics Avanzados</h3>
+                <p>
+                  Monitorea visitas, productos más solicitados y rendimiento de
+                  tu catálogo con reportes detallados.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="how-it-works" id="como-funciona">
+          <div className="container">
+            <div className="section-title">
+              <h2>Cómo Funciona</h2>
+              <p>En 4 simples pasos tendrás tu catálogo digital funcionando</p>
+            </div>
+
+            <div className="steps">
+              <div className="step ">
+                <div className="step-number">1</div>
+                <h3>Registra tu Empresa</h3>
+                <p>
+                  Crea tu cuenta y configura los datos básicos de tu negocio
+                </p>
+              </div>
+
+              <div className="step ">
+                <div className="step-number">2</div>
+                <h3>Añade Productos</h3>
+                <p>
+                  Crea categorías y sube tus productos con fotos y descripciones
+                </p>
+              </div>
+
+              <div className="step ">
+                <div className="step-number">3</div>
+                <h3>Genera tu QR</h3>
+                <p>
+                  Obtén tu código QR personalizado y compártelo con tus clientes
+                </p>
+              </div>
+
+              <div className="step ">
+                <div className="step-number">4</div>
+                <h3>Recibe Pedidos</h3>
+                <p>
+                  Los clientes escanean, seleccionan productos y te contactan
+                  vía WhatsApp
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="pricing-section" id="planes-precios">
+          <h1 className="section-title">Planes y Precios</h1>
+          <div className="plans-grid">
+            {plans.map((plan) => (
+              <PlanCard plan={plan} key={plan.price_id} />
+            ))}
+          </div>
+        </section>
+
+        <section className="cta-section">
+          <div className="container">
+            <h2>¿Listo para digitalizar tu negocio?</h2>
+            <p>
+              Únete a miles de empresas que ya están vendiendo más con CatalogQR
+            </p>
+            <a href="#" className="primary-btn">
+              Comenzar Ahora - Es Gratis
             </a>
           </div>
-        </div>
-      </section>
-      <section className="features" id="caracteristicas">
-        <div className="container">
-          <div className="section-title-1">
-            <h2>Todo lo que necesitas para vender más</h2>
-            <p>Una plataforma completa para digitalizar tu negocio</p>
+        </section>
+
+        <footer>
+          <div className="container">
+            <p>&copy; 2025 CatalogQR. Todos los derechos reservados.</p>
           </div>
-
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Building2 />
-              </div>
-              <h3>Crea tu Empresa</h3>
-              <p>
-                Configura tu perfil empresarial con logo, información de
-                contacto y datos de tu negocio en minutos.
-              </p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">
-                <FolderOpen />
-              </div>
-              <h3>Organiza Categorías</h3>
-              <p>
-                Estructura tu catálogo con categorías personalizadas para que
-                tus clientes encuentren fácilmente lo que buscan.
-              </p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Package />
-              </div>
-              <h3>Gestiona Productos</h3>
-              <p>
-                Añade productos con fotos, descripciones, precios y variaciones.
-                Todo desde una interfaz intuitiva.
-              </p>
-            </div>
-
-            <div className="feature-card ">
-              <div className="feature-icon">
-                <QrCode />
-              </div>
-              <h3>Códigos QR</h3>
-              <p>
-                Genera códigos QR únicos para tu catálogo y compártelos en
-                físico o digital para acceso instantáneo.
-              </p>
-            </div>
-
-            <div className="feature-card ">
-              <div className="feature-icon">
-                <MessageCircle />
-              </div>
-              <h3>Integración WhatsApp</h3>
-              <p>
-                Conecta tu WhatsApp Business y recibe pedidos directamente.
-                Automatiza el proceso de ventas.
-              </p>
-            </div>
-
-            <div className="feature-card ">
-              <div className="feature-icon">
-                <ChartNoAxesCombined />
-              </div>
-              <h3>Analytics Avanzados</h3>
-              <p>
-                Monitorea visitas, productos más solicitados y rendimiento de tu
-                catálogo con reportes detallados.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="how-it-works" id="como-funciona">
-        <div className="container">
-          <div className="section-title">
-            <h2>Cómo Funciona</h2>
-            <p>En 4 simples pasos tendrás tu catálogo digital funcionando</p>
-          </div>
-
-          <div className="steps">
-            <div className="step ">
-              <div className="step-number">1</div>
-              <h3>Registra tu Empresa</h3>
-              <p>Crea tu cuenta y configura los datos básicos de tu negocio</p>
-            </div>
-
-            <div className="step ">
-              <div className="step-number">2</div>
-              <h3>Añade Productos</h3>
-              <p>
-                Crea categorías y sube tus productos con fotos y descripciones
-              </p>
-            </div>
-
-            <div className="step ">
-              <div className="step-number">3</div>
-              <h3>Genera tu QR</h3>
-              <p>
-                Obtén tu código QR personalizado y compártelo con tus clientes
-              </p>
-            </div>
-
-            <div className="step ">
-              <div className="step-number">4</div>
-              <h3>Recibe Pedidos</h3>
-              <p>
-                Los clientes escanean, seleccionan productos y te contactan vía
-                WhatsApp
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="pricing-section" id="planes-precios">
-        <h1 className="section-title">Planes y Precios</h1>
-        <div className="plans-grid">
-          {plans.map((plan) => (
-            <PlanCard plan={plan} key={plan.price_id} />
-          ))}
-        </div>
-      </section>
-
-      <section className="cta-section">
-        <div className="container">
-          <h2>¿Listo para digitalizar tu negocio?</h2>
-          <p>
-            Únete a miles de empresas que ya están vendiendo más con CatalogQR
-          </p>
-          <a href="#" className="primary-btn">
-            Comenzar Ahora - Es Gratis
-          </a>
-        </div>
-      </section>
-
-      <footer>
-        <div className="container">
-          <p>&copy; 2025 CatalogQR. Todos los derechos reservados.</p>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 };
 
