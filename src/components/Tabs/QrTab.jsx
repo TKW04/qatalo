@@ -1,4 +1,7 @@
-const QrTab = ({ business, isDemo }) => {
+import { useSelector } from "react-redux";
+
+const QrTab = () => {
+  const business = useSelector((state) => state.business.business);
   return (
     <div>
       <div className="admin-header">
@@ -13,11 +16,7 @@ const QrTab = ({ business, isDemo }) => {
           </p>
           <div className="form-actions">
             <a
-              href={
-                isDemo
-                  ? `/demo/admin/qr`
-                  : `/admin/qr/${business.slug}`
-              }
+              href={`/admin/qr`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
@@ -25,11 +24,7 @@ const QrTab = ({ business, isDemo }) => {
               Ver QR del Catálogo
             </a>
             <a
-              href={
-                isDemo
-                  ? `/demo/catalog/${business.slug}`
-                  : `/catalog/${business.slug}`
-              }
+              href={`/catalog/${business.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-outline"

@@ -209,7 +209,7 @@ const Categories = ({ setActiveTab }) => {
                             height: "40px",
                             width: "40px",
                             color: "var(--color-blue)",
-                            borderColor: "var(--color-blue)",
+                            border: "none",
                           }}
                           onClick={() => {
                             handleEditCategory(category);
@@ -217,12 +217,12 @@ const Categories = ({ setActiveTab }) => {
                         />
                         <Button
                           outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#e74c3c",
-                                borderColor: "#e74c3c",
-                              }}
+                          style={{
+                            height: "40px",
+                            width: "40px",
+                            color: "#e74c3c",
+                            border: "none",
+                          }}
                           onClick={() => {
                             handleDeleteCategory(true, category);
                           }}

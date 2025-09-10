@@ -1,14 +1,9 @@
-import { useEffect, useState } from "react";
-import { getBusinessData } from "../services/storage";
 import QrViewer from "../components/QrViewer";
 import "../styles/admin.css";
+import { useSelector } from "react-redux";
 
-function AdminQR() {
-  const [business, setBusiness] = useState(null);
-
-  useEffect(() => {
-    setBusiness(getBusinessData());
-  }, []);
+const AdminQR = () => {
+  const business = useSelector((state) => state.business.business);
 
   if (!business) {
     return (
@@ -28,10 +23,10 @@ function AdminQR() {
       }}
     >
       <div className="container">
-        <QrViewer business={business} isDemo={true} />
+        <QrViewer />
       </div>
     </div>
   );
-}
+};
 
 export default AdminQR;

@@ -6,15 +6,37 @@ import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Download, Printer, BookUp2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getTokenInfo } from "../helpers/token";
+import { useNotification } from "./UI/NotificationProvider";
+import { GetBusiness } from "../store/business-store/business-actions";
 
-function QrViewer({ business, isDemo }) {
+let once = true;
+const QrViewer = () => {
+  const auth = getTokenInfo();
+  const business = useSelector((state) => state.business.business);
+  const dispatch = useDispatch();
+  const { showError, showWarning, showSuccess } = useNotification();
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
 
-  const catalogUrl = isDemo
-    ? `${window.location.origin}/demo/catalog/${business.slug}`
-    : `${window.location.origin}/catalog/${business.slug}`;
+  const catalogUrl = `${window.location.origin}/catalog/${business.slug}`;
+
+  useEffect(() => {
+    if (business !== null && business.business_id === "" && once) {
+      dispatch(GetBusiness(auth.sub, showError));
+      once = false;
+    }
+  }, [
+    auth,
+    business,
+    business.business_id,
+    dispatch,
+    showError,
+    showSuccess,
+    showWarning,
+  ]);
 
   useEffect(() => {
     const generateQR = async () => {
@@ -252,6 +274,6 @@ function QrViewer({ business, isDemo }) {
       </div>
     </>
   );
-}
+};
 
 export default QrViewer;

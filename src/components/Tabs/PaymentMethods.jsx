@@ -741,7 +741,7 @@ const PaymentMethods = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "var(--color-blue)",
-                                borderColor: "var(--color-blue)",
+                                border: "none",
                               }}
                               onClick={() => handleEditPaymentMethod(rowData)}
                             />
@@ -752,7 +752,7 @@ const PaymentMethods = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "#e74c3c",
-                                borderColor: "#e74c3c",
+                                border: "none",
                               }}
                               onClick={() => handleDeletePaymentMethod(rowData)}
                             />
@@ -763,7 +763,7 @@ const PaymentMethods = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "#3498db",
-                                borderColor: "#3498db",
+                               border: "none",
                               }}
                               onClick={() => handleViewPaymentMethod(rowData)}
                             />
@@ -805,7 +805,7 @@ const PaymentMethods = ({ setActiveTab }) => {
                                       height: "40px",
                                       width: "40px",
                                       color: "var(--color-blue)",
-                                      borderColor: "var(--color-blue)",
+                                      border: "none",
                                     }}
                                     onClick={() =>
                                       handleEditPaymentMethod(rowData)
@@ -818,7 +818,7 @@ const PaymentMethods = ({ setActiveTab }) => {
                                       height: "40px",
                                       width: "40px",
                                       color: "#e74c3c",
-                                      borderColor: "#e74c3c",
+                                      border: "none",
                                     }}
                                     onClick={() =>
                                       handleDeletePaymentMethod(rowData)
@@ -831,7 +831,7 @@ const PaymentMethods = ({ setActiveTab }) => {
                                       height: "40px",
                                       width: "40px",
                                       color: "#3498db",
-                                      borderColor: "#3498db",
+                                     border: "none",
                                     }}
                                     onClick={() =>
                                       handleViewPaymentMethod(rowData)

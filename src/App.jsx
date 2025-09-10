@@ -17,8 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/catalog/:slug" element={<CatalogPublic />} />
-          {/* <Route path="/demo/admin" element={<AdminDemoDashboard />} />
-          <Route path="/demo/admin/qr" element={<AdminQR />} /> */}
+          <Route path="/admin/qr" element={<AdminQR />} /> 
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/payment" element={<Payment />} />

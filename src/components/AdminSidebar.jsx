@@ -1,6 +1,16 @@
 import { Link } from "react-router-dom";
-import { Cog, Folder, Package, QrCode, House, DollarSign,Users } from "lucide-react";
+import {
+  Cog,
+  Folder,
+  Package,
+  QrCode,
+  House,
+  DollarSign,
+  Users,
+  CirclePower,
+} from "lucide-react";
 import { Image } from "primereact/image";
+import { logout } from "../services/authenticate";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
   const menuItems = [
@@ -20,8 +30,10 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
   };
 
   return (
-    <aside className={`admin-sidebar ${isOpen ? "open" : ""}`} 
-    style={{ width: "250px" }}>
+    <aside
+      className={`admin-sidebar ${isOpen ? "open" : ""}`}
+      style={{ width: "250px" }}
+    >
       <h2 style={{ marginRight: isOpen ? "20px" : "" }}>
         <Image
           src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
@@ -30,8 +42,8 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
           style={{ marginLeft: isOpen ? "20px" : "40px" }}
         />
       </h2>
-      <nav style={{padding: "0px"}}>
-        <ul className="admin-nav" style={{ width: "100%" , marginLeft: "0px" }}>
+      <nav style={{ padding: "0px" }}>
+        <ul className="admin-nav" style={{ width: "100%", marginLeft: "0px" }}>
           {menuItems.map((item) => (
             <li key={item.id}>
               <Link
@@ -43,13 +55,17 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
               </Link>
             </li>
           ))}
-          {isDemo && (
-            <li>
-              <Link to="/" style={{ color: "white", textDecoration: "none" }}>
-                <House /> Ir al inicio
-              </Link>
-            </li>
-          )}
+          <li>
+            <Link
+              onClick={() => logout()}
+              style={{ color: "white", textDecoration: "none" }}
+            >
+              <span style={{ margin: "5px" }}>
+                <CirclePower />
+              </span>{" "}
+              Cerrar sesión
+            </Link>
+          </li>
         </ul>
       </nav>
     </aside>

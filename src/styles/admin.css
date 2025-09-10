@@ -11,6 +11,7 @@
   padding: 2rem 0;
   position: fixed;
   height: 100vh;
+  margin-top: -4px;
   overflow-y: auto;
 }
 
@@ -145,12 +146,12 @@
 .mobile-sidebar-toggle {
   display: none;
   position: fixed;
-  top: 1rem;
-  left: 1rem;
+  top: 2px;
+  left: 12px;
   z-index: 1001;
   background-color: var(--color-navy);
   color: white;
-  border: none;
+  border: 0.25px solid white;
   padding: 0.5rem;
   margin-top: 0px;
   margin-left: -10px;

@@ -466,7 +466,8 @@ const Products = ({ setActiveTab }) => {
                 <div className="flex justify-content-center">
                   <Button
                     icon={<Trash2 style={{ color: "red" }} />}
-                    className="p-button-rounded p-button-danger ml-auto"
+                    style={{ border: "none", background: "transparent" }}
+                    outlined
                     onClick={() => {
                       const title = "Eliminar Imagen";
                       const children = (
@@ -487,7 +488,11 @@ const Products = ({ setActiveTab }) => {
                             className="btn btn-danger"
                             label="Si"
                             icon={<Trash2 />}
-                            style={{ width: "100px", margin: "2px" }}
+                            style={{
+                              width: "100px",
+                              margin: "2px",
+                              border: "none",
+                            }}
                             onClick={() => {
                               setIsLoading(true);
                               setLoadingMessage("Eliminando imagen...");
@@ -874,7 +879,7 @@ const Products = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "var(--color-blue)",
-                                borderColor: "var(--color-blue)",
+                                border: "none",
                               }}
                               onClick={() => handleEditProduct(rowData)}
                             />
@@ -885,7 +890,7 @@ const Products = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "#e74c3c",
-                                borderColor: "#e74c3c",
+                                border: "none",
                               }}
                               onClick={() => handleDeleteProduct(rowData)}
                             />
@@ -896,7 +901,7 @@ const Products = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "#3498db",
-                                borderColor: "#3498db",
+                                border: "none",
                               }}
                               onClick={() => handleViewProduct(rowData)}
                             />
@@ -937,29 +942,35 @@ const Products = ({ setActiveTab }) => {
                                 <div className="table-actions">
                                   <Button
                                     icon={<PencilIcon />}
-                                    className="btn btn-small btn-outline"
+                                    outlined
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "var(--color-blue)",
+                                      border: "none",
+                                    }}
                                     onClick={() => handleEditProduct(rowData)}
                                   />
                                   <Button
                                     icon={<Trash2 />}
                                     outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#e74c3c",
-                                borderColor: "#e74c3c",
-                              }}
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "#e74c3c",
+                                      border: "none",
+                                    }}
                                     onClick={() => handleDeleteProduct(rowData)}
                                   />
                                   <Button
                                     icon={<Info />}
                                     outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#3498db",
-                                borderColor: "#3498db",
-                              }}
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "#3498db",
+                                      border: "none",
+                                    }}
                                     onClick={() => handleViewProduct(rowData)}
                                   />
                                 </div>

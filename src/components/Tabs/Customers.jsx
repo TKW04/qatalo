@@ -19,7 +19,6 @@ import { customerActions } from "../../store/customer-store/customer-slice";
 import {
   ApproveTransaction,
   CancelTransactionAdmin,
-  CreateCustomer,
   GetCustomers,
   UpdateCustomer,
 } from "../../store/customer-store/customer-actions";
