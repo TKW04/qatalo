@@ -150,6 +150,9 @@ const ProductModal = ({ product, business, onClose }) => {
             (pm) => pm.payment_method_id === paymentMethod.code
           )?.payment_type,
           currency: product.currency,
+          payment_link: paymentMethods.find(
+            (pm) => pm.payment_method_id === paymentMethod.code
+          )?.payment_link,
         },
       },
     };

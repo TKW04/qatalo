@@ -1,4 +1,4 @@
-import { getToken, getTokenInfo } from "../../helpers/token";
+import { getToken } from "../../helpers/token";
 import { customerActions } from "./customer-slice";
 
 export const GetCustomers = (showError) => {
@@ -13,15 +13,11 @@ export const GetCustomers = (showError) => {
       });
     };
 
-    console.log(getTokenInfo());
-    
-
     try {
       const response = await CustomersInfo();
       if (response.status === 200) {
         const data = await response.json();
-        console.log(data);
-        
+
         dispatch(
           customerActions.setCustomers({
             customers: data,
@@ -34,23 +30,26 @@ export const GetCustomers = (showError) => {
     }
   };
 };
-export const GetCustomerTransaction=(customer_id, showError)=>{
+export const GetCustomerTransaction = (customer_id, showError) => {
   return async (dispatch) => {
     const CustomerTransactionInfo = async () => {
-      return await fetch(`${import.meta.env.VITE_APP_API_URL}customers/${customer_id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/${customer_id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
     };
 
     try {
       const response = await CustomerTransactionInfo();
-      
+
       if (response.status === 200) {
         const data = await response.json();
-        
+
         dispatch(
           customerActions.setCustomer({
             customer: data,
@@ -63,11 +62,7 @@ export const GetCustomerTransaction=(customer_id, showError)=>{
     }
   };
 };
-export const CreateCustomer = (
-  customer,
-  showWarning,
-  showSuccess
-) => {
+export const CreateCustomer = (customer, showWarning, showSuccess) => {
   return async () => {
     const RegisterUserInfo = async () => {
       return await fetch(`${import.meta.env.VITE_APP_API_URL}customers`, {
@@ -102,7 +97,12 @@ export const CreateCustomer = (
     }
   };
 };
-export const UpdateCustomer = (customer, showError, showWarning, showSuccess) => {
+export const UpdateCustomer = (
+  customer,
+  showError,
+  showWarning,
+  showSuccess
+) => {
   return async () => {
     const UpdateCustomerInfo = async () => {
       return await fetch(
@@ -126,9 +126,6 @@ export const UpdateCustomer = (customer, showError, showWarning, showSuccess) =>
       const response = await UpdateCustomerInfo();
       if (response.status === 200) {
         showSuccess("Cliente actualizado", "Cliente actualizado con éxito");
-        setTimeout(() => {
-          window.location.reload();
-        }, 4500);
       } else {
         showWarning(
           "No se pudo actualizar el usuario",
@@ -141,7 +138,12 @@ export const UpdateCustomer = (customer, showError, showWarning, showSuccess) =>
     }
   };
 };
-export const DeleteCustomer = (customer_id, showError, showWarning, showSuccess) => {
+export const DeleteCustomer = (
+  customer_id,
+  showError,
+  showWarning,
+  showSuccess
+) => {
   return async () => {
     const DeleteCustomerInfo = async () => {
       return await fetch(
@@ -172,3 +174,170 @@ export const DeleteCustomer = (customer_id, showError, showWarning, showSuccess)
   };
 };
 
+export const UploadTransactionFile = (
+  customer_id,
+  transaction_id,
+  file,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const transactionForm = new FormData();
+    transactionForm.append("customer_id", customer_id);
+    transactionForm.append("transaction_id", transaction_id);
+    transactionForm.append("receipt", file);
+
+    const UpdateTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions`,
+        {
+          method: "POST",
+          body: transactionForm,
+        }
+      );
+    };
+    try {
+      const response = await UpdateTransactionInfo();
+      if (response.status === 200) {
+        showSuccess("Archivo subido", "El archivo se ha subido con éxito");
+        setTimeout(() => {
+          window.location.reload();
+        }, 4500);
+      } else {
+        showWarning(
+          "No se pudo subir el archivo",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};
+
+export const CancelTransaction = (
+  customer_id,
+  transaction_id,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const CancelTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/cancel`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            transaction_id: transaction_id,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    };
+    try {
+      const response = await CancelTransactionInfo();
+      if (response.status === 200) {
+        showSuccess("Transacción cancelada", "Transacción cancelada con éxito");
+        setTimeout(() => {
+          window.location.reload();
+        }, 4500);
+      } else {
+        showWarning(
+          "No se pudo cancelar la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};
+
+export const CancelTransactionAdmin = (
+  customer_id,
+  transaction_id,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const CancelTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/cancelAdmin`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            transaction_id: transaction_id,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+    try {
+      const response = await CancelTransactionInfo();
+      if (response.status === 200) {
+        showSuccess("Transacción cancelada", "Transacción cancelada con éxito");
+      } else {
+        showWarning(
+          "No se pudo cancelar la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};
+
+export const ApproveTransaction = (
+  customer_id,
+  transaction_id,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const ApproveTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/approve`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            transaction_id: transaction_id,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+    try {
+      const response = await ApproveTransactionInfo();
+      if (response.status === 200) {
+        showSuccess("Transacción aprobada", "Transacción aprobada con éxito");
+      } else {
+        showWarning(
+          "No se pudo aprobar la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};

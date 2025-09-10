@@ -198,7 +198,7 @@
   color: var(--color-navy);
   font-weight: 600;
   padding: 1rem;
-  width: 400px !important;
+  width: 400px ;
   border-radius: 6px;
   border: 1px solid #113f67;
 }

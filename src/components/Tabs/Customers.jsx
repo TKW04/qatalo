@@ -5,24 +5,32 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Info, PencilIcon, Trash2, X } from "lucide-react";
+import {
+  Check,
+  FileImage,
+  Info,
+  PencilIcon,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { customerActions } from "../../store/customer-store/customer-slice";
 
 import {
+  ApproveTransaction,
+  CancelTransactionAdmin,
   CreateCustomer,
-  DeleteCustomer,
   GetCustomers,
   UpdateCustomer,
 } from "../../store/customer-store/customer-actions";
 import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
-import { formatted } from "../../helpers/utils";
+import { formatDate, formatted, getStatusStyle } from "../../helpers/utils";
 import "../../styles/catalog.css";
-
-
-
-
+import { Card } from "primereact/card";
+import { Image } from "primereact/image";
+import { Dialog } from "primereact/dialog";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -35,6 +43,8 @@ const Customers = ({ setActiveTab }) => {
   const [customerErrors, setCustomerErrors] = useState({});
   const [dialogContent, setDialogContent] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [imageSize, setImageSize] = useState({ width: 80, height: 60 });
   const isMobile = window.innerWidth <= 480;
   const [expandedRows, setExpandedRows] = useState(null);
 
@@ -42,6 +52,7 @@ const Customers = ({ setActiveTab }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [transaction, setTransaction] = useState(null);
 
   useEffect(() => {
     if (customers.length === 0 && once) {
@@ -89,17 +100,15 @@ const Customers = ({ setActiveTab }) => {
     if (customer.customer_id) {
       setLoadingMessage("Actualizando cliente...");
       dispatch(UpdateCustomer(customer, showError, showWarning, showSuccess));
-    } else {
-      setLoadingMessage("Creando cliente...");
-      dispatch(CreateCustomer(customer, showError, showWarning, showSuccess));
+      setIsLoading(true);
+      setTimeout(() => {
+        setActiveTab("customers");
+        dispatch(GetCustomers(showError));
+        dispatch(customerActions.startCustomer());
+        setEditingCustomer(false);
+        setIsLoading(false);
+      }, 1500);
     }
-    setTimeout(() => {
-      setActiveTab("customers");
-      dispatch(GetCustomers(showError));
-      dispatch(customerActions.startCustomer());
-      setEditingCustomer(false);
-      setIsLoading(false);
-    }, 1500);
   };
 
   const handleEditCustomer = (customer) => {
@@ -138,115 +147,171 @@ const Customers = ({ setActiveTab }) => {
     setDialogContent({ title, children, footer });
     setShowDialog(true);
   };
-  
 
   const rowExpansionTemplate = (data) => {
     return (
-      <div className="p-3">
-        <DataTable value={data.transactions} showGridlines>
-          <Column header="Producto" field="product_name"></Column>
-          <Column header="Cantidad" field="quantity"></Column>
-          <Column header="Precio unitario" body={(rowData) => {
-            return (
-              <span>
-                {rowData.payment_method.currency} {formatted(rowData.price)}
-              </span>
-            );
-          }}></Column>
-          <Column
-            header="Total"
-            body={(rowData) => {
-              const total = rowData.price * rowData.quantity;
-              return (
-                <span>
-                  {rowData.payment_method.currency} {formatted(total)}
-                </span>
-              );
-            }}
-          ></Column>
-          <Column header="Estado" field="status"></Column>
-          <Column
-            header="Método de Pago"
-            body={(rowData) => {
-              return rowData.payment_method
-                ? `${
-                    rowData.payment_method.payment_type === "bank_transfer"
-                      ? "Transferencia"
-                      : "Tarjeta de Crédito"
-                  } (${rowData.payment_method.currency})`
-                : "N/A";
-            }}
-          ></Column>
+      <>
+        <Dialog
+          header="Recibo de pago"
+          visible={showImageDialog}
+          style={{ width: imageSize.width === 80 ? "400px" : "100%" }}
+          onHide={() => {
+            if (!showImageDialog) return;
+            setShowImageDialog(false);
+          }}
+        >
+          <div>
+            <Image
+              alt="Image"
+              width={imageSize.width}
+              height={imageSize.height}
+              indicatorIcon={<Search />}
+              src={transaction !== null ? transaction.receipt_url : ""}
+              zoomSrc={transaction !== null ? transaction.receipt_url : ""}
+              style={{
+                padding: "10px",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                setImageSize({ width: 800, height: 300 });
+              }}
+            />
+          </div>
+        </Dialog>
+        <div className="p-3">
+          <DataTable value={data.transactions} showGridlines>
+            <Column header="Producto" field="product_name"></Column>
+            <Column header="Cantidad" field="quantity"></Column>
+            <Column
+              header="Precio unitario"
+              body={(rowData) => {
+                return (
+                  <span>
+                    {rowData.payment_method.currency} {formatted(rowData.price)}
+                  </span>
+                );
+              }}
+            ></Column>
+            <Column
+              header="Total"
+              body={(rowData) => {
+                const total = rowData.price * rowData.quantity;
+                return (
+                  <span>
+                    {rowData.payment_method.currency} {formatted(total)}
+                  </span>
+                );
+              }}
+            ></Column>
+            <Column
+              header="Fecha"
+              body={(rowData) => {
+                return <span>{formatDate(rowData.create_date)}</span>;
+              }}
+            ></Column>
+            <Column
+              header="Estado"
+              body={(rowData) => {
+                return (
+                  <span style={getStatusStyle(rowData.status)}>
+                    {rowData.status}
+                  </span>
+                );
+              }}
+            ></Column>
 
-          {/* <Column
+            <Column
               header="Acciones"
               body={(rowData) => {
                 return (
                   <div className="flex justify-content-center">
                     <Button
-                      icon={<Trash2 style={{ color: "red" }} />}
-                      className="p-button-rounded p-button-danger ml-auto"
+                      icon={<FileImage />}
+                      style={{ border: "none" }}
+                      outlined
+                      disabled={!rowData.receipt_url}
+                      tooltip="Ver recibo"
                       onClick={() => {
-                        const title = "Eliminar Imagen";
-                        const children = (
-                          <div>
-                            ¿Estás seguro de que deseas eliminar esta imagen?
-                          </div>
-                        );
-                        const footer = (
-                          <div className="flex justify-content-end">
-                            <Button
-                              className="btn btn-secondary"
-                              label="No"
-                              icon={<X />}
-                              onClick={() => setShowDialog(false)}
-                              style={{ width: "100px", margin: "2px" }}
-                            />
-                            <Button
-                              className="btn btn-danger"
-                              label="Si"
-                              icon={<Trash2 />}
-                              style={{ width: "100px", margin: "2px" }}
-                              onClick={() => {
-                                setIsLoading(true);
-                                setLoadingMessage("Eliminando imagen...");
-                                dispatch(
-                                  DeleteImage(
-                                    data.product_id,
-                                    rowData.image,
-                                    showError,
-                                    showWarning,
-                                    showSuccess
-                                  )
-                                );
-                                setTimeout(() => {
-                                  setActiveTab("products");
-                                  dispatch(GetProducts(showError));
-                                  dispatch(productActions.startProduct());
-                                  fileUploadRef.current.clear();
-                                  setSelectedCurrency({
-                                    code: "DOP",
-                                    name: "Peso dominicano",
-                                    symbol: "RD$",
-                                  });
-                                  setIsLoading(false);
-                                  setShowDialog(false);
-                                  setEditingProduct(false);
-                                }, 1500);
-                              }}
-                            />
-                          </div>
-                        );
-                        setDialogContent({ title, children, footer });
-                        setShowDialog(true);
+                        setTransaction(rowData);
+                        setShowImageDialog(true);
+                        setImageSize({ width: 80, height: 60 });
                       }}
                     />
+                    {rowData.status !== "Cancelada" &&
+                      rowData.status !== "Aprobada" && (
+                        <>
+                          <Button
+                            icon={<Check />}
+                            style={{ color: "green", border: "none" }}
+                            outlined
+                            tooltip="Aprobar pago"
+                            disabled={!rowData.receipt_url}
+                            onClick={() => {
+                              dispatch(
+                                ApproveTransaction(
+                                  data.customer_id,
+                                  rowData.transaction_id,
+                                  showError,
+                                  showWarning,
+                                  showSuccess
+                                )
+                              );
+                              setIsLoading(true);
+                              setLoadingMessage("Cargando clientes...");
+                              dispatch(GetCustomers(showError));
+                              dispatch(customerActions.startCustomer());
+                              once = false;
+                              dispatch(
+                                customerActions.modifyPropertyValue({
+                                  id: "business_id",
+                                  value: business.business_id,
+                                })
+                              );
+                              setTimeout(() => {
+                                setIsLoading(false);
+                              }, 1500);
+                            }}
+                          />
+                          <Button
+                            icon={<X />}
+                            style={{ color: "red", border: "none" }}
+                            outlined
+                            tooltip="Cancelar"
+                            onClick={() => {
+                              dispatch(
+                                CancelTransactionAdmin(
+                                  data.customer_id,
+                                  rowData.transaction_id,
+                                  showError,
+                                  showWarning,
+                                  showSuccess
+                                )
+                              );
+                              setIsLoading(true);
+                              setLoadingMessage("Cargando clientes...");
+                              dispatch(GetCustomers(showError));
+                              dispatch(customerActions.startCustomer());
+                              once = false;
+                              dispatch(
+                                customerActions.modifyPropertyValue({
+                                  id: "business_id",
+                                  value: business.business_id,
+                                })
+                              );
+                              setTimeout(() => {
+                                setIsLoading(false);
+                              }, 1500);
+                            }}
+                          />
+                        </>
+                      )}
                   </div>
                 );
               }}
-            ></Column> */}
-        </DataTable>
-      </div>
+            ></Column>
+          </DataTable>
+        </div>
+      </>
     );
   };
 
@@ -257,56 +322,119 @@ const Customers = ({ setActiveTab }) => {
         <div className="admin-header">
           <h1>Gestión de Clientes</h1>
         </div>
-
-        <div className="admin-card">
-          <h2>{editingCustomer ? "Editar Categoría" : "Nueva Categoría"}</h2>
-          <form onSubmit={handleCustomerSubmit}>
-            <div className="form-group">
-              <label className="form-label">Nombre *</label>
-              <InputText
-                type="text"
-                className="input"
-                value={customer.name}
-                onChange={(e) => {
-                  dispatch(
-                    customerActions.modifyPropertyValue({
-                      id: "name",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="Ropa"
-                required
-              />
-              {customerErrors.given_name && (
-                <div className="error-message">{customerErrors.given_name}</div>
-              )}
-            </div>
-
-            <div className="form-actions">
-              <Button type="submit" className="btn btn-primary">
-                {editingCustomer ? "Actualizar" : "Crear"} Categoría
-              </Button>
-              {editingCustomer && (
-                <Button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => {
-                    dispatch(customerActions.startCustomer(false));
-                    setEditingCustomer(false);
+        {editingCustomer && (
+          <div className="admin-card">
+            <h2>{"Editar Cliente"}</h2>
+            <form onSubmit={handleCustomerSubmit}>
+              <div className="form-group">
+                <label className="form-label">Nombre *</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.given_name || ""}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "given_name",
+                        value: e.target.value,
+                      })
+                    );
                   }}
-                >
-                  Cancelar
-                </Button>
-              )}
-            </div>
-          </form>
-        </div>
+                  placeholder="Juan"
+                  required
+                />
+                {customerErrors.given_name && (
+                  <div className="error-message">
+                    {customerErrors.given_name}
+                  </div>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Apellido *</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.family_name || ""}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "family_name",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="perez"
+                  required
+                />
+                {customerErrors.family_name && (
+                  <div className="error-message">
+                    {customerErrors.family_name}
+                  </div>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email *</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.email || ""}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "email",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="juan.perez@ejemplo.com"
+                  required
+                />
+                {customerErrors.email && (
+                  <div className="error-message">{customerErrors.email}</div>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Teléfono </label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.phone || ""}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "phone",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="18095551212"
+                />
+              </div>
 
+              <div className="form-actions">
+                <Button type="submit" className="btn btn-primary">
+                  Actualizar Cliente
+                </Button>
+                {editingCustomer && (
+                  <Button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => {
+                      dispatch(customerActions.startCustomer(false));
+                      setEditingCustomer(false);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
         <div className="admin-card">
-          <h2>Categorías Existentes</h2>
+          <h2>Clientes Existentes</h2>
           {customers.length === 0 ? (
-            <p>No hay categorías creadas aún.</p>
+            <p>No hay Clientes creados aún.</p>
           ) : (
             <>
               <DialogModal
@@ -352,21 +480,11 @@ const Customers = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "var(--color-blue)",
-                                borderColor: "var(--color-blue)",
+                                border: "none",
                               }}
                               onClick={() => handleEditCustomer(rowData)}
                             />
-                            <Button
-                              icon={<Trash2 />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#e74c3c",
-                                borderColor: "#e74c3c",
-                              }}
-                              onClick={() => handleDeleteCustomer(rowData)}
-                            />
+
                             <Button
                               icon={<Info />}
                               outlined
@@ -374,7 +492,7 @@ const Customers = ({ setActiveTab }) => {
                                 height: "40px",
                                 width: "40px",
                                 color: "#3498db",
-                                borderColor: "#3498db",
+                                border: "none",
                               }}
                               onClick={() => handleViewCustomer(rowData)}
                             />
@@ -415,7 +533,13 @@ const Customers = ({ setActiveTab }) => {
                                 <div className="table-actions">
                                   <Button
                                     icon={<PencilIcon />}
-                                    className="btn btn-small btn-outline"
+                                    outlined
+                                    style={{
+                                      height: "40px",
+                                      width: "40px",
+                                      color: "var(--color-navy)",
+                                      border: "none",
+                                    }}
                                     onClick={() => handleEditCustomer(rowData)}
                                   />
                                   <Button
@@ -425,7 +549,7 @@ const Customers = ({ setActiveTab }) => {
                                       height: "40px",
                                       width: "40px",
                                       color: "#e74c3c",
-                                      borderColor: "#e74c3c",
+                                      border: "none",
                                     }}
                                     onClick={() =>
                                       handleDeleteCustomer(rowData)
@@ -438,7 +562,7 @@ const Customers = ({ setActiveTab }) => {
                                       height: "40px",
                                       width: "40px",
                                       color: "#3498db",
-                                      borderColor: "#3498db",
+                                      border: "none",
                                     }}
                                     onClick={() => handleViewCustomer(rowData)}
                                   />
