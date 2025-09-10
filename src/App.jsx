@@ -8,6 +8,8 @@ import Payment from "./pages/Payment";
 import CatalogPublic from "./pages/CatalogPublic";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 import PaymentValidation from "./pages/PaymentValidation";
+import "primereact/resources/themes/lara-light-cyan/theme.css";
+import "primereact/resources/primereact.min.css";
 
 function App() {
   return (

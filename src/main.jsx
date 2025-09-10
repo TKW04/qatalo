@@ -7,6 +7,7 @@ import App from "./App.jsx";
 import store from "./store/index.jsx";
 import "./styles/globals.css";
 
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // wrap the application with AuthProvider

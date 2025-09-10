@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
 import { Info, PencilIcon, Trash2, X } from "lucide-react";
 import { customerActions } from "../../store/customer-store/customer-slice";
 
@@ -15,12 +17,12 @@ import {
 import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
+import { formatted } from "../../helpers/utils";
 import "../../styles/catalog.css";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
 
-import "primereact/resources/themes/lara-light-cyan/theme.css";
-import "primereact/resources/primereact.min.css";
+
+
+
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -136,12 +138,7 @@ const Customers = ({ setActiveTab }) => {
     setDialogContent({ title, children, footer });
     setShowDialog(true);
   };
-  const formatted = (value) => {
-    return Number(value).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
+  
 
   const rowExpansionTemplate = (data) => {
     return (
