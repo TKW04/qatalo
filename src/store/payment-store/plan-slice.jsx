@@ -10,6 +10,7 @@ const initialState = {
     currency: "",
     repassword: "",
   },
+  subscription: {},
 };
 
 const planSlice = createSlice({
@@ -34,6 +35,9 @@ const planSlice = createSlice({
     },
     setPlan(state, actions) {
       state.plan = actions.payload.plan;
+    },
+    setSubscription(state, actions) {
+      state.subscription = actions.payload.subscription;
     },
     modifyPropertyValue(state, actions) {
       state.plan[actions.payload.id] = actions.payload.value;

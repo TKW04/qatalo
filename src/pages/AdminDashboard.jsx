@@ -13,6 +13,7 @@ import { getCurrentSession } from "../services/authenticate";
 import "../styles/admin.css";
 import Customers from "../components/Tabs/Customers";
 import { Menu } from "lucide-react";
+import Subscription from "../components/Tabs/Subscription";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
@@ -67,9 +68,8 @@ const AdminDashboard = () => {
           <PaymentMethods setActiveTab={setActiveTab} />
         )}
         {activeTab === "customers" && <Customers setActiveTab={setActiveTab} />}
-        {activeTab === "qr" && (
-          <QrTab setActiveTab={setActiveTab} />
-        )}
+        {activeTab === "qr" && <QrTab setActiveTab={setActiveTab} />}
+        {activeTab === "subscription" && <Subscription setActiveTab={setActiveTab} />}
       </main>
     </div>
   );

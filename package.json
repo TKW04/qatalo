@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    
     "@fontsource/roboto": "^5.2.6",
     "@paddle/paddle-js": "^1.4.2",
     "@reduxjs/toolkit": "^2.8.2",
@@ -29,6 +29,7 @@
     "rollup-plugin-node-polyfills": "^0.2.1"
   },
   "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@eslint/js": "^9.32.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",

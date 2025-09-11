@@ -8,11 +8,12 @@ import {
   DollarSign,
   Users,
   CirclePower,
+  CalendarSync,
 } from "lucide-react";
 import { Image } from "primereact/image";
 import { logout } from "../services/authenticate";
 
-const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
+const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const menuItems = [
     { id: "business", label: "Configuración", icon: <Cog /> },
     { id: "categories", label: "Categorías", icon: <Folder /> },
@@ -20,6 +21,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose, isDemo }) => {
     { id: "paymentMethods", label: "Métodos de Pago", icon: <DollarSign /> },
     { id: "customers", label: "Clientes", icon: <Users /> },
     { id: "qr", label: "Código QR", icon: <QrCode /> },
+    { id: "subscription", label: "Suscripción", icon: <CalendarSync /> },
   ];
 
   const handleItemClick = (itemId) => {
