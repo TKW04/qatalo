@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Image } from "primereact/image";
-import { Button } from "primereact/button";
 
 import PaddleCheckoutButton from "../components/PaddleCheckoutButton";
 
