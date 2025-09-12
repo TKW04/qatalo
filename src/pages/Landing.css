@@ -251,7 +251,7 @@
     width: 60px;
     height: 60px;
     background: #FDF5AA;
-    color: var(--primary-dark);
+    color: var(--color-blue);
     border-radius: 50%;
     display: flex;
     align-items: center;

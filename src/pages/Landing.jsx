@@ -9,6 +9,7 @@ import {
   MessageCircle,
   ChartNoAxesCombined,
   Menu,
+  Users,
 } from "lucide-react";
 import { Image } from "primereact/image";
 
@@ -21,6 +22,7 @@ import PlanCard from "../components/PlanCard";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "primereact/resources/primereact.min.css";
 import LandingSidebar from "../components/LandingSideBar";
+import { Link } from "react-router-dom";
 
 const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
@@ -211,7 +213,7 @@ const Landing = () => {
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-icon">
-                  <Building2 />
+                  <Building2 size={40} style={{ color: "var(--color-navy)" }} />
                 </div>
                 <h3>Crea tu Empresa</h3>
                 <p>
@@ -222,7 +224,10 @@ const Landing = () => {
 
               <div className="feature-card">
                 <div className="feature-icon">
-                  <FolderOpen />
+                  <FolderOpen
+                    size={40}
+                    style={{ color: "var(--color-navy)" }}
+                  />
                 </div>
                 <h3>Organiza Categorías</h3>
                 <p>
@@ -233,7 +238,7 @@ const Landing = () => {
 
               <div className="feature-card">
                 <div className="feature-icon">
-                  <Package />
+                  <Package size={40} style={{ color: "var(--color-navy)" }} />
                 </div>
                 <h3>Gestiona Productos</h3>
                 <p>
@@ -244,7 +249,18 @@ const Landing = () => {
 
               <div className="feature-card ">
                 <div className="feature-icon">
-                  <QrCode />
+                  <Users size={40} style={{ color: "var(--color-navy)" }} />
+                </div>
+                <h3>Clientes</h3>
+                <p>
+                  Administra la información de tus clientes y lleva un registro
+                  de sus pedidos y preferencias.
+                </p>
+              </div>
+
+              <div className="feature-card ">
+                <div className="feature-icon">
+                  <QrCode size={40} style={{ color: "var(--color-navy)" }} />
                 </div>
                 <h3>Códigos QR</h3>
                 <p>
@@ -255,23 +271,15 @@ const Landing = () => {
 
               <div className="feature-card ">
                 <div className="feature-icon">
-                  <MessageCircle />
+                  <MessageCircle
+                    size={40}
+                    style={{ color: "var(--color-navy)" }}
+                  />
                 </div>
                 <h3>Integración WhatsApp</h3>
                 <p>
                   Conecta tu WhatsApp Business y recibe pedidos directamente.
                   Automatiza el proceso de ventas.
-                </p>
-              </div>
-
-              <div className="feature-card ">
-                <div className="feature-icon">
-                  <ChartNoAxesCombined />
-                </div>
-                <h3>Analytics Avanzados</h3>
-                <p>
-                  Monitorea visitas, productos más solicitados y rendimiento de
-                  tu catálogo con reportes detallados.
                 </p>
               </div>
             </div>
@@ -334,7 +342,7 @@ const Landing = () => {
           <div className="container">
             <h2>¿Listo para digitalizar tu negocio?</h2>
             <p>
-              Únete a miles de empresas que ya están vendiendo más con CatalogQR
+              Únete y comienza a vender más con tu catálogo digital hoy mismo.
             </p>
             <a href="#" className="primary-btn">
               Comenzar Ahora - Es Gratis
@@ -344,7 +352,15 @@ const Landing = () => {
 
         <footer>
           <div className="container">
-            <p>&copy; 2025 CatalogQR. Todos los derechos reservados.</p>
+            <p>
+              <Link
+                to="/terms-and-conditions"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                Términos y Condiciones
+              </Link>
+            </p>
+            <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
           </div>
         </footer>
       </div>
