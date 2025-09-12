@@ -9,6 +9,7 @@ import CatalogPublic from "./pages/CatalogPublic";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 import PaymentValidation from "./pages/PaymentValidation";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             element={<PaymentValidation />}
           />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Router>
     </NotificationProvider>
