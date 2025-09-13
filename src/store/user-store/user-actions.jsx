@@ -137,9 +137,6 @@ export const Reset_Password = (token, password, showError, showWarning, showSucc
           "Contraseña restablecida",
           "Su contraseña ha sido restablecida con éxito"
         );
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 4500);
       } else {
         showWarning(
           "No se pudo restablecer la contraseña",

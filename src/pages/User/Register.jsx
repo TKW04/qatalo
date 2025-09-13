@@ -63,6 +63,9 @@ const Register = () => {
     }
     setIsLoading(true);
     dispatch(CreateAccount(user, showError, showWarning, showSuccess));
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 4500);
   };
 
   return (
