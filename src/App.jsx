@@ -4,12 +4,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminQR from "./pages/AdminQR";
 import Register from "./pages/User/Register";
 import Login from "./pages/User/Login";
+import ForgotPassword from "./pages/User/ForgotPassword";
 import Payment from "./pages/Payment";
 import CatalogPublic from "./pages/CatalogPublic";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 import PaymentValidation from "./pages/PaymentValidation";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import NotFoundPage from "./pages/NotFoundPage";
+import ResetPassword from "./pages/User/ResetPassword";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
           <Route path="/admin/qr" element={<AdminQR />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/payment" element={<Payment />} />
           <Route
             path="/paymentValidation/:customer_id/"

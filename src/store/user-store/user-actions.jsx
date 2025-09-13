@@ -78,6 +78,82 @@ export const UpdateUser = (user, showError, showWarning, showSuccess) => {
     }
   };
 };
+export const Forgot_Password = (email, showError, showWarning, showSuccess) => {
+  return async () => {
+    const ForgotPasswordRequest = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}users/forgot-password/${email}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    };
+    try {
+      const response = await ForgotPasswordRequest();
+      if (response.status === 200) {
+        showSuccess(
+          "Enlace enviado",
+          "Se ha enviado un enlace de recuperación a su correo electrónico"
+        );
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 4500);
+      } else {
+        showWarning(
+          "No se pudo enviar el enlace",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los usuarios");
+    }
+  };
+}
+export const Reset_Password = (token, password, showError, showWarning, showSuccess) => {
+  return async () => {
+    const ResetPasswordRequest = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}users/change-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: token,
+            password: password,
+          }),
+        }
+      );
+    };
+    try {
+      const response = await ResetPasswordRequest();
+      if (response.status === 200) {
+        showSuccess(
+          "Contraseña restablecida",
+          "Su contraseña ha sido restablecida con éxito"
+        );
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 4500);
+      } else {
+        showWarning(
+          "No se pudo restablecer la contraseña",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los usuarios");
+    }
+  };
+};
+
+
 export const ActivateUser = (userId, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateUserInfo = async () => {

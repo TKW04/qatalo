@@ -86,7 +86,7 @@ const Login = () => {
               />
             </div>
             <div className="form-links">
-              <a href="#" onClick={() => (window.location.href = "/forgot")}>
+              <a href="#" onClick={() => (window.location.href = "/forgot-password")}>
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
