@@ -45,22 +45,23 @@ export const CreateBusiness = (
 export const GetBusiness = (showError) => {
   return async (dispatch) => {
     const FetchBusinessInfo = async () => {
-      return await fetch(
-        `${import.meta.env.VITE_APP_API_URL}businesses`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: getToken(),
-          },
-        }
-      );
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}businesses`, {
+        method: "GET",
+        headers: {
+          Authorization: getToken(),
+        },
+      });
     };
 
     try {
       const response = await FetchBusinessInfo();
       if (response.status === 200) {
         const data = await response.json();
-        dispatch(businessActions.setBusiness({ business: data }));
+        if (data !== null) {
+          dispatch(businessActions.setBusiness({ business: data }));
+        } else {
+          dispatch(businessActions.startBusiness());
+        }
       }
     } catch (error) {
       console.log(error);

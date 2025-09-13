@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Image } from "primereact/image";
 import { logout } from "../services/authenticate";
+import { useSelector } from "react-redux";
+import { Button } from "primereact/button";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const menuItems = [
@@ -23,6 +25,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     { id: "qr", label: "Código QR", icon: <QrCode /> },
     { id: "subscription", label: "Suscripción", icon: <CalendarSync /> },
   ];
+  const business = useSelector((state) => state.business.business);
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
@@ -48,17 +51,18 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
         <ul className="admin-nav" style={{ width: "100%", marginLeft: "0px" }}>
           {menuItems.map((item) => (
             <li key={item.id}>
-              <Link
+              <Button
                 onClick={() => handleItemClick(item.id)}
-                style={{ color: "white", textDecoration: "none" }}
+                style={{ color: "white", textDecoration: "none",  }}
                 className={activeTab === item.id ? "active " : ""}
+                disabled={item.id !== "business" && business.business_id=== ""}
               >
                 <span style={{ margin: "5px" }}>{item.icon}</span> {item.label}
-              </Link>
+              </Button>
             </li>
           ))}
           <li>
-            <Link
+            <Button
               onClick={() => logout()}
               style={{ color: "white", textDecoration: "none" }}
             >
@@ -66,7 +70,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
                 <CirclePower />
               </span>{" "}
               Cerrar sesión
-            </Link>
+            </Button>
           </li>
         </ul>
       </nav>

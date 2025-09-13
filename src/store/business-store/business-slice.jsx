@@ -21,7 +21,7 @@ const businessSlice = createSlice({
       state.business = {};
       state.businesses = [];
     },
-    startUser(state) {
+    startBusiness(state) {
       state.business = {
         business_id: "",
         name: "",

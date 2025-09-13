@@ -49,7 +49,7 @@ const Categories = ({ setActiveTab }) => {
         setIsLoading(false);
       }, 1500);
     }
-  }, [business.business_id, categories, dispatch, showError]);
+  }, [business, categories, dispatch, showError]);
 
   const handleCategorySubmit = (e) => {
     e.preventDefault();

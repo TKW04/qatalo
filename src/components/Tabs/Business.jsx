@@ -37,7 +37,6 @@ const Business = () => {
   }, [
     auth,
     business,
-    business.business_id,
     dispatch,
     showError,
     showSuccess,
@@ -84,6 +83,7 @@ const Business = () => {
       }, 4500);
     }
   };
+  
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
