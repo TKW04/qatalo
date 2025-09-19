@@ -9,7 +9,7 @@ import { useNotification } from "./UI/NotificationProvider";
 import { GetBusinessBySlug } from "../store/business-store/business-actions";
 
 let once = true;
-const HeaderPublic = () => {
+const HeaderPublic = ({ setIsLoading }) => {
   const business = useSelector((state) => state.business.business);
   const { showError, showSuccess, showWarning } = useNotification();
   const dispatch = useDispatch();
@@ -18,9 +18,10 @@ const HeaderPublic = () => {
   useEffect(() => {
     if (once) {
       dispatch(GetBusinessBySlug(slug, showError));
+      setIsLoading(true);
       once = false;
     }
-  }, [dispatch, slug, showError]);
+  }, [dispatch, slug, showError, setIsLoading]);
 
   const handleShare = () => {
     const url = window.location.href;

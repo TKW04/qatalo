@@ -88,6 +88,7 @@ export const GetBusinessBySlug = (slug, showError) => {
       const response = await FetchBusinessInfo();
       if (response.status === 200) {
         const data = await response.json();
+        
         dispatch(businessActions.setBusiness({ business: data }));
       }
     } catch (error) {

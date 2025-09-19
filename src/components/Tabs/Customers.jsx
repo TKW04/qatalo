@@ -68,7 +68,7 @@ const Customers = ({ setActiveTab }) => {
       );
       setTimeout(() => {
         setIsLoading(false);
-      }, 1500);
+      }, 4500);
     }
   }, [business.business_id, customers, dispatch, showError]);
 

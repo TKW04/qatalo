@@ -47,7 +47,7 @@ const Categories = ({ setActiveTab }) => {
       );
       setTimeout(() => {
         setIsLoading(false);
-      }, 1500);
+      }, 4500);
     }
   }, [business, categories, dispatch, showError]);
 

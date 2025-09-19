@@ -1,10 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
-import {
-  getBusinessData,
-  getCategoriesData,
-  getProductsData,
-} from "../services/storage";
+
 import HeaderPublic from "../components/HeaderPublic";
 import SearchBar from "../components/SearchBar";
 import CategoryFilter from "../components/CategoryFilter";
@@ -18,7 +13,6 @@ import { GetProductsByBusinessId } from "../store/product-store/product-actions"
 import Loading from "../components/UI/Loading";
 
 const CatalogPublic = () => {
-  const { slug } = useParams();
   const business = useSelector((state) => state.business.business);
   const categories = useSelector((state) => state.category.categories);
   const products = useSelector((state) => state.product.products);
@@ -37,7 +31,6 @@ const CatalogPublic = () => {
       business.business_id !== null &&
       business.business_id !== ""
     ) {
-      setIsLoading(true);
       if (categories.length === 0) {
         dispatch(GetCategoriesByBusinessId(business.business_id, showError));
       }
@@ -45,10 +38,12 @@ const CatalogPublic = () => {
         dispatch(GetProductsByBusinessId(business.business_id, showError));
       }
       setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
+        if (business.status === "trialing" || business.status === "active") {
+          setIsLoading(false);
+        }
+      }, 4500);
     }
-  }, [business, categories, products]);
+  }, [business, categories, dispatch, products, showError]);
 
   // Filtrar productos
   const filteredProducts = useMemo(() => {
@@ -88,40 +83,38 @@ const CatalogPublic = () => {
 
   return (
     <>
-      {!isLoading && (
-        <div className="catalog">
-          <HeaderPublic />
-          <main className="catalog-main">
-            <div className="container">
-              <div className="catalog-controls">
-                <SearchBar
-                  value={searchTerm}
-                  onChange={setSearchTerm}
-                  placeholder="Buscar productos..."
-                />
-                <CategoryFilter
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={setSelectedCategory}
-                />
-              </div>
-
-              <ProductGrid
-                products={filteredProducts}
-                onProductClick={setSelectedProduct}
+      <div className="catalog">
+        <HeaderPublic setIsLoading={setIsLoading} />
+        <main className="catalog-main">
+          <div className="container">
+            <div className="catalog-controls">
+              <SearchBar
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Buscar productos..."
+              />
+              <CategoryFilter
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
               />
             </div>
-          </main>
 
-          {selectedProduct && (
-            <ProductModal
-              product={selectedProduct}
-              business={business}
-              onClose={() => setSelectedProduct(null)}
+            <ProductGrid
+              products={filteredProducts}
+              onProductClick={setSelectedProduct}
             />
-          )}
-        </div>
-      )}
+          </div>
+        </main>
+
+        {selectedProduct && (
+          <ProductModal
+            product={selectedProduct}
+            business={business}
+            onClose={() => setSelectedProduct(null)}
+          />
+        )}
+      </div>
     </>
   );
 };

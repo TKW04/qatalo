@@ -78,7 +78,7 @@ const PaymentMethods = ({ setActiveTab }) => {
 
       setTimeout(() => {
         setIsLoading(false);
-      }, 1500);
+      }, 4500);
     }
   }, [business.business_id, dispatch, showError, paymentMethods, auth.email]);
 

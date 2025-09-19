@@ -19,6 +19,7 @@ import { formatted, getStatusStyle } from "../helpers/utils";
 import DialogModal from "../components/DialogModal";
 import { FileUpload } from "primereact/fileupload";
 import Loading from "../components/UI/Loading";
+import { InputTextarea } from "primereact/inputtextarea";
 
 const PaymentValidation = () => {
   const customer = useSelector((state) => state.customer.customer);
@@ -27,10 +28,12 @@ const PaymentValidation = () => {
   const { showError, showSuccess, showWarning } = useNotification();
   const fileUploadRef = useRef(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [showDialogCancel, setShowDialogCancel] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
   const [uploadedFile, setUploadedFile] = useState(null);
   const [transaction, setTransaction] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState("");
 
   const isMobile = window.innerWidth <= 480;
 
@@ -64,7 +67,11 @@ const PaymentValidation = () => {
           }}
         >
           <Image
-            src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
+            src={
+              customer.business_logo_url !== ""
+                ? customer.business_logo_url
+                : "https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
+            }
             alt="Card"
             style={{ padding: "0rem" }}
           />
@@ -140,15 +147,8 @@ const PaymentValidation = () => {
                 border: "none",
               }}
               onClick={() => {
-                dispatch(
-                  CancelTransaction(
-                    customer.customer_id,
-                    rowData.transaction_id,
-                    showError,
-                    showWarning,
-                    showSuccess
-                  )
-                );
+                setTransaction(rowData);
+                setShowDialogCancel(true);
               }}
             />
           </>
@@ -317,7 +317,7 @@ const PaymentValidation = () => {
                     </div>
                     <div className={`${isMobile ? "col-12" : "col-5"}`}>
                       <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                       Tipo de cuenta:
+                        Tipo de cuenta:
                       </span>{" "}
                       <span
                         style={{
@@ -326,9 +326,11 @@ const PaymentValidation = () => {
                         }}
                       >
                         {transaction !== null
-                          ? transaction.payment_method.account_type==="checking"
+                          ? transaction.payment_method.account_type ===
+                            "checking"
                             ? "Corriente"
-                            : transaction.payment_method.account_type==="savings"
+                            : transaction.payment_method.account_type ===
+                              "savings"
                             ? "Ahorros"
                             : transaction.payment_method.account_type
                           : ""}
@@ -336,7 +338,7 @@ const PaymentValidation = () => {
                     </div>
                     <div className={`${isMobile ? "col-12" : "col-5"}`}>
                       <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                       Moneda:
+                        Moneda:
                       </span>{" "}
                       <span
                         style={{
@@ -351,7 +353,7 @@ const PaymentValidation = () => {
                     </div>
                     <div className={`${isMobile ? "col-12" : "col-5"}`}>
                       <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                       Cuenta Estandar:
+                        Cuenta Estandar:
                       </span>{" "}
                       <span
                         style={{
@@ -366,7 +368,7 @@ const PaymentValidation = () => {
                     </div>
                     <div className={`${isMobile ? "col-12" : "col-5"}`}>
                       <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                       Swift:
+                        Swift:
                       </span>{" "}
                       <span
                         style={{
@@ -411,7 +413,7 @@ const PaymentValidation = () => {
                     </div>
                     <div className={`${isMobile ? "col-12" : "col-5"}`}>
                       <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                       Documento del titular:
+                        Documento del titular:
                       </span>{" "}
                       <span
                         style={{
@@ -426,7 +428,7 @@ const PaymentValidation = () => {
                     </div>
                     <div className={`${isMobile ? "col-12" : "col-5"}`}>
                       <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                       Email del titular:
+                        Email del titular:
                       </span>{" "}
                       <span
                         style={{
@@ -455,6 +457,77 @@ const PaymentValidation = () => {
                 onSelect={(e) => {
                   fileHandler(e);
                 }}
+              />
+            </div>
+          </div>
+        </div>
+      </DialogModal>
+      <DialogModal
+        title={"Razón de la cancelación"}
+        visible={showDialogCancel}
+        onHide={() => setShowDialogCancel(false)}
+        footer={
+          <div className="flex justify-content-start mt-2">
+            <div className="flex gap-2">
+              <Button
+                label="cancelar"
+                className="btn btn-outline"
+                raised
+                style={{ width: "100px", height: "40px", margin: "10px" }}
+                onClick={() => {
+                  setLoadingMessage("Cancelando orden...");
+                  setIsLoading(true);
+                }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                label="Solicitar"
+                className="btn btn-primary"
+                raised
+                style={{ width: "100px", height: "40px", margin: "10px" }}
+                onClick={() => {
+                  setLoadingMessage("Cancelando orden...");
+
+                  setIsLoading(true);
+
+                  dispatch(
+                    CancelTransaction(
+                      customer.customer_id,
+                      transaction.transaction_id,
+                      cancellationReason,
+                      showError,
+                      showWarning,
+                      showSuccess
+                    )
+                  );
+                  setTimeout(() => {
+                    dispatch(GetCustomerTransaction(customer_id, showError));
+                    setIsLoading(false);
+                    setShowDialogCancel(false);
+                    setCancellationReason("");
+                  }, 4500);
+                }}
+              />
+            </div>
+          </div>
+        }
+      >
+        <div
+          className="flex flex-column gap-2 p-3"
+          style={{
+            textAlign: "left",
+            borderRadius: "8px",
+          }}
+        >
+          <div className="grid flex gap-2">
+            <div className="col-12">
+              <InputTextarea
+                rows={5}
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="Ingrese la razón de la cancelación"
+                style={{ width: "100%", padding: "10px" }}
               />
             </div>
           </div>

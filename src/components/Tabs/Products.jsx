@@ -79,7 +79,7 @@ const Products = ({ setActiveTab }) => {
       once = false;
       setTimeout(() => {
         setIsLoading(false);
-      }, 1500);
+      }, 4500);
     }
   }, [dispatch, products, showError]);
 

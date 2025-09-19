@@ -30,9 +30,7 @@ const Business = () => {
       once = false;
       setTimeout(() => {
         setIsLoading(false);
-      }, 1500);
-    } else {
-      setIsLoading(false);
+      }, 4500);
     }
   }, [
     auth,
@@ -81,7 +79,7 @@ const Business = () => {
       dispatch(GetBusiness(auth.sub, showError));
       setTimeout(() => {
         setIsLoading(false);
-      }, 1500);
+      }, 4500);
     }
   };
   
