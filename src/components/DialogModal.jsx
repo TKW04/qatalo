@@ -1,4 +1,5 @@
 import { Dialog } from "primereact/dialog";
+
 const DialogModal = ({
   title,
   children,
@@ -6,12 +7,13 @@ const DialogModal = ({
   visible,
   onHide
 }) => {
+  const isMobile = window.innerWidth <= 480;
   return (
     <Dialog
       header={title}
       visible={visible}
       position={"center"}
-      style={{ width: "50vw" }}
+      style={{ width: isMobile ? "100%" : "50vw" }}
       onHide={onHide}
       footer={footer}
       draggable={false}

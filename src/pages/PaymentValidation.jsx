@@ -95,6 +95,7 @@ const PaymentValidation = () => {
             <Button
               icon={<Info />}
               outlined
+              tooltip="Ver información"
               style={{
                 height: "40px",
                 width: "40px",
@@ -108,6 +109,7 @@ const PaymentValidation = () => {
             <Button
               icon={<CreditCard />}
               disabled={rowData.payment_method.payment_type === "bank_transfer"}
+              visible={rowData.payment_method.payment_type !== "bank_transfer"}
               outlined
               style={{
                 height: "40px",
@@ -153,6 +155,7 @@ const PaymentValidation = () => {
       </div>
     );
   };
+  console.log(transaction);
 
   return (
     <>
@@ -269,6 +272,176 @@ const PaymentValidation = () => {
                   ? "Transferencia bancaria"
                   : "Tarjeta de crédito"}
               </span>
+              {transaction !== null &&
+                transaction.payment_method.payment_type === "bank_transfer" && (
+                  <div
+                    className="grid"
+                    style={{
+                      marginTop: "1rem",
+                      gap: "1rem",
+                      border: "1px solid #ffffff",
+                      padding: "1rem",
+                      marginTop: "10px",
+                      marginLeft: "10px",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                        Banco:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.bank_name
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                        Número de cuenta:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.account_number
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                       Tipo de cuenta:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.account_type==="checking"
+                            ? "Corriente"
+                            : transaction.payment_method.account_type==="savings"
+                            ? "Ahorros"
+                            : transaction.payment_method.account_type
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                       Moneda:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.currency
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                       Cuenta Estandar:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.standard_account
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                       Swift:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.swift
+                          : ""}
+                      </span>
+                    </div>
+                    <div className="col-12">
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                        Código de ruta:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.routing_number
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                        Titular de la cuenta:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.owner_name
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                       Documento del titular:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.owner_document
+                          : ""}
+                      </span>
+                    </div>
+                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                       Email del titular:
+                      </span>{" "}
+                      <span
+                        style={{
+                          fontSize: "1.2rem",
+                          color: "var(--color-yellow)",
+                        }}
+                      >
+                        {transaction !== null
+                          ? transaction.payment_method.owner_email
+                          : ""}
+                      </span>
+                    </div>
+                  </div>
+                )}
             </div>
             <div className="col-12">
               <span style={{ fontWeight: "bold", color: "#ffffff" }}>

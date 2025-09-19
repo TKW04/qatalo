@@ -57,26 +57,12 @@ const Products = ({ setActiveTab }) => {
   });
 
   const [selectedCurrency, setSelectedCurrency] = useState({
-    code: "DOP",
-    name: "Peso dominicano",
-    symbol: "RD$",
+    code: "",
+    name: "",
+    symbol: "",
   });
 
   const [expandedRows, setExpandedRows] = useState(null);
-  useEffect(() => {
-    if (
-      product.business_id === undefined ||
-      product.business_id === null ||
-      product.business_id === ""
-    ) {
-      dispatch(
-        productActions.modifyPropertyValue({
-          id: "business_id",
-          value: business.business_id,
-        })
-      );
-    }
-  }, [business.business_id, dispatch, product.business_id, showError]);
 
   useEffect(() => {
     if (categories.length === 0 && once) {
@@ -276,17 +262,30 @@ const Products = ({ setActiveTab }) => {
       ) {
         modifiedProduct.is_available = "available";
       }
+
       if (modifiedProduct.product_id) {
         setIsLoading(true);
         setLoadingMessage("Actualizando producto...");
         dispatch(
-          UpdateProduct(modifiedProduct, showError, showWarning, showSuccess)
+          UpdateProduct(
+            modifiedProduct,
+            business,
+            showError,
+            showWarning,
+            showSuccess
+          )
         );
       } else {
         setIsLoading(true);
         setLoadingMessage("Creando producto...");
         dispatch(
-          CreateProduct(modifiedProduct, showError, showWarning, showSuccess)
+          CreateProduct(
+            modifiedProduct,
+            business,
+            showError,
+            showWarning,
+            showSuccess
+          )
         );
       }
       setTimeout(() => {

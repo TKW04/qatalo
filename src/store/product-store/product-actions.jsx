@@ -1,11 +1,11 @@
 import { getToken } from "../../helpers/token";
 import { productActions } from "./product-slice";
 
-export const CreateProduct = (product, showError, showWarning, showSuccess) => {
+export const CreateProduct = (product,business, showError, showWarning, showSuccess) => {
   return async () => {
     const RegisterProductInfo = async () => {
       const productForm = new FormData();
-      productForm.append("business_id", product.business_id);
+      productForm.append("business_id", business.business_id);
       productForm.append("name", product.name);
       productForm.append("description", product.description);
       productForm.append("price", product.price);
@@ -99,11 +99,11 @@ export const GetProductsByBusinessId = (businessId, showError) => {
     }
   };
 };
-export const UpdateProduct = (product, showError, showWarning, showSuccess) => {
+export const UpdateProduct = (product,business, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateProductInfo = async () => {
       const productForm = new FormData();
-      productForm.append("business_id", product.business_id);
+      productForm.append("business_id", business.business_id);
       productForm.append("name", product.name);
       productForm.append("description", product.description);
       productForm.append("price", product.price);
