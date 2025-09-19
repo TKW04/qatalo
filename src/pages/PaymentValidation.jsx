@@ -132,6 +132,7 @@ const PaymentValidation = () => {
             <Button
               icon={<X />}
               outlined
+              tooltip="Cancelar transacción"
               style={{
                 height: "40px",
                 width: "40px",
@@ -155,7 +156,6 @@ const PaymentValidation = () => {
       </div>
     );
   };
-  console.log(transaction);
 
   return (
     <>
@@ -277,7 +277,6 @@ const PaymentValidation = () => {
                   <div
                     className="grid"
                     style={{
-                      marginTop: "1rem",
                       gap: "1rem",
                       border: "1px solid #ffffff",
                       padding: "1rem",
