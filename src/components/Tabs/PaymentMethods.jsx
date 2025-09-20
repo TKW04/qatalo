@@ -19,6 +19,7 @@ import { Dropdown } from "primereact/dropdown";
 import { getTokenInfo } from "../../helpers/token";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { Card } from "primereact/card";
 
 let once = true;
 const PaymentMethods = ({ setActiveTab }) => {
@@ -681,176 +682,174 @@ const PaymentMethods = ({ setActiveTab }) => {
           </form>
         </div>
 
-        <div className="admin-card">
+        <div>
           <h2>Métodos de Pago Existentes</h2>
-          {paymentMethods.length === 0 ? (
-            <p>No hay métodos de pago creados aún.</p>
-          ) : (
-            <>
-              {!isMobile && (
-                <div className="card">
-                  <DataTable
-                    value={paymentMethods}
-                    dataKey="payment_method_id"
-                    tableStyle={{ minWidth: "60rem" }}
-                  >
-                    <Column
-                      header="Método"
-                      body={(rowData) => {
-                        return getPaymentMethodName(rowData.payment_type);
-                      }}
-                    ></Column>
-                    <Column
-                      header="Link de pago"
-                      body={(rowData) => {
-                        return (
-                          <>
-                            {rowData.payment_type === "payment_link"
-                              ? rowData.payment_link
-                              : "N/A"}
-                          </>
-                        );
-                      }}
-                    ></Column>
-                    <Column
-                      header="Número de cuenta"
-                      body={(rowData) => {
-                        return (
-                          <>
-                            {rowData.payment_type === "bank_transfer"
-                              ? rowData.account_number
-                              : "N/A"}
-                          </>
-                        );
-                      }}
-                    ></Column>
-                    <Column
-                      field="bank_name"
-                      header="Nombre del banco"
-                    ></Column>
+          <>
+            {!isMobile && (
+              <div>
+                <DataTable
+                  value={paymentMethods}
+                  dataKey="payment_method_id"
+                  showGridlines
+                  stripedRows
+                >
+                  <Column
+                    header="Método"
+                    style={{
+                      minWidth: "15rem",
+                      padding: "1rem",
+                    }}
+                    body={(rowData) => {
+                      return getPaymentMethodName(rowData.payment_type);
+                    }}
+                  ></Column>
+                  <Column
+                    header="Link de pago"
+                    body={(rowData) => {
+                      return (
+                        <>
+                          {rowData.payment_type === "payment_link"
+                            ? rowData.payment_link
+                            : "N/A"}
+                        </>
+                      );
+                    }}
+                  ></Column>
+                  <Column
+                    header="Número de cuenta"
+                    body={(rowData) => {
+                      return (
+                        <>
+                          {rowData.payment_type === "bank_transfer"
+                            ? rowData.account_number
+                            : "N/A"}
+                        </>
+                      );
+                    }}
+                  ></Column>
+                  <Column field="bank_name" header="Nombre del banco"></Column>
 
-                    <Column
-                      header="Acciones"
-                      body={(rowData) => {
-                        return (
-                          <div className="table-actions">
-                            <Button
-                              icon={<PencilIcon />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "var(--color-blue)",
-                                border: "none",
-                              }}
-                              onClick={() => handleEditPaymentMethod(rowData)}
-                            />
-                            <Button
-                              icon={<Trash2 />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#e74c3c",
-                                border: "none",
-                              }}
-                              onClick={() => handleDeletePaymentMethod(rowData)}
-                            />
-                            <Button
-                              icon={<Info />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#3498db",
-                               border: "none",
-                              }}
-                              onClick={() => handleViewPaymentMethod(rowData)}
-                            />
-                          </div>
-                        );
-                      }}
-                    ></Column>
-                  </DataTable>
-                </div>
-              )}
-              {isMobile && (
-                <div className="card">
-                  <DataTable
-                    value={paymentMethods}
-                    dataKey="product_id"
-                    tableStyle={{ minWidth: "6rem" }}
-                  >
-                    <Column
-                      header="Método"
-                      body={(rowData) => {
-                        return (
-                          <>
-                            <Card>
-                              <div>
-                                <span
-                                  style={{
-                                    fontWeight: "400",
-                                  }}
-                                >
-                                  {getPaymentMethodName(rowData)}
-                                </span>
-                              </div>
+                  <Column
+                    header="Acciones"
+                    body={(rowData) => {
+                      return (
+                        <div className="table-actions">
+                          <Button
+                            icon={<PencilIcon />}
+                            outlined
+                            style={{
+                              height: "40px",
+                              width: "40px",
+                              color: "var(--color-blue)",
+                              border: "none",
+                            }}
+                            onClick={() => handleEditPaymentMethod(rowData)}
+                          />
+                          <Button
+                            icon={<Trash2 />}
+                            outlined
+                            style={{
+                              height: "40px",
+                              width: "40px",
+                              color: "#e74c3c",
+                              border: "none",
+                            }}
+                            onClick={() => handleDeletePaymentMethod(rowData)}
+                          />
+                          <Button
+                            icon={<Info />}
+                            outlined
+                            style={{
+                              height: "40px",
+                              width: "40px",
+                              color: "#3498db",
+                              border: "none",
+                            }}
+                            onClick={() => handleViewPaymentMethod(rowData)}
+                          />
+                        </div>
+                      );
+                    }}
+                  ></Column>
+                </DataTable>
+              </div>
+            )}
+            {isMobile && (
+              <div>
+                <DataTable
+                  value={paymentMethods}
+                  dataKey="product_id"
+                  tableStyle={{ minWidth: "6rem" }}
+                >
+                  <Column
+                    header="Método"
+                    body={(rowData) => {
+                      return (
+                        <>
+                          <Card>
+                            <div>
+                              <span
+                                style={{
+                                  fontWeight: "400",
+                                }}
+                              >
+                                {getPaymentMethodName(rowData)}
+                              </span>
+                            </div>
+                            <div className="table-actions">
                               <div className="table-actions">
-                                <div className="table-actions">
-                                  <Button
-                                    icon={<PencilIcon />}
-                                    outlined
-                                    style={{
-                                      height: "40px",
-                                      width: "40px",
-                                      color: "var(--color-blue)",
-                                      border: "none",
-                                    }}
-                                    onClick={() =>
-                                      handleEditPaymentMethod(rowData)
-                                    }
-                                  />
-                                  <Button
-                                    icon={<Trash2 />}
-                                    outlined
-                                    style={{
-                                      height: "40px",
-                                      width: "40px",
-                                      color: "#e74c3c",
-                                      border: "none",
-                                    }}
-                                    onClick={() =>
-                                      handleDeletePaymentMethod(rowData)
-                                    }
-                                  />
-                                  <Button
-                                    icon={<Info />}
-                                    outlined
-                                    style={{
-                                      height: "40px",
-                                      width: "40px",
-                                      color: "#3498db",
-                                     border: "none",
-                                    }}
-                                    onClick={() =>
-                                      handleViewPaymentMethod(rowData)
-                                    }
-                                  />
-                                </div>
+                                <Button
+                                  icon={<PencilIcon />}
+                                  outlined
+                                  style={{
+                                    height: "40px",
+                                    width: "40px",
+                                    color: "var(--color-blue)",
+                                    border: "none",
+                                  }}
+                                  onClick={() =>
+                                    handleEditPaymentMethod(rowData)
+                                  }
+                                />
+                                <Button
+                                  icon={<Trash2 />}
+                                  outlined
+                                  style={{
+                                    height: "40px",
+                                    width: "40px",
+                                    color: "#e74c3c",
+                                    border: "none",
+                                  }}
+                                  onClick={() =>
+                                    handleDeletePaymentMethod(rowData)
+                                  }
+                                />
+                                <Button
+                                  icon={<Info />}
+                                  outlined
+                                  style={{
+                                    height: "40px",
+                                    width: "40px",
+                                    color: "#3498db",
+                                    border: "none",
+                                  }}
+                                  onClick={() =>
+                                    handleViewPaymentMethod(rowData)
+                                  }
+                                />
                               </div>
-                            </Card>
-                          </>
-                        );
-                      }}
-                    ></Column>
+                            </div>
+                          </Card>
+                        </>
+                      );
+                    }}
+                  ></Column>
 
-                    <Column expander style={{ width: "3em" }} />
-                  </DataTable>
-                </div>
-              )}
-            </>
-          )}
+                  <Column expander style={{ width: "3em" }} />
+                </DataTable>
+              </div>
+            )}
+          </>
         </div>
       </div>
     </>

@@ -14,32 +14,28 @@ import {
 } from "../../store/business-store/business-actions";
 import { getTokenInfo } from "../../helpers/token";
 import Loading from "../UI/Loading";
+import { Image } from "primereact/image";
+
 let once = true;
 const Business = () => {
   const auth = getTokenInfo();
   const business = useSelector((state) => state.business.business);
   const dispatch = useDispatch();
   const { showError, showWarning, showSuccess } = useNotification();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
   const [businessErrors, setBusinessErrors] = useState({});
 
   useEffect(() => {
     if (business !== null && business.business_id === "" && once) {
+      setIsLoading(true);
       dispatch(GetBusiness(auth.sub, showError));
       once = false;
       setTimeout(() => {
         setIsLoading(false);
       }, 4500);
     }
-  }, [
-    auth,
-    business,
-    dispatch,
-    showError,
-    showSuccess,
-    showWarning,
-  ]);
+  }, [auth, business, dispatch, showError, showSuccess, showWarning]);
 
   const generateSlug = (name) => {
     return name
@@ -82,7 +78,7 @@ const Business = () => {
       }, 4500);
     }
   };
-  
+
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
@@ -97,7 +93,9 @@ const Business = () => {
           <form onSubmit={handleBusinessSubmit}>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Nombre del negocio *</label>
+                <label className="form-label">
+                  Nombre del negocio <span className="important">*</span>
+                </label>
                 <InputText
                   value={business.name}
                   className={`input ${businessErrors.name ? "error" : ""}`}
@@ -125,8 +123,7 @@ const Business = () => {
 
               <div className="form-group">
                 <label className="form-label">
-                  Slug ({window.location.origin}/catalog/
-                  <span style={{ color: "red" }}>{business.slug}</span>) *
+                  Slug <span className="important">*</span>
                 </label>
                 <InputText
                   value={business.slug}
@@ -150,7 +147,9 @@ const Business = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Teléfono (WhatsApp) *</label>
+                <label className="form-label">
+                  Teléfono (WhatsApp) <span className="important">*</span>
+                </label>
                 <InputText
                   className={`input ${businessErrors.phone ? "error" : ""}`}
                   value={business.phone}
@@ -174,26 +173,37 @@ const Business = () => {
               <div className="form-group">
                 <label className="form-label">Logo</label>
                 <div className="card flex justify-content-center">
-                  <input
-                    className={`input ${businessErrors.slug ? "error" : ""}`}
-                    accept="image/*"
-                    type="file"
-                    label="Seleccionar Imagen"
-                    onChange={(e) => {
-                      dispatch(
-                        businessActions.modifyPropertyValue({
-                          id: "logoUrl",
-                          value: URL.createObjectURL(e.target.files[0]),
-                        })
-                      );
-                      dispatch(
-                        businessActions.modifyPropertyValue({
-                          id: "logo",
-                          value: e.target.files[0],
-                        })
-                      );
-                    }}
-                  />
+                  <div className="flex flex-column align-items-center">
+                    {business.logo_url && (
+                      <Image
+                        src={business.logo_url}
+                        alt="CatalogQR Logo"
+                        width={110}
+                        style={{ marginTop: "0px", borderRadius: "8px" }}
+                      />
+                    )}
+
+                    <input
+                      className={`input ${businessErrors.slug ? "error" : ""}`}
+                      accept="image/*"
+                      type="file"
+                      label="Seleccionar Imagen"
+                      onChange={(e) => {
+                        dispatch(
+                          businessActions.modifyPropertyValue({
+                            id: "logoUrl",
+                            value: URL.createObjectURL(e.target.files[0]),
+                          })
+                        );
+                        dispatch(
+                          businessActions.modifyPropertyValue({
+                            id: "logo",
+                            value: e.target.files[0],
+                          })
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {businessErrors.logo && (

@@ -9,6 +9,7 @@ import {
   Check,
   FileImage,
   Info,
+  InfoIcon,
   PencilIcon,
   Search,
   Trash2,
@@ -42,8 +43,10 @@ const Customers = ({ setActiveTab }) => {
   const [customerErrors, setCustomerErrors] = useState({});
   const [dialogContent, setDialogContent] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [productInfo, setProductInfo] = useState({});
   const [showImageDialog, setShowImageDialog] = useState(false);
-  const [imageSize, setImageSize] = useState({ width: 80, height: 60 });
+  const [showProductDialog, setShowProductDialog] = useState(false);
+  const [imageSize, setImageSize] = useState({ width: 100, height: 200 });
   const isMobile = window.innerWidth <= 480;
   const [expandedRows, setExpandedRows] = useState(null);
 
@@ -153,7 +156,10 @@ const Customers = ({ setActiveTab }) => {
         <Dialog
           header="Recibo de pago"
           visible={showImageDialog}
-          style={{ width: imageSize.width === 80 ? "400px" : "100%" }}
+          style={{
+            width: "450px",
+            overflow: "hidden",
+          }}
           onHide={() => {
             if (!showImageDialog) return;
             setShowImageDialog(false);
@@ -171,145 +177,293 @@ const Customers = ({ setActiveTab }) => {
                 padding: "10px",
                 cursor: "pointer",
               }}
-              onClick={() => {
-                setImageSize({ width: 800, height: 300 });
-              }}
             />
           </div>
         </Dialog>
-        <div className="p-3">
-          <DataTable value={data.transactions} showGridlines>
-            <Column header="Producto" field="product_name"></Column>
-            <Column header="Cantidad" field="quantity"></Column>
-            <Column
-              header="Precio unitario"
-              body={(rowData) => {
-                return (
-                  <span>
-                    {rowData.payment_method.currency} {formatted(rowData.price)}
-                  </span>
-                );
-              }}
-            ></Column>
-            <Column
-              header="Total"
-              body={(rowData) => {
-                const total = rowData.price * rowData.quantity;
-                return (
-                  <span>
-                    {rowData.payment_method.currency} {formatted(total)}
-                  </span>
-                );
-              }}
-            ></Column>
-            <Column
-              header="Fecha"
-              body={(rowData) => {
-                return <span>{formatDate(rowData.create_date)}</span>;
-              }}
-            ></Column>
-            <Column
-              header="Estado"
-              body={(rowData) => {
-                return (
-                  <span style={getStatusStyle(rowData.status)}>
-                    {rowData.status}
-                  </span>
-                );
-              }}
-            ></Column>
+        <Dialog
+          header="Detalles del producto"
+          visible={showProductDialog}
+          style={{ width: "100%" }}
+          onHide={() => setShowProductDialog(false)}
+        >
+          <div className="admin-card" style={{ textAlign: "left" }}>
+            <label className="form-label">
+              Producto:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {productInfo.product_name}
+              </span>
+            </label>
+            <label className="form-label">
+              Cantidad:{" "}
+              <span style={{ fontWeight: "bold" }}>{productInfo.quantity}</span>
+            </label>
+            <label className="form-label">
+              Precio unitario:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {" "}
+                {productInfo.payment_method
+                  ? productInfo.payment_method.currency
+                  : ""}{" "}
+                {formatted(productInfo.price)}
+              </span>
+            </label>
 
-            <Column
-              header="Acciones"
-              body={(rowData) => {
-                return (
-                  <div className="flex justify-content-center">
-                    <Button
-                      icon={<FileImage />}
-                      style={{ border: "none" }}
-                      outlined
-                      disabled={!rowData.receipt_url}
-                      tooltip="Ver recibo"
-                      onClick={() => {
-                        setTransaction(rowData);
-                        setShowImageDialog(true);
-                        setImageSize({ width: 80, height: 60 });
-                      }}
-                    />
-                    {rowData.status !== "Cancelada" &&
-                      rowData.status !== "Aprobada" && (
-                        <>
-                          <Button
-                            icon={<Check />}
-                            style={{ color: "green", border: "none" }}
-                            outlined
-                            tooltip="Aprobar pago"
-                            disabled={!rowData.receipt_url}
-                            onClick={() => {
-                              dispatch(
-                                ApproveTransaction(
-                                  data.customer_id,
-                                  rowData.transaction_id,
-                                  showError,
-                                  showWarning,
-                                  showSuccess
-                                )
-                              );
-                              setIsLoading(true);
-                              setLoadingMessage("Cargando clientes...");
-                              dispatch(GetCustomers(showError));
-                              dispatch(customerActions.startCustomer());
-                              once = false;
-                              dispatch(
-                                customerActions.modifyPropertyValue({
-                                  id: "business_id",
-                                  value: business.business_id,
-                                })
-                              );
-                              setTimeout(() => {
-                                setIsLoading(false);
-                              }, 1500);
-                            }}
-                          />
-                          <Button
-                            icon={<X />}
-                            style={{ color: "red", border: "none" }}
-                            outlined
-                            tooltip="Cancelar"
-                            onClick={() => {
-                              dispatch(
-                                CancelTransactionAdmin(
-                                  data.customer_id,
-                                  rowData.transaction_id,
-                                  showError,
-                                  showWarning,
-                                  showSuccess
-                                )
-                              );
-                              setIsLoading(true);
-                              setLoadingMessage("Cargando clientes...");
-                              dispatch(GetCustomers(showError));
-                              dispatch(customerActions.startCustomer());
-                              once = false;
-                              dispatch(
-                                customerActions.modifyPropertyValue({
-                                  id: "business_id",
-                                  value: business.business_id,
-                                })
-                              );
-                              setTimeout(() => {
-                                setIsLoading(false);
-                              }, 1500);
-                            }}
-                          />
-                        </>
-                      )}
-                  </div>
-                );
-              }}
-            ></Column>
-          </DataTable>
-        </div>
+            <label className="form-label">
+              Total:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {productInfo.payment_method
+                  ? productInfo.payment_method.currency
+                  : ""}{" "}
+                {formatted(productInfo.price * productInfo.quantity)}
+              </span>
+            </label>
+            <label className="form-label">
+              Estado:{" "}
+              <span style={getStatusStyle(productInfo.status)}>
+                {productInfo.status}
+              </span>
+            </label>
+            {productInfo.status === "Cancelada" && (
+              <label className="form-label">
+                Razón:{" "}
+                <span style={{ fontWeight: "bold" }}>
+                  {productInfo.cancellation_reason}
+                </span>
+              </label>
+            )}
+            <div className="">
+              {productInfo.status !== "Cancelada" &&
+                productInfo.status !== "Aprobada" && (
+                  <>
+                    <div className="grid flex justify-content-center">
+                      <div className="col-4 ">
+                        <Button
+                          style={{ border: "none" }}
+                          outlined
+                          disabled={!productInfo.receipt_url}
+                          label="Ver recibo"
+                          onClick={() => {
+                            setTransaction(productInfo);
+                            setShowImageDialog(true);
+                            setImageSize({ width: "400px", height: "400px" });
+                          }}
+                        />
+                      </div>
+                      <div className="col-4">
+                        <Button
+                          style={{ color: "green", border: "none" }}
+                          outlined
+                          label="Aprobar pago"
+                          disabled={!productInfo.receipt_url}
+                          onClick={() => {
+                            dispatch(
+                              ApproveTransaction(
+                                data.customer_id,
+                                productInfo.transaction_id,
+                                showError,
+                                showWarning,
+                                showSuccess
+                              )
+                            );
+                            setIsLoading(true);
+                            setLoadingMessage("Cargando clientes...");
+                            dispatch(GetCustomers(showError));
+                            dispatch(customerActions.startCustomer());
+                            once = false;
+                            dispatch(
+                              customerActions.modifyPropertyValue({
+                                id: "business_id",
+                                value: business.business_id,
+                              })
+                            );
+                            setTimeout(() => {
+                              setIsLoading(false);
+                            }, 1500);
+                          }}
+                        />
+                      </div>
+                      <div className="col-4">
+                        <Button
+                          style={{ color: "red", border: "none" }}
+                          outlined
+                          label="Cancelar"
+                          onClick={() => {
+                            dispatch(
+                              CancelTransactionAdmin(
+                                data.customer_id,
+                                productInfo.transaction_id,
+                                showError,
+                                showWarning,
+                                showSuccess
+                              )
+                            );
+                            setIsLoading(true);
+                            setLoadingMessage("Cargando clientes...");
+                            dispatch(GetCustomers(showError));
+                            dispatch(customerActions.startCustomer());
+                            once = false;
+                            dispatch(
+                              customerActions.modifyPropertyValue({
+                                id: "business_id",
+                                value: business.business_id,
+                              })
+                            );
+                            setTimeout(() => {
+                              setIsLoading(false);
+                            }, 1500);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+            </div>
+          </div>
+        </Dialog>
+
+        {!isMobile && (
+          <div className="">
+            <DataTable
+              value={data.transactions}
+              showGridlines
+              style={{ width: "100%" }}
+            >
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Producto
+                  </span>
+                }
+                field="product_name"
+                style={{
+                  width: "15%",
+                  textAlign: "center",
+                }}
+              ></Column>
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Cantidad
+                  </span>
+                }
+                field="quantity"
+                style={{ width: "2%", textAlign: "center" }}
+              ></Column>
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Precio
+                  </span>
+                }
+                body={(rowData) => {
+                  return (
+                    <span>
+                      {rowData.payment_method.currency}{" "}
+                      {formatted(rowData.price)}
+                    </span>
+                  );
+                }}
+                style={{ width: "15%", textAlign: "center" }}
+              ></Column>
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Total
+                  </span>
+                }
+                body={(rowData) => {
+                  const total = rowData.price * rowData.quantity;
+                  return (
+                    <span>
+                      {rowData.payment_method.currency} {formatted(total)}
+                    </span>
+                  );
+                }}
+                style={{ width: "15%", textAlign: "center" }}
+              ></Column>
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Fecha
+                  </span>
+                }
+                body={(rowData) => {
+                  return <span>{formatDate(rowData.create_date)}</span>;
+                }}
+                style={{ width: "10%", textAlign: "center" }}
+              ></Column>
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Estado
+                  </span>
+                }
+                body={(rowData) => {
+                  return (
+                    <span style={getStatusStyle(rowData.status)}>
+                      {rowData.status}
+                    </span>
+                  );
+                }}
+                style={{ width: "10%", textAlign: "center" }}
+              ></Column>
+
+              <Column
+                header="Acciones"
+                body={(rowData) => {
+                  return (
+                    <div className="flex justify-content-center">
+                      <Button
+                        style={{ border: "none" }}
+                        outlined
+                        label="Ver detalles"
+                        onClick={() => {
+                          setProductInfo(rowData);
+                          setShowProductDialog(true);
+                        }}
+                      />
+                    </div>
+                  );
+                }}
+              ></Column>
+            </DataTable>
+          </div>
+        )}
+        {isMobile && (
+          <div>
+            <DataTable value={data.transactions} showGridlines>
+              <Column header="Producto" field="product_name"></Column>
+              <Column
+                header="Estado"
+                body={(rowData) => {
+                  return (
+                    <span style={getStatusStyle(rowData.status)}>
+                      {rowData.status}
+                    </span>
+                  );
+                }}
+              ></Column>
+              <Column
+                header="Acciones"
+                body={(rowData) => {
+                  return (
+                    <div className="flex justify-content-center">
+                      <Button
+                        style={{ border: "none" }}
+                        outlined
+                        label="Ver detalles"
+                        onClick={() => {
+                          setProductInfo(rowData);
+                          setShowProductDialog(true);
+                        }}
+                      />
+                    </div>
+                  );
+                }}
+              ></Column>
+            </DataTable>
+          </div>
+        )}
       </>
     );
   };
@@ -504,7 +658,7 @@ const Customers = ({ setActiveTab }) => {
                 </div>
               )}
               {isMobile && (
-                <div className="card">
+                <div>
                   <DataTable
                     value={customers}
                     expandedRows={expandedRows}
@@ -514,19 +668,33 @@ const Customers = ({ setActiveTab }) => {
                     tableStyle={{ minWidth: "6rem" }}
                   >
                     <Column
-                      header="Nombre"
+                      header={
+                        <span style={{ fontWeight: "bold", fontSize: "1.2em" }}>
+                          Cliente
+                        </span>
+                      }
                       body={(rowData) => {
                         return (
                           <>
-                            <Card>
+                            <Card
+                              style={{
+                                border: "none",
+                                boxShadow: "none",
+                                marginBottom: "0px",
+                                padding: "0px",
+                              }}
+                            >
                               <div>
-                                <span
+                                <div
                                   style={{
-                                    fontWeight: "400",
+                                    fontWeight: "800",
+                                    padding: "10px",
+                                    fontSize: "1.2em",
+                                    textDecoration: "underline",
                                   }}
                                 >
-                                  {rowData.name}
-                                </span>
+                                  {rowData.given_name} {rowData.family_name}
+                                </div>
                               </div>
                               <div className="table-actions">
                                 <div className="table-actions">

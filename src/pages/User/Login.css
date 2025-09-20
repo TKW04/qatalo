@@ -65,13 +65,13 @@ body {
     }
 }
 
-.logo {
+.logo_login {
     text-align: center;
     margin-top: -10px;
     margin-bottom: 0px;
 }
 
-.logo h1 {
+.logo_login h1 {
     color: var(--navy);
     font-size: 28px;
     font-weight: 700;
@@ -79,7 +79,7 @@ body {
     margin-top: -50px;
 }
 
-.logo p {
+.logo_login p {
     color: var(--blue-medium);
     font-size: 14px;
 }

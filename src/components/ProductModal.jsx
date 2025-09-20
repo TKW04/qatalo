@@ -348,7 +348,8 @@ const ProductModal = ({ product, business, onClose }) => {
           <div style={{ width: "100%", textAlign: "left" }}>
             <p>
               Su solicitud ha sido enviada con éxito. En breve recibirá una
-              notificación.
+              notificación. En caso de no encontrarla en su bandeja de entrada,
+              por favor verifique su carpeta de spam, promociones o correo no deseado.
             </p>
             <p>Gracias por su preferencia.</p>
             <div className="flex justify-content-center">

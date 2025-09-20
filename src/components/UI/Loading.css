@@ -17,9 +17,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* min-height: 100vh; */
   background: linear-gradient(135deg, #113F67 0%, #34699A 100%);
-  font-family: 'Arial', sans-serif;
+  font-family: 'Roboto', sans-serif;
   position: relative;
   overflow: hidden;
   padding: 2rem;

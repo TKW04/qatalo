@@ -29,18 +29,15 @@ const ForgotPassword = () => {
     <>
       <div className="auth-container-forgot">
         <div id="register" className={`form-section active`}>
-          <div className="logo">
+          <div className="logo_forgot">
             <Image
               src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
-              alt="CatalogQR Logo"
+              alt="CatalogQR logo_forgot"
               width={200}
               style={{ padding: "0rem" }}
             />
             <h1>Olvidaste tu Contraseña?</h1>
-            <p>
-              Por favor, ingresa tu correo electrónico para recibir
-              instrucciones.
-            </p>
+            
           </div>
 
           <form onSubmit={handleForgot}>

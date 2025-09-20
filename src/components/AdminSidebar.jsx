@@ -4,7 +4,6 @@ import {
   Folder,
   Package,
   QrCode,
-  House,
   DollarSign,
   Users,
   CirclePower,
@@ -48,14 +47,20 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
         />
       </h2>
       <nav style={{ padding: "0px" }}>
-        <ul className="admin-nav" style={{ width: "100%", marginLeft: "0px" }}>
+        <ul className="admin-nav" style={{ width: "100%", marginLeft: "0px", textAlign: "left" }}>
           {menuItems.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} >
               <Button
+              
                 onClick={() => handleItemClick(item.id)}
-                style={{ color: "white", textDecoration: "none",  }}
+                style={{
+                  color: "white",
+                  textDecoration: "none",
+                  width: "250px",
+            
+                }}
                 className={activeTab === item.id ? "active " : ""}
-                disabled={item.id !== "business" && business.business_id=== ""}
+                disabled={item.id !== "business" && business.business_id === ""}
               >
                 <span style={{ margin: "5px" }}>{item.icon}</span> {item.label}
               </Button>

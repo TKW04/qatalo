@@ -51,16 +51,15 @@ const Login = () => {
     <>
       <Loading message={"Iniciando sesión..."} visible={isLoading} />
       <div className="auth-container-login">
-        <div id="login" className="form-section active">
-          <div className="logo">
+        <div id="login">
+          <div className="logo_login">
             <Image
               src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
-              alt="CatalogQR Logo"
+              alt="CatalogQR logo_login"
               width={200}
               style={{ padding: "0rem" }}
             />
             <h1>Bienvenido</h1>
-            <p>Inicia sesión en tu cuenta</p>
           </div>
 
           <form onSubmit={handleLogin}>

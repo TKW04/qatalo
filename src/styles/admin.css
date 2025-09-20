@@ -30,8 +30,9 @@
 }
 
 .admin-nav button {
-  display: block;
-  padding: 0.75rem 1.5rem;
+  /* display: block; */
+  padding: 0.2rem 1.5rem;
+  font-size: large;
   color: white;
   text-decoration: none;
   transition: background-color 0.2s ease;
@@ -67,7 +68,7 @@
 }
 
 .admin-card {
-  background: white;
+  background: linear-gradient(135deg, #113F67 0%, #34699A 100%);
   border-radius: var(--border-radius);
   padding: 2rem;
   box-shadow: var(--shadow);
@@ -76,7 +77,7 @@
 
 .admin-card h2 {
   font-size: 1.5rem;
-  color: var(--color-navy);
+  color: white;
   margin-bottom: 1.5rem;
 }
 
@@ -227,7 +228,7 @@
 
 @media (max-width: 480px) {
   .admin-card {
-    background: white;
+     background: linear-gradient(135deg, #113F67 0%, #34699A 100%);
     border-radius: var(--border-radius);
     padding: 2rem;
     box-shadow: var(--shadow);

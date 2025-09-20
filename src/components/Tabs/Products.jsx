@@ -322,101 +322,180 @@ const Products = ({ setActiveTab }) => {
   };
 
   const handleDeleteProduct = (rowData) => {
-    const title = "Eliminar Producto";
     const children = (
-      <div>¿Estás seguro de que deseas eliminar este producto?</div>
-    );
-    const footer = (
-      <div className="flex justify-content-end">
-        <Button
-          className="btn btn-secondary"
-          label="No"
-          icon={<X />}
-          onClick={() => setShowDialog(false)}
-          style={{ width: "100px", margin: "2px" }}
-        />
-        <Button
-          className="btn btn-danger"
-          label="Si"
-          icon={<Trash2 />}
-          style={{ width: "100px", margin: "2px" }}
-          onClick={() => {
-            setIsLoading(true);
-            setLoadingMessage("Eliminando producto...");
-            dispatch(
-              DeleteProduct(
-                rowData.product_id,
-                showError,
-                showWarning,
-                showSuccess
-              )
-            );
-            setTimeout(() => {
-              setActiveTab("products");
-              dispatch(GetProducts(showError));
-              dispatch(productActions.startProduct());
-              fileUploadRef.current.clear();
-              setSelectedCurrency({
-                code: "DOP",
-                name: "Peso dominicano",
-                symbol: "RD$",
-              });
-              setIsLoading(false);
-              setShowDialog(false);
-              setEditingProduct(false);
-            }, 1500);
-          }}
-        />
+      <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}>
+        <div className="dialog-title ">
+          <div className="grid">
+            <div className="col-2"></div>
+            <div className="col-7 text-center">
+              <span
+                style={{ color: "var(--color-yellow)", textAlign: "center" }}
+              >
+                Eliminar Producto
+              </span>
+            </div>
+            <div className="col-2 justify-content-end align-items-end flex">
+              <Button
+                icon={<X />}
+                outlined
+                rounded
+                raised
+                style={{
+                  height: "40px",
+                  width: "40px",
+                  border: "1px solid ",
+                  color: "var(--color-sea)",
+                }}
+                onClick={() => setShowDialog(false)}
+              />
+            </div>
+          </div>
+        </div>
+        <div style={{ color: "white", fontSize: "20px", textAlign: "center" }}>
+          ¿Estás seguro de que deseas eliminar este producto?
+        </div>
+        <div className="flex justify-content-end mt-3">
+          <Button
+            className="btn btn-outline"
+            label="No"
+            onClick={() => setShowDialog(false)}
+            style={{ width: "100px", margin: "2px" }}
+          />
+          <Button
+            className="btn btn-primary"
+            label="Si"
+            style={{ width: "100px", margin: "2px" }}
+            onClick={() => {
+              setIsLoading(true);
+              setLoadingMessage("Eliminando producto...");
+              dispatch(
+                DeleteProduct(
+                  rowData.product_id,
+                  showError,
+                  showWarning,
+                  showSuccess
+                )
+              );
+              setTimeout(() => {
+                setActiveTab("products");
+                dispatch(GetProducts(showError));
+                dispatch(productActions.startProduct());
+                fileUploadRef.current.clear();
+                setSelectedCurrency({
+                  code: "DOP",
+                  name: "Peso dominicano",
+                  symbol: "RD$",
+                });
+                setIsLoading(false);
+                setShowDialog(false);
+                setEditingProduct(false);
+              }, 1500);
+            }}
+          />
+        </div>
       </div>
     );
-    setDialogContent({ title, children, footer });
+    setDialogContent({ children });
     setShowDialog(true);
   };
   const handleViewProduct = (productInfo) => {
     let available = productInfo.is_available === "available" ? true : false;
-    const title = "Detalles del Producto";
+
     const children = (
-      <div className="admin-card" style={{ textAlign: "left" }}>
-        <label className="form-label">
-          Nombre: <span style={{ fontWeight: "bold" }}>{productInfo.name}</span>
-        </label>
-        <label className="form-label">
-          Descripción:{" "}
-          <span style={{ fontWeight: "bold" }}>{productInfo.description}</span>
-        </label>
-        <label className="form-label">
-          Precio:{" "}
-          <span style={{ fontWeight: "bold" }}>
-            {" "}
-            {productInfo.currency}
-            {productInfo.price}
-          </span>
-        </label>
-        <label className="form-label">
-          Categoría:{" "}
-          <span style={{ fontWeight: "bold" }}>
-            {getCategoryName(productInfo.category_id)}
-          </span>
-        </label>
-        <label className="form-label">
-          Estado:{" "}
-          <span
-            className={`product-status  product-status_${
-              available ? "available" : "unavailable"
-            }`}
-          >
-            {" "}
-            {available ? "Disponible" : "Agotado"}
-          </span>
-        </label>
-        <label className="form-label">
-          Moneda:{" "}
-          <span style={{ fontWeight: "bold" }}>{selectedCurrency.name}</span>
-        </label>
+      <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}>
+        <div className="dialog-title ">
+          <div className="grid">
+            <div className="col"></div>
+            <div className="col-9 text-center">
+              <span style={{ color: "var(--color-yellow)" }}>
+                Detalles del Producto
+              </span>
+            </div>
+            <div className="col-2 justify-content-end align-items-end flex">
+              <Button
+                icon={<X />}
+                outlined
+                rounded
+                raised
+                style={{
+                  height: "40px",
+                  width: "40px",
+                  border: "1px solid ",
+                  color: "var(--color-sea)",
+                }}
+                onClick={() => setShowDialog(false)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="grid flex gap-2">
+          <div className="col-12">
+            <label className="form-label">
+              Nombre:{" "}
+              <span style={{ fontWeight: "bold" }}>{productInfo.name}</span>
+            </label>
+          </div>
+          <div className="col-12">
+            <label className="form-label">
+              Descripción:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {productInfo.description}
+              </span>
+            </label>
+          </div>
+          <div className="col">
+            <label className="form-label">
+              Precio:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {" "}
+                {productInfo.currency}
+                {productInfo.price}
+              </span>
+            </label>
+          </div>
+          <div className="col">
+            <label className="form-label">
+              Categoría:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {getCategoryName(productInfo.category_id)}
+              </span>
+            </label>
+          </div>
+          <div className="col">
+            <label className="form-label">
+              Orden:{" "}
+              <span style={{ fontWeight: "bold" }}>{productInfo.orden}</span>
+            </label>
+          </div>
+          <div className="col">
+            <label className="form-label">
+              Cantidad:{" "}
+              <span style={{ fontWeight: "bold" }}>{productInfo.quantity}</span>
+            </label>
+          </div>
+          <div className="col">
+            <label className="form-label">
+              Estado:{" "}
+              <span
+                className={`product-status  product-status_${
+                  available ? "available" : "unavailable"
+                }`}
+              >
+                {" "}
+                {available ? "Disponible" : "Agotado"}
+              </span>
+            </label>
+          </div>
+          <div className="col">
+            <label className="form-label">
+              Moneda:{" "}
+              <span style={{ fontWeight: "bold" }}>{productInfo.currency}</span>
+            </label>
+          </div>
+        </div>
       </div>
     );
-    const footer = null;
-    setDialogContent({ title, children, footer });
+    setDialogContent({ children });
     setShowDialog(true);
   };
 
@@ -442,10 +521,16 @@ const Products = ({ setActiveTab }) => {
 
   const rowExpansionTemplate = (data) => {
     return (
-      <div className="p-3">
-        <DataTable value={data.imagesUrl}>
+      <div>
+        <DataTable
+          value={data.imagesUrl}
+          dataKey={data.image}
+          showGridlines
+          stripedRows
+        >
           <Column
             header="Imagenes"
+            style={{ minWidth: "15rem", padding: "1rem" }}
             body={(rowData) => {
               return (
                 <Image
@@ -458,71 +543,121 @@ const Products = ({ setActiveTab }) => {
               );
             }}
           ></Column>
+
           <Column
             header="Acciones"
+            style={{ minWidth: "5rem", padding: "1rem" }}
             body={(rowData) => {
               return (
                 <div className="flex justify-content-center">
                   <Button
-                    icon={<Trash2 style={{ color: "red" }} />}
-                    style={{ border: "none", background: "transparent" }}
-                    outlined
+                    icon={<Trash2 />}
+                    raised
+                    label="Eliminar"
+                    style={{
+                      height: "40px",
+                      width: "108px",
+                      backgroundColor: "#e74c3c",
+                      border: "1px solid ",
+                      color: "white",
+                      borderRadius: "5px",
+                      paddingLeft: "5px",
+                    }}
                     onClick={() => {
-                      const title = "Eliminar Imagen";
                       const children = (
-                        <div>
-                          ¿Estás seguro de que deseas eliminar esta imagen?
-                        </div>
-                      );
-                      const footer = (
-                        <div className="flex justify-content-end">
-                          <Button
-                            className="btn btn-secondary"
-                            label="No"
-                            icon={<X />}
-                            onClick={() => setShowDialog(false)}
-                            style={{ width: "100px", margin: "2px" }}
-                          />
-                          <Button
-                            className="btn btn-danger"
-                            label="Si"
-                            icon={<Trash2 />}
+                        <div
+                          style={{
+                            textAlign: "left",
+                            padding: "5px",
+                            overflowX: "hidden",
+                          }}
+                        >
+                          <div className="dialog-title ">
+                            <div className="grid">
+                              <div className="col"></div>
+                              <div className="col-9 text-center">
+                                <span
+                                  style={{
+                                    color: "var(--color-yellow)",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  Eliminar Imagen
+                                </span>
+                              </div>
+                              <div className="col-2 justify-content-end align-items-end flex">
+                                <Button
+                                  icon={<X />}
+                                  outlined
+                                  rounded
+                                  raised
+                                  style={{
+                                    height: "40px",
+                                    width: "40px",
+                                    border: "1px solid ",
+                                    color: "var(--color-sea)",
+                                  }}
+                                  onClick={() => setShowDialog(false)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div
                             style={{
-                              width: "100px",
-                              margin: "2px",
-                              border: "none",
+                              color: "white",
+                              fontSize: "20px",
+                              textAlign: "center",
                             }}
-                            onClick={() => {
-                              setIsLoading(true);
-                              setLoadingMessage("Eliminando imagen...");
-                              dispatch(
-                                DeleteImage(
-                                  data.product_id,
-                                  rowData.image,
-                                  showError,
-                                  showWarning,
-                                  showSuccess
-                                )
-                              );
-                              setTimeout(() => {
-                                setActiveTab("products");
-                                dispatch(GetProducts(showError));
-                                dispatch(productActions.startProduct());
-                                fileUploadRef.current.clear();
-                                setSelectedCurrency({
-                                  code: "DOP",
-                                  name: "Peso dominicano",
-                                  symbol: "RD$",
-                                });
-                                setIsLoading(false);
-                                setShowDialog(false);
-                                setEditingProduct(false);
-                              }, 1500);
-                            }}
-                          />
+                          >
+                            ¿Estás seguro de que deseas eliminar esta imagen?
+                          </div>
+                          <div className="flex justify-content-end">
+                            <Button
+                              className="btn btn-outline"
+                              label="No"
+                              onClick={() => setShowDialog(false)}
+                              style={{ width: "100px", margin: "2px" }}
+                            />
+                            <Button
+                              className="btn btn-primary"
+                              label="Si"
+                              style={{
+                                width: "100px",
+                                margin: "2px",
+                                border: "none",
+                              }}
+                              onClick={() => {
+                                setIsLoading(true);
+                                setLoadingMessage("Eliminando imagen...");
+                                dispatch(
+                                  DeleteImage(
+                                    data.product_id,
+                                    rowData.image,
+                                    showError,
+                                    showWarning,
+                                    showSuccess
+                                  )
+                                );
+                                setTimeout(() => {
+                                  setActiveTab("products");
+                                  dispatch(GetProducts(showError));
+                                  dispatch(productActions.startProduct());
+                                  fileUploadRef.current.clear();
+                                  setSelectedCurrency({
+                                    code: "DOP",
+                                    name: "Peso dominicano",
+                                    symbol: "RD$",
+                                  });
+                                  setIsLoading(false);
+                                  setShowDialog(false);
+                                  setEditingProduct(false);
+                                }, 1500);
+                              }}
+                            />
+                          </div>
                         </div>
                       );
-                      setDialogContent({ title, children, footer });
+                      setDialogContent({ children });
                       setShowDialog(true);
                     }}
                   />
@@ -614,7 +749,9 @@ const Products = ({ setActiveTab }) => {
                   Precio * {selectedCurrency?.symbol || ""}
                 </label>
                 <InputNumber
-                  className={`input ${productErrors.price ? "error" : ""}`}
+                  // className={`${productErrors.price ? "error" : ""}`}
+                  // className="input"
+
                   value={product.price}
                   onChange={(e) => {
                     dispatch(
@@ -804,188 +941,233 @@ const Products = ({ setActiveTab }) => {
           </form>
         </div>
 
-        <div className="admin-card">
+        <div>
           <h2>Productos Existentes</h2>
-          {products.length === 0 ? (
-            <p>No hay productos creados aún.</p>
-          ) : (
-            <>
-              <DialogModal
-                title={dialogContent?.title || "Eliminar Producto"}
-                visible={showDialog}
-                onHide={() => setShowDialog(false)}
-                footer={dialogContent?.footer || null}
-              >
-                <p>
-                  {dialogContent?.children ||
-                    "¿Estás seguro de que deseas eliminar este producto?"}
-                </p>
-              </DialogModal>
-              {!isMobile && (
-                <div className="card">
-                  <DataTable
-                    value={products}
-                    expandedRows={expandedRows}
-                    onRowToggle={(e) => setExpandedRows(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="product_id"
-                    tableStyle={{ minWidth: "60rem" }}
-                  >
-                    <Column field="name" header="Nombre"></Column>
-                    <Column
-                      header="Precio"
-                      body={(rowData) => {
-                        return (
-                          <>
-                            {rowData.currency}
-                            {rowData.price}
-                          </>
-                        );
-                      }}
-                    ></Column>
-                    <Column
-                      field="categoryId"
-                      header="Categoría"
-                      body={(rowData) => getCategoryName(rowData.category_id)}
-                    ></Column>
-                    <Column
-                      header="Estado"
-                      body={(rowData) => {
-                        let available =
-                          rowData.is_available === "available" ? true : false;
-                        return (
-                          <span
-                            className={`product-status  product-status_${
-                              available ? "available" : "unavailable"
-                            }`}
+          <>
+            <DialogModal
+              visible={showDialog}
+              onHide={() => setShowDialog(false)}
+            >
+              <p>
+                {dialogContent?.children ||
+                  "¿Estás seguro de que deseas eliminar este producto?"}
+              </p>
+            </DialogModal>
+            {!isMobile && (
+              <div>
+                <DataTable
+                  value={products}
+                  expandedRows={expandedRows}
+                  onRowToggle={(e) => setExpandedRows(e.data)}
+                  rowExpansionTemplate={rowExpansionTemplate}
+                  dataKey="product_id"
+                  showGridlines
+                  stripedRows
+                >
+                  <Column
+                    field="name"
+                    header="Nombre"
+                    style={{ minWidth: "15rem", padding: "1rem" }}
+                  ></Column>
+                  <Column
+                    header="Precio"
+                    style={{ minWidth: "10rem", padding: "1rem" }}
+                    body={(rowData) => {
+                      return (
+                        <>
+                          {rowData.currency}
+                          {rowData.price}
+                        </>
+                      );
+                    }}
+                  ></Column>
+                  <Column
+                    header="Estado"
+                    style={{ minWidth: "5rem", padding: "1rem" }}
+                    body={(rowData) => {
+                      let available =
+                        rowData.is_available === "available" ? true : false;
+                      return (
+                        <span
+                          className={`product-status  product-status_${
+                            available ? "available" : "unavailable"
+                          }`}
+                        >
+                          {available ? "Disponible" : "Agotado"}
+                        </span>
+                      );
+                    }}
+                  ></Column>
+
+                  <Column
+                    header="Acciones"
+                    style={{ minWidth: "15rem", padding: "1rem" }}
+                    body={(rowData) => {
+                      return (
+                        <div className="table-actions">
+                          <Button
+                            icon={<PencilIcon />}
+                            outlined={isMobile}
+                            raised={!isMobile}
+                            label={isMobile ? "" : " Editar"}
+                            style={{
+                              height: "40px",
+                              width: isMobile ? "40px" : "100px",
+                              backgroundColor: isMobile
+                                ? "transparent"
+                                : "var(--color-blue)",
+                              border: isMobile ? "none" : "1px solid ",
+                              color: isMobile ? "var(--color-blue)" : "white",
+                              borderRadius: "5px",
+                              paddingLeft: isMobile ? "0" : "5px",
+                            }}
+                            onClick={() => handleEditProduct(rowData)}
+                          />
+                          <Button
+                            icon={<Trash2 />}
+                            outlined={isMobile}
+                            raised={!isMobile}
+                            label={isMobile ? "" : " Eliminar"}
+                            style={{
+                              height: "40px",
+                              width: isMobile ? "40px" : "108px",
+                              backgroundColor: isMobile
+                                ? "transparent"
+                                : "#e74c3c",
+                              border: isMobile ? "none" : "1px solid ",
+                              color: isMobile ? "#e74c3c" : "white",
+                              borderRadius: "5px",
+                              paddingLeft: isMobile ? "0" : "5px",
+                            }}
+                            onClick={() => handleDeleteProduct(rowData)}
+                          />
+                          <Button
+                            icon={<Info />}
+                            outlined={isMobile}
+                            raised={!isMobile}
+                            label={isMobile ? "" : " Info"}
+                            style={{
+                              height: "40px",
+                              width: isMobile ? "40px" : "100px",
+                              backgroundColor: isMobile
+                                ? "transparent"
+                                : "#3498db",
+                              border: isMobile ? "none" : "1px solid ",
+                              color: isMobile ? "#3498db" : "white",
+                              borderRadius: "5px",
+                              paddingLeft: isMobile ? "0" : "5px",
+                            }}
+                            onClick={() => handleViewProduct(rowData)}
+                          />
+                        </div>
+                      );
+                    }}
+                  ></Column>
+                  <Column expander style={{ width: "3em" }} />
+                </DataTable>
+              </div>
+            )}
+            {isMobile && (
+              <div>
+                <DataTable
+                  value={products}
+                  expandedRows={expandedRows}
+                  onRowToggle={(e) => setExpandedRows(e.data)}
+                  rowExpansionTemplate={rowExpansionTemplate}
+                  dataKey="product_id"
+                  showGridlines
+                  stripedRows
+                >
+                  <Column
+                    header="Nombre"
+                    style={{ minWidth: "10rem", padding: "1rem" }}
+                    body={(rowData) => {
+                      return (
+                        <>
+                          <Card
+                            style={{
+                              border: " none",
+                              background: "transparent",
+                              boxShadow: "none",
+                              padding: "0",
+                            }}
                           >
-                            {available ? "Disponible" : "Agotado"}
-                          </span>
-                        );
-                      }}
-                    ></Column>
-                    <Column field="orden" header="Orden"></Column>
-                    <Column field="quantity" header="Cantidad"></Column>
-                    <Column
-                      header="Acciones"
-                      body={(rowData) => {
-                        return (
-                          <div className="table-actions">
-                            <Button
-                              icon={<PencilIcon />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "var(--color-blue)",
-                                border: "none",
-                              }}
-                              onClick={() => handleEditProduct(rowData)}
-                            />
-                            <Button
-                              icon={<Trash2 />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#e74c3c",
-                                border: "none",
-                              }}
-                              onClick={() => handleDeleteProduct(rowData)}
-                            />
-                            <Button
-                              icon={<Info />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#3498db",
-                                border: "none",
-                              }}
-                              onClick={() => handleViewProduct(rowData)}
-                            />
-                          </div>
-                        );
-                      }}
-                    ></Column>
-                    <Column expander style={{ width: "3em" }} />
-                  </DataTable>
-                </div>
-              )}
-              {isMobile && (
-                <div className="card">
-                  <DataTable
-                    value={products}
-                    expandedRows={expandedRows}
-                    onRowToggle={(e) => setExpandedRows(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="product_id"
-                    tableStyle={{ minWidth: "6rem" }}
-                  >
-                    <Column
-                      header="Nombre"
-                      body={(rowData) => {
-                        return (
-                          <>
-                            <Card>
-                              <div>
-                                <span
-                                  style={{
-                                    fontWeight: "400",
-                                  }}
-                                >
-                                  {rowData.name}
-                                </span>
-                              </div>
-                              <div className="table-actions">
-                                <div className="table-actions">
+                            <div style={{ padding: "1rem" }}>
+                              <span
+                                style={{
+                                  fontWeight: "800",
+                                  fontSize: "1.1rem",
+                                }}
+                              >
+                                {rowData.name}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="grid">
+                                <div className="col m-auto">
                                   <Button
                                     icon={<PencilIcon />}
-                                    outlined
+                                    raised
+                                    label={"Editar"}
                                     style={{
                                       height: "40px",
-                                      width: "40px",
-                                      color: "var(--color-blue)",
-                                      border: "none",
+                                      width: "108px",
+                                      backgroundColor: "var(--color-blue)",
+                                      border: "1px solid ",
+                                      color: "white",
+                                      borderRadius: "5px",
+                                      paddingLeft: "5px",
                                     }}
                                     onClick={() => handleEditProduct(rowData)}
                                   />
+                                </div>
+                                <div className="col m-auto">
                                   <Button
                                     icon={<Trash2 />}
-                                    outlined
+                                    raised
+                                    label="Eliminar"
                                     style={{
                                       height: "40px",
-                                      width: "40px",
-                                      color: "#e74c3c",
-                                      border: "none",
+                                      width: "108px",
+                                      backgroundColor: "#e74c3c",
+                                      border: "1px solid ",
+                                      color: "white",
+                                      borderRadius: "5px",
+                                      paddingLeft: "5px",
                                     }}
                                     onClick={() => handleDeleteProduct(rowData)}
                                   />
+                                </div>
+                                <div className="col m-auto">
                                   <Button
                                     icon={<Info />}
-                                    outlined
+                                    raised={!isMobile}
+                                    label="Info"
                                     style={{
                                       height: "40px",
-                                      width: "40px",
-                                      color: "#3498db",
-                                      border: "none",
+                                      width: "108px",
+                                      backgroundColor: "#3498db",
+                                      border: "1px solid ",
+                                      color: "white",
+                                      borderRadius: "5px",
+                                      paddingLeft: "5px",
                                     }}
                                     onClick={() => handleViewProduct(rowData)}
                                   />
                                 </div>
                               </div>
-                            </Card>
-                          </>
-                        );
-                      }}
-                    ></Column>
+                            </div>
+                          </Card>
+                        </>
+                      );
+                    }}
+                  ></Column>
 
-                    <Column expander style={{ width: "3em" }} />
-                  </DataTable>
-                </div>
-              )}
-            </>
-          )}
+                  <Column expander style={{ width: "3em" }} />
+                </DataTable>
+              </div>
+            )}
+          </>
         </div>
       </div>
     </>

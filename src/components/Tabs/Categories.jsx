@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
 import { PencilIcon, Trash2, X } from "lucide-react";
 import { categoryActions } from "../../store/categories-store/category-slice";
 
@@ -31,6 +33,7 @@ const Categories = ({ setActiveTab }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const isMobile = window.innerWidth <= 480;
 
   useEffect(() => {
     if (categories.length === 0 && once) {
@@ -75,7 +78,7 @@ const Categories = ({ setActiveTab }) => {
       dispatch(categoryActions.startCategory());
       setEditingCategory(false);
       setIsLoading(false);
-    }, 1500);
+    }, 4500);
   };
 
   const handleEditCategory = (category) => {
@@ -184,57 +187,77 @@ const Categories = ({ setActiveTab }) => {
           </form>
         </div>
 
-        <div className="admin-card">
+        <div>
           <h2>Categorías Existentes</h2>
-          {categories.length === 0 ? (
-            <p>No hay categorías creadas aún.</p>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.category_id}>
-                    <td>{category.name}</td>
-                    <td>
-                      <div className="table-actions">
+          <div>
+            <DataTable
+              value={categories}
+              dataKey="category_id"
+              showGridlines
+              stripedRows
+            >
+              <Column
+                field="name"
+                header="Name"
+                style={{
+                  minWidth: isMobile ? "10rem" : "15rem",
+                  padding: "1rem",
+                }}
+              ></Column>
+
+              <Column
+                header="Acciones"
+                style={{
+                  minWidth: isMobile ? "5rem" : "15rem",
+                  padding: "1rem",
+                }}
+                body={(rowData) => (
+                  <div>
+                    <div className="grid justify-content-center">
+                      <div className={isMobile ? "col-12" : "col"}>
                         <Button
                           icon={<PencilIcon />}
-                          outlined
+                          raised
+                          label={"Editar"}
                           style={{
                             height: "40px",
-                            width: "40px",
-                            color: "var(--color-blue)",
-                            border: "none",
+                            width: "100px",
+                            backgroundColor: "var(--color-blue)",
+                            border: "1px solid ",
+                            color: "white",
+                            borderRadius: "5px",
+                            paddingLeft: "5px",
                           }}
                           onClick={() => {
-                            handleEditCategory(category);
+                            handleEditCategory(rowData);
                           }}
                         />
+                      </div>
+                      <div className={isMobile ? "col-12" : "col"}>
                         <Button
-                          outlined
+                          raised
+                          label={"Eliminar"}
                           style={{
                             height: "40px",
-                            width: "40px",
-                            color: "#e74c3c",
-                            border: "none",
+                            width: "108px",
+                            backgroundColor: "#e74c3c",
+                            border: "1px solid ",
+                            color: "white",
+                            borderRadius: "5px",
+                            paddingLeft: "5px",
                           }}
                           onClick={() => {
-                            handleDeleteCategory(true, category);
+                            handleDeleteCategory(true, rowData);
                           }}
                           icon={<Trash2 />}
                         />
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                    </div>
+                  </div>
+                )}
+              ></Column>
+            </DataTable>
+          </div>
         </div>
       </div>
     </>

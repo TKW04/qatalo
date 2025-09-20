@@ -74,10 +74,10 @@ const Register = () => {
       {!isLoading && (
         <div className="auth-container">
           <div id="register" className="form-section active">
-            <div className="logo">
+            <div className="logo_register">
               <Image
                 src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
-                alt="CatalogQR Logo"
+                alt="CatalogQR logo_register"
                 width={200}
                 style={{ padding: "0rem" }}
               />
