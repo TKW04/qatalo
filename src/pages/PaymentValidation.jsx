@@ -162,311 +162,362 @@ const PaymentValidation = () => {
       <Loading message={loadingMessage} visible={isLoading} />
       <DialogModal
         title={"Información del producto"}
+        style={{
+          backgroundColor: "var(--color-navy)",
+          width: isMobile ? "420px" : "40vw",
+        }}
         visible={showDialog}
         onHide={() => setShowDialog(false)}
-        footer={
-          <div className="flex justify-content-start mt-2">
-            {uploadedFile && (
-              <Button
-                label="Guardar"
-                icon={<Save />}
-                className="p-button-rounded p-button-outlined p-2"
-                severity="success"
-                onClick={() => {
-                  setLoadingMessage("Subiendo comprobante...");
-                  setIsLoading(true);
-                  setShowDialog(false);
-                  dispatch(
-                    UploadTransactionFile(
-                      customer.customer_id,
-                      transaction.transaction_id,
-                      uploadedFile,
-                      showError,
-                      showWarning,
-                      showSuccess
-                    )
-                  );
-                }}
-              />
-            )}
-          </div>
-        }
       >
         <div
-          className="flex flex-column gap-2 p-3"
-          style={{
-            textAlign: "left",
-            backgroundColor: "var(--color-navy)",
-            borderRadius: "8px",
-          }}
+          style={{ textAlign: "left", overflowX: "hidden", maxWidth: "800px" }}
         >
-          <div className="grid">
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Producto:
-              </span>{" "}
-              <span
-                style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
-              >
-                {transaction !== null ? transaction.product_name : ""}
-              </span>
-            </div>
+          <div
+            className=" p-3 "
+            style={{
+              textAlign: "left",
+              backgroundColor: "var(--color-navy)",
+              borderRadius: "8px",
+              marginTop: "00px",
+              width: isMobile ? "400px" : "100%",
+            }}
+          >
+            <div className="grid">
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Producto:
+                </span>{" "}
+                <span
+                  style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
+                >
+                  {transaction !== null ? transaction.product_name : ""}
+                </span>
+              </div>
 
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Cantidad:
-              </span>{" "}
-              <span
-                style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
-              >
-                {transaction !== null ? transaction.quantity : ""}
-              </span>
-            </div>
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Precio unitario:
-              </span>{" "}
-              <span
-                style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
-              >
-                {transaction !== null
-                  ? transaction.payment_method.currency
-                  : ""}{" "}
-                {formatted(transaction !== null ? transaction.price : "")}
-              </span>
-            </div>
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Total:
-              </span>{" "}
-              <span
-                style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
-              >
-                {transaction !== null
-                  ? transaction.payment_method.currency
-                  : ""}{" "}
-                {formatted(transaction !== null ? transaction.price : "")}
-              </span>
-            </div>
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Estado:
-              </span>{" "}
-              <span
-                style={getStatusStyle(
-                  transaction !== null ? transaction.status : ""
-                )}
-              >
-                {transaction !== null ? transaction.status : ""}
-              </span>
-            </div>
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Método de pago:
-              </span>{" "}
-              <span
-                style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
-              >
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Cantidad:
+                </span>{" "}
+                <span
+                  style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
+                >
+                  {transaction !== null ? transaction.quantity : ""}
+                </span>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Precio unitario:
+                </span>{" "}
+                <span
+                  style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
+                >
+                  {transaction !== null
+                    ? transaction.payment_method.currency
+                    : ""}{" "}
+                  {formatted(transaction !== null ? transaction.price : "")}
+                </span>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Total:
+                </span>{" "}
+                <span
+                  style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
+                >
+                  {transaction !== null
+                    ? transaction.payment_method.currency
+                    : ""}{" "}
+                  {formatted(transaction !== null ? transaction.price : "")}
+                </span>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Estado:
+                </span>{" "}
+                <span
+                  style={getStatusStyle(
+                    transaction !== null ? transaction.status : ""
+                  )}
+                >
+                  {transaction !== null ? transaction.status : ""}
+                </span>
+              </div>
+              <div className="col-12">
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Método de pago:
+                </span>{" "}
+                <span
+                  style={{ fontSize: "1.2rem", color: "var(--color-yellow)" }}
+                >
+                  {transaction !== null &&
+                    transaction.payment_method.payment_method_name}
+                </span>
                 {transaction !== null &&
-                transaction.payment_method.payment_type === "bank_transfer"
-                  ? "Transferencia bancaria"
-                  : "Tarjeta de crédito"}
-              </span>
-              {transaction !== null &&
-                transaction.payment_method.payment_type === "bank_transfer" && (
-                  <div
-                    className="grid"
-                    style={{
-                      gap: "1rem",
-                      border: "1px solid #ffffff",
-                      padding: "1rem",
-                      marginTop: "10px",
-                      marginLeft: "10px",
-                      borderRadius: "8px",
+                  transaction.payment_method.payment_type ===
+                    "bank_transfer" && (
+                    <div
+                      className="grid"
+                      style={{
+                        gap: "1rem",
+                        border: "1px solid #ffffff",
+                        padding: "1rem",
+                        marginTop: "10px",
+
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Banco:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.bank_name
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Número de cuenta:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.account_number
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Tipo de cuenta:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.account_type ===
+                              "checking"
+                              ? "Corriente"
+                              : transaction.payment_method.account_type ===
+                                "savings"
+                              ? "Ahorros"
+                              : transaction.payment_method.account_type
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Moneda:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.currency
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Cuenta Estandar:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.standard_account
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Swift:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.swift
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={isMobile ? "col-12" : "col"}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Código de ruta:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.routing_number
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Titular de la cuenta:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.owner_name
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Documento del titular:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.owner_document
+                            : ""}
+                        </span>
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                          Email del titular:
+                        </span>{" "}
+                        <span
+                          style={{
+                            fontSize: "1.2rem",
+                            color: "var(--color-yellow)",
+                          }}
+                        >
+                          {transaction !== null
+                            ? transaction.payment_method.owner_email
+                            : ""}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+              </div>
+              <div className={isMobile ? "col-12" : "col"}>
+                <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                  Comprobante de pago:
+                </span>{" "}
+                <FileUpload
+                  ref={fileUploadRef}
+                  chooseOptions={chooseOptions}
+                  mode="basic"
+                  accept="image/*"
+                  maxFileSize={1000000}
+                  onSelect={(e) => {
+                    fileHandler(e);
+                  }}
+                />
+              </div>
+              <div className="col-12">
+                {uploadedFile && (
+                  <Button
+                    label="Subir comprobante"
+                    icon={<Save />}
+                    raised
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setLoadingMessage("Subiendo comprobante...");
+                      setIsLoading(true);
+                      setShowDialog(false);
+                      dispatch(
+                        UploadTransactionFile(
+                          customer.customer_id,
+                          transaction.transaction_id,
+                          uploadedFile,
+                          showError,
+                          showWarning,
+                          showSuccess
+                        )
+                      );
                     }}
-                  >
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Banco:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.bank_name
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Número de cuenta:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.account_number
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Tipo de cuenta:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.account_type ===
-                            "checking"
-                            ? "Corriente"
-                            : transaction.payment_method.account_type ===
-                              "savings"
-                            ? "Ahorros"
-                            : transaction.payment_method.account_type
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Moneda:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.currency
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Cuenta Estandar:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.standard_account
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Swift:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.swift
-                          : ""}
-                      </span>
-                    </div>
-                    <div className="col-12">
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Código de ruta:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.routing_number
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Titular de la cuenta:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.owner_name
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Documento del titular:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.owner_document
-                          : ""}
-                      </span>
-                    </div>
-                    <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                      <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                        Email del titular:
-                      </span>{" "}
-                      <span
-                        style={{
-                          fontSize: "1.2rem",
-                          color: "var(--color-yellow)",
-                        }}
-                      >
-                        {transaction !== null
-                          ? transaction.payment_method.owner_email
-                          : ""}
-                      </span>
-                    </div>
-                  </div>
+                  />
                 )}
-            </div>
-            <div className="col-12">
-              <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                Comprobante de pago:
-              </span>{" "}
-              <FileUpload
-                ref={fileUploadRef}
-                chooseOptions={chooseOptions}
-                mode="basic"
-                accept="image/*"
-                maxFileSize={1000000}
-                onSelect={(e) => {
-                  fileHandler(e);
-                }}
-              />
+              </div>
             </div>
           </div>
         </div>
       </DialogModal>
       <DialogModal
-        title={"Razón de la cancelación"}
         visible={showDialogCancel}
         onHide={() => setShowDialogCancel(false)}
-        footer={
+      >
+        <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}>
+          <div className="dialog-title ">
+            <div className="grid">
+              <div className="col"></div>
+              <div className="col-9 text-center">
+                <span style={{ color: "var(--color-yellow)" }}>
+                  Razón de la cancelación
+                </span>
+              </div>
+              <div className="col justify-content-end align-items-end flex">
+                <Button
+                  icon={<X />}
+                  outlined
+                  rounded
+                  raised
+                  style={{
+                    height: "40px",
+                    width: "40px",
+                    border: "1px solid ",
+                    color: "var(--color-sea)",
+                  }}
+                  onClick={() => setShowDialogCancel(false)}
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            className="flex flex-column gap-2 p-3"
+            style={{
+              textAlign: "left",
+              borderRadius: "8px",
+            }}
+          >
+            <div className="grid flex gap-2">
+              <div className={isMobile ? "col-12" : "col"}>
+                <InputTextarea
+                  rows={5}
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  placeholder="Ingrese la razón de la cancelación"
+                  style={{ width: "100%", padding: "10px" }}
+                />
+              </div>
+            </div>
+          </div>
           <div className="flex justify-content-start mt-2">
             <div className="flex gap-2">
               <Button
@@ -508,26 +559,6 @@ const PaymentValidation = () => {
                     setCancellationReason("");
                   }, 4500);
                 }}
-              />
-            </div>
-          </div>
-        }
-      >
-        <div
-          className="flex flex-column gap-2 p-3"
-          style={{
-            textAlign: "left",
-            borderRadius: "8px",
-          }}
-        >
-          <div className="grid flex gap-2">
-            <div className="col-12">
-              <InputTextarea
-                rows={5}
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="Ingrese la razón de la cancelación"
-                style={{ width: "100%", padding: "10px" }}
               />
             </div>
           </div>

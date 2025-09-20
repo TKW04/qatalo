@@ -5,6 +5,7 @@ const initialState = {
   paymentMethods: [],
   paymentMethod: {
     payment_method_id: "",
+    payment_method_name: "",
     business_id: "",
     payment_type: "",
     account_number: "",
@@ -32,6 +33,7 @@ const paymentMethodSlice = createSlice({
     startPaymentMethod(state) {
       state.paymentMethod = {
         payment_method_id: "",
+        payment_method_name: "",
         business_id: "",
         payment_type: "",
         account_number: "",

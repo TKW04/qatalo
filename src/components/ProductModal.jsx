@@ -36,6 +36,7 @@ const ProductModal = ({ product, business, onClose }) => {
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [showBuyDialog, setShowBuyDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const isMobile = window.innerWidth <= 480;
 
   const paymentMethods = useSelector(
     (state) => state.paymentMethod.paymentMethods
@@ -79,7 +80,13 @@ const ProductModal = ({ product, business, onClose }) => {
         >
           <Button
             rounded
-            icon={<ChevronLeftIcon color="white" size="2rem" />}
+            icon={<ChevronLeftIcon color="white" />}
+            style={{
+              width: "40px",
+              height: "40px",
+              backgroundColor: "transparent",
+              border: "1px solid var(--color-sea)",
+            }}
             className="image-arrow-left"
             onClick={(e) => e.stopPropagation() || instanceRef.current?.prev()}
           />
@@ -88,14 +95,20 @@ const ProductModal = ({ product, business, onClose }) => {
               preview
               src={image}
               alt="image"
-              width="100%"
+              width={isMobile ? "400px" : "500px"}
               height="290"
               style={{ objectFit: "fill" }}
             />
           </div>
           <Button
-            icon={<ChevronRightIcon color="white" size="2rem" />}
+            icon={<ChevronRightIcon color="white" />}
             className="image-arrow-right"
+            style={{
+              width: "40px",
+              height: "40px",
+              backgroundColor: "transparent",
+              border: "1px solid var(--color-sea)",
+            }}
             onClick={(e) => e.stopPropagation() || instanceRef.current?.next()}
           />
         </div>
@@ -184,189 +197,272 @@ const ProductModal = ({ product, business, onClose }) => {
       <div className="modal-overlay" onClick={handleOverlayClick}>
         {/* Modal de creacion de usuario */}
         <DialogModal
-          title={"Información del Cliente"}
           visible={showCustomerDialog}
           onHide={() => setShowCustomerDialog(false)}
         >
-          <div style={{ width: "100%", textAlign: "left" }}>
-            <div className="field col">
-              <label>Nombre</label>
-              <InputText
-                type="text"
-                className="input"
-                value={customer.given_name}
-                onChange={(e) => {
-                  dispatch(
-                    customerActions.modifyPropertyValue({
-                      id: "given_name",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="Juan"
-              />
+          <div
+            style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
+          >
+            <div className="dialog-title ">
+              <div className="grid">
+                <div className="col"></div>
+                <div className="col-9 text-center">
+                  <span style={{ color: "var(--color-yellow)" }}>
+                    Información del Cliente
+                  </span>
+                </div>
+                <div className="col justify-content-end align-items-end flex">
+                  <Button
+                    icon={<X />}
+                    outlined
+                    rounded
+                    raised
+                    style={{
+                      height: "40px",
+                      width: "40px",
+                      border: "1px solid ",
+                      color: "var(--color-sea)",
+                    }}
+                    onClick={() => setShowCustomerDialog(false)}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="field col">
-              <label>Apellido</label>
-              <InputText
-                type="text"
-                className="input"
-                value={customer.family_name}
-                onChange={(e) => {
-                  dispatch(
-                    customerActions.modifyPropertyValue({
-                      id: "family_name",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="Pérez"
-              />
-            </div>
-            <div className="field col">
-              <label>Correo Electrónico</label>
-              <InputText
-                type="text"
-                className="input"
-                value={customer.email}
-                onChange={(e) => {
-                  dispatch(
-                    customerActions.modifyPropertyValue({
-                      id: "email",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="juan@example.com"
-              />
-            </div>
-            <div className="field col">
-              <label>Teléfono</label>
-              <InputText
-                type="text"
-                className="input"
-                value={customer.phone}
-                onChange={(e) => {
-                  dispatch(
-                    customerActions.modifyPropertyValue({
-                      id: "phone",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="809-555-1234"
-              />
-            </div>
-            <div className="flex justify-content-end">
-              <Button
-                className="btn btn-primary"
-                label="Continuar"
-                icon={<Check />}
-                onClick={() => onCreate(action)}
-                style={{ width: "100px", margin: "2px" }}
-              />
-              <Button
-                className="btn btn-danger"
-                label="Cancelar"
-                icon={<X />}
-                onClick={() => setShowCustomerDialog(false)}
-                style={{ width: "100px", margin: "2px" }}
-              />
+            <div style={{ width: "100%", textAlign: "left" }}>
+              <div className="field col">
+                <label className="form-label">Nombre</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.given_name}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "given_name",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="Juan"
+                />
+              </div>
+              <div className="field col">
+                <label className="form-label">Apellido</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.family_name}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "family_name",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="Pérez"
+                />
+              </div>
+              <div className="field col">
+                <label className="form-label">Correo Electrónico</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.email}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "email",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="juan@example.com"
+                />
+              </div>
+              <div className="field col">
+                <label className="form-label">Teléfono</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={customer.phone}
+                  onChange={(e) => {
+                    dispatch(
+                      customerActions.modifyPropertyValue({
+                        id: "phone",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="809-555-1234"
+                />
+              </div>
+              <div className="flex justify-content-end">
+                <Button
+                  className="btn btn-primary"
+                  label="Continuar"
+                  icon={<Check />}
+                  onClick={() => onCreate(action)}
+                  style={{ width: "100px", margin: "2px" }}
+                />
+                <Button
+                  className="btn btn-danger"
+                  label="Cancelar"
+                  icon={<X />}
+                  onClick={() => setShowCustomerDialog(false)}
+                  style={{ width: "100px", margin: "2px" }}
+                />
+              </div>
             </div>
           </div>
         </DialogModal>
         {/* Modal de compra */}
         <DialogModal
-          title={"Forma de pago"}
           visible={showBuyDialog}
           onHide={() => setShowBuyDialog(false)}
         >
-          <div style={{ width: "100%", textAlign: "left" }}>
-            <div className="field col">
-              <label className="form-label">Metodo de pago</label>
-              <Dropdown
-                value={paymentMethod}
-                className="input"
-                onChange={(e) => {
-                  setPaymentMethod(e.value);
-                }}
-                options={paymentMethods.map((method) => ({
-                  name:
-                    method.payment_type === "bank_transfer"
-                      ? "Transferencia Bancaria"
-                      : "Link de Pago",
-                  code: method.payment_method_id,
-                }))}
-                optionLabel="name"
-                placeholder="Seleccionar metodo de pago"
-              />
+          <div
+            style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
+          >
+            <div className="dialog-title ">
+              <div className="grid">
+                <div className="col"></div>
+                <div className="col-9 text-center">
+                  <span style={{ color: "var(--color-yellow)" }}>
+                    Forma de pago
+                  </span>
+                </div>
+                <div className="col justify-content-end align-items-end flex">
+                  <Button
+                    icon={<X />}
+                    outlined
+                    rounded
+                    raised
+                    style={{
+                      height: "40px",
+                      width: "40px",
+                      border: "1px solid ",
+                      color: "var(--color-sea)",
+                    }}
+                    onClick={() => setShowBuyDialog(false)}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="field col">
-              <label>Cantidad</label>
-              <InputText
-                className="input"
-                value={customer.transaction_quantity}
-                onChange={(e) => {
-                  if (!isNaN(e.target.value)) {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "transaction_quantity",
-                        value: e.target.value,
-                      })
-                    );
-                  }
-                }}
-              />
-            </div>
-            <div className="flex justify-content-end">
-              <Button
-                disabled={!paymentMethod}
-                className={`btn ${
-                  paymentMethod ? "btn-success" : "btn-disabled"
-                }`}
-                label="Guardar"
-                icon={<Check />}
-                onClick={() => onBuy()}
-                style={{ width: "100px", margin: "2px" }}
-              />
-              <Button
-                className="btn btn-danger"
-                label="Cancelar"
-                icon={<X />}
-                onClick={() => setShowBuyDialog(false)}
-                style={{ width: "100px", margin: "2px" }}
-              />
+            <div style={{ width: "100%", textAlign: "left" }}>
+              <div className="field col">
+                <label className="form-label">Método de pago</label>
+                <Dropdown
+                  value={paymentMethod}
+                  className="input"
+                  onChange={(e) => {
+                    setPaymentMethod(e.value);
+                  }}
+                  options={paymentMethods.map((method) => ({
+                    name: method.payment_method_name,
+                    code: method.payment_method_id,
+                  }))}
+                  optionLabel="name"
+                  placeholder="Seleccionar metodo de pago"
+                />
+              </div>
+              <div className="field col">
+                <label className="form-label">Cantidad</label>
+                <InputText
+                  className="input"
+                  value={customer.transaction_quantity}
+                  onChange={(e) => {
+                    if (!isNaN(e.target.value)) {
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "transaction_quantity",
+                          value: e.target.value,
+                        })
+                      );
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex justify-content-end">
+                <Button
+                  disabled={!paymentMethod}
+                  className={`btn ${
+                    paymentMethod ? "btn-success" : "btn-disabled"
+                  }`}
+                  label="Guardar"
+                  icon={<Check />}
+                  onClick={() => onBuy()}
+                  style={{ width: "100px", margin: "2px" }}
+                />
+                <Button
+                  className="btn btn-danger"
+                  label="Cancelar"
+                  icon={<X />}
+                  onClick={() => setShowBuyDialog(false)}
+                  style={{ width: "100px", margin: "2px" }}
+                />
+              </div>
             </div>
           </div>
         </DialogModal>
         {/* Modal de información */}
         <DialogModal
-          title={"Solicitud Enviada"}
           visible={showPaymentDialog}
           onHide={() => setShowPaymentDialog(false)}
         >
-          <div style={{ width: "100%", textAlign: "left" }}>
-            <p>
-              Su solicitud ha sido enviada con éxito. En breve recibirá una
-              notificación. En caso de no encontrarla en su bandeja de entrada,
-              por favor verifique su carpeta de spam, promociones o correo no deseado.
-            </p>
-            <p>Gracias por su preferencia.</p>
-            <div className="flex justify-content-center">
-              <Button
-                className="btn btn-danger"
-                label="Cerrar"
-                icon={<X />}
-                onClick={() => {
-                  setShowPaymentDialog(false);
-                  onClose();
-                }}
-                style={{ width: "100px", margin: "2px" }}
-              />
+          <div
+            style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
+          >
+            <div className="dialog-title ">
+              <div className="grid">
+                <div className="col"></div>
+                <div className="col-9 text-center">
+                  <span style={{ color: "var(--color-yellow)" }}>
+                    Solicitud Enviada
+                  </span>
+                </div>
+                <div className="col justify-content-end align-items-end flex">
+                  <Button
+                    icon={<X />}
+                    outlined
+                    rounded
+                    raised
+                    style={{
+                      height: "40px",
+                      width: "40px",
+                      border: "1px solid ",
+                      color: "var(--color-sea)",
+                    }}
+                    onClick={() => setShowPaymentDialog(false)}
+                  />
+                </div>
+              </div>
             </div>
+            <div
+              style={{
+                width: "100%",
+                textAlign: "center",
+                border: "1px solid var(--color-yellow)",
+                borderRadius: "8px",
+                padding: "10px",
+              }}
+            >
+              <p style={{ color: "white" }}>
+                Su solicitud ha sido enviada con éxito. En breve recibirá una
+                notificación. En caso de no encontrarla en su bandeja de
+                entrada, por favor verifique su carpeta de <span style={{ color: "var(--color-yellow)" }}>spam, promociones o
+                correo no deseado</span>.
+              </p>
+              <p style={{ color: "white" }}>
+                Gracias por su preferencia.
+              </p>
+            </div>{" "}
           </div>
         </DialogModal>
-        <div className="modal-content product-modal-content">
+        <div
+          className="modal-content product-modal-content"
+          style={{ height: "610px" }}
+        >
           <div className="product-modal-header">
             <div className="navigation-wrapper">
               <div

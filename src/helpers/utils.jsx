@@ -12,7 +12,7 @@ export const getStatusStyle = (status) => {
     case "Pendiente de pago":
       return { color: "var(--chart-5)" };
     case "Pendiente de validación":
-      return { color: "var(--color-blue)" };
+      return { color: "var(--color-sea)" };
     case "Cancelada":
       return { color: "red" };
     default:
@@ -24,3 +24,7 @@ export const formatDate = (dateString) => {
   const options = { year: "numeric", month: "2-digit", day: "2-digit" };
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
+export const currencies = [
+  { code: "USD", name: "Dólar estadounidense", symbol: "$" },
+  { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
+];

@@ -5,12 +5,13 @@ import SearchBar from "../components/SearchBar";
 import CategoryFilter from "../components/CategoryFilter";
 import ProductGrid from "../components/ProductGrid";
 import ProductModal from "../components/ProductModal";
-import "../styles/catalog.css";
+
 import { useDispatch, useSelector } from "react-redux";
 import { GetCategoriesByBusinessId } from "../store/categories-store/category-actions";
 import { useNotification } from "../components/UI/NotificationProvider";
 import { GetProductsByBusinessId } from "../store/product-store/product-actions";
 import Loading from "../components/UI/Loading";
+import "../styles/catalog.css";
 
 const CatalogPublic = () => {
   const business = useSelector((state) => state.business.business);

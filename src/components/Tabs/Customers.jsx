@@ -5,16 +5,7 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import {
-  Check,
-  FileImage,
-  Info,
-  InfoIcon,
-  PencilIcon,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Search, X, BookImage, Check, Trash2 } from "lucide-react";
 import { customerActions } from "../../store/customer-store/customer-slice";
 
 import {
@@ -26,11 +17,18 @@ import {
 import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
-import { formatDate, formatted, getStatusStyle } from "../../helpers/utils";
+import {
+  currencies,
+  formatDate,
+  formatted,
+  getStatusStyle,
+} from "../../helpers/utils";
 import "../../styles/catalog.css";
 import { Card } from "primereact/card";
 import { Image } from "primereact/image";
 import { Dialog } from "primereact/dialog";
+import { EditButton, InfoButton } from "../Buttons";
+import { InputTextarea } from "primereact/inputtextarea";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -42,10 +40,16 @@ const Customers = ({ setActiveTab }) => {
   const business = useSelector((state) => state.business.business);
   const [customerErrors, setCustomerErrors] = useState({});
   const [dialogContent, setDialogContent] = useState(null);
-  const [showDialog, setShowDialog] = useState(false);
+
   const [productInfo, setProductInfo] = useState({});
+
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [showDialogCancel, setShowDialogCancel] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  // const customer_id = customer.customer_id;
+
   const [imageSize, setImageSize] = useState({ width: 100, height: 200 });
   const isMobile = window.innerWidth <= 480;
   const [expandedRows, setExpandedRows] = useState(null);
@@ -109,18 +113,13 @@ const Customers = ({ setActiveTab }) => {
         dispatch(customerActions.startCustomer());
         setEditingCustomer(false);
         setIsLoading(false);
-      }, 1500);
+      }, 4500);
     }
   };
 
   const handleEditCustomer = (customer) => {
     dispatch(customerActions.setCustomer({ customer: customer }));
     setEditingCustomer(true);
-  };
-
-  const handleDeleteCustomer = (showDialog, customer) => {
-    setShowDialog(showDialog);
-    dispatch(customerActions.setCustomer({ customer: customer }));
   };
 
   const handleViewCustomer = (customerInfo) => {
@@ -145,16 +144,102 @@ const Customers = ({ setActiveTab }) => {
         </label>
       </div>
     );
-    const footer = null;
-    setDialogContent({ title, children, footer });
+    setDialogContent({ title, children });
     setShowDialog(true);
   };
 
+  const getCurrencySymbol = (currencyCode) => {
+    const currency = currencies.find((c) => c.code === currencyCode);
+    return currency ? currency.symbol : "";
+  };
   const rowExpansionTemplate = (data) => {
     return (
       <>
-        <Dialog
-          header="Recibo de pago"
+        <DialogModal
+          visible={showDialogCancel}
+          onHide={() => setShowDialogCancel(false)}
+        >
+          <div
+            style={{
+              textAlign: "left",
+              padding: "30px",
+              overflowX: "hidden",
+              maxWidth: "800px",
+            }}
+          >
+            <div
+              className="flex flex-column gap-2 p-3"
+              style={{
+                textAlign: "left",
+                borderRadius: "8px",
+              }}
+            >
+              <div className="grid flex gap-2">
+                <div className="col-12">
+                  <InputTextarea
+                    rows={5}
+                    value={cancellationReason}
+                    onChange={(e) => setCancellationReason(e.target.value)}
+                    placeholder="Ingrese la razón de la cancelación"
+                    style={{ width: "100%", padding: "10px" }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-content-start mt-2">
+              <div className="flex gap-2">
+                <Button
+                  label="Cerrar"
+                  className="btn btn-outline"
+                  raised
+                  style={{ width: "100px", height: "40px", margin: "10px" }}
+                  onClick={() => {
+                    setShowDialogCancel(false);
+                    setCancellationReason("");
+                  }}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  label="Solicitar"
+                  className="btn btn-primary"
+                  raised
+                  style={{ width: "100px", height: "40px", margin: "10px" }}
+                  onClick={() => {
+                    dispatch(
+                      CancelTransactionAdmin(
+                        data.customer_id,
+                        productInfo.transaction_id,
+                        cancellationReason,
+                        showError,
+                        showWarning,
+                        showSuccess
+                      )
+                    );
+                    setIsLoading(true);
+                    setShowDialogCancel(false);
+                    setShowProductDialog(false);
+                    setLoadingMessage("Cancelado transacción...");
+
+                    setTimeout(() => {
+                      setIsLoading(false);
+                      dispatch(GetCustomers(showError));
+                      dispatch(customerActions.startCustomer());
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "business_id",
+                          value: business.business_id,
+                        })
+                      );
+                    }, 4500);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </DialogModal>
+        <DialogModal
+          title={"Imagen del Recibo"}
           visible={showImageDialog}
           style={{
             width: "450px",
@@ -179,14 +264,20 @@ const Customers = ({ setActiveTab }) => {
               }}
             />
           </div>
-        </Dialog>
-        <Dialog
-          header="Detalles del producto"
+        </DialogModal>
+        <DialogModal
+          title={"Información del producto"}
           visible={showProductDialog}
-          style={{ width: "100%" }}
           onHide={() => setShowProductDialog(false)}
         >
-          <div className="admin-card" style={{ textAlign: "left" }}>
+          <div
+            style={{
+              textAlign: "left",
+              padding: "30px",
+              overflowX: "hidden",
+              maxWidth: "800px",
+            }}
+          >
             <label className="form-label">
               Producto:{" "}
               <span style={{ fontWeight: "bold" }}>
@@ -202,7 +293,7 @@ const Customers = ({ setActiveTab }) => {
               <span style={{ fontWeight: "bold" }}>
                 {" "}
                 {productInfo.payment_method
-                  ? productInfo.payment_method.currency
+                  ? getCurrencySymbol(productInfo.payment_method.currency)
                   : ""}{" "}
                 {formatted(productInfo.price)}
               </span>
@@ -212,9 +303,19 @@ const Customers = ({ setActiveTab }) => {
               Total:{" "}
               <span style={{ fontWeight: "bold" }}>
                 {productInfo.payment_method
-                  ? productInfo.payment_method.currency
+                  ? getCurrencySymbol(productInfo.payment_method.currency)
                   : ""}{" "}
                 {formatted(productInfo.price * productInfo.quantity)}
+              </span>
+            </label>
+            <label className="form-label">
+              Método de Pago:{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {productInfo.payment_method !== undefined &&
+                productInfo.payment_method.payment_type !== undefined &&
+                productInfo.payment_method.payment_type === "bank_transfer"
+                  ? "Transferencia Bancaria"
+                  : "Link de Pago"}
               </span>
             </label>
             <label className="form-label">
@@ -238,23 +339,29 @@ const Customers = ({ setActiveTab }) => {
                     <div className="grid flex justify-content-center">
                       <div className="col-4 ">
                         <Button
-                          style={{ border: "none" }}
-                          outlined
+                          icon={<BookImage />}
+                          raised
                           disabled={!productInfo.receipt_url}
-                          label="Ver recibo"
+                          label="Recibo"
                           onClick={() => {
                             setTransaction(productInfo);
                             setShowImageDialog(true);
                             setImageSize({ width: "400px", height: "400px" });
                           }}
+                          style={{ padding: "10px" }}
                         />
                       </div>
                       <div className="col-4">
                         <Button
-                          style={{ color: "green", border: "none" }}
-                          outlined
-                          label="Aprobar pago"
+                          icon={<Check />}
+                          raised
+                          label="Validar"
                           disabled={!productInfo.receipt_url}
+                          style={{
+                            padding: "10px",
+                            backgroundColor: "green",
+                            borderColor: "green",
+                          }}
                           onClick={() => {
                             dispatch(
                               ApproveTransaction(
@@ -267,50 +374,36 @@ const Customers = ({ setActiveTab }) => {
                             );
                             setIsLoading(true);
                             setLoadingMessage("Cargando clientes...");
-                            dispatch(GetCustomers(showError));
-                            dispatch(customerActions.startCustomer());
-                            once = false;
-                            dispatch(
-                              customerActions.modifyPropertyValue({
-                                id: "business_id",
-                                value: business.business_id,
-                              })
-                            );
+
                             setTimeout(() => {
                               setIsLoading(false);
-                            }, 1500);
+                              setShowProductDialog(false);
+                              dispatch(GetCustomers(showError));
+                              dispatch(customerActions.startCustomer());
+                              once = false;
+                              dispatch(
+                                customerActions.modifyPropertyValue({
+                                  id: "business_id",
+                                  value: business.business_id,
+                                })
+                              );
+                            }, 4500);
                           }}
                         />
                       </div>
                       <div className="col-4">
                         <Button
-                          style={{ color: "red", border: "none" }}
-                          outlined
+                          icon={<Trash2 />}
+                          raised
                           label="Cancelar"
+                          style={{
+                            padding: "10px",
+                            backgroundColor: "red",
+                            borderColor: "red",
+                            color: "white",
+                          }}
                           onClick={() => {
-                            dispatch(
-                              CancelTransactionAdmin(
-                                data.customer_id,
-                                productInfo.transaction_id,
-                                showError,
-                                showWarning,
-                                showSuccess
-                              )
-                            );
-                            setIsLoading(true);
-                            setLoadingMessage("Cargando clientes...");
-                            dispatch(GetCustomers(showError));
-                            dispatch(customerActions.startCustomer());
-                            once = false;
-                            dispatch(
-                              customerActions.modifyPropertyValue({
-                                id: "business_id",
-                                value: business.business_id,
-                              })
-                            );
-                            setTimeout(() => {
-                              setIsLoading(false);
-                            }, 1500);
+                            setShowDialogCancel(true);
                           }}
                         />
                       </div>
@@ -319,26 +412,27 @@ const Customers = ({ setActiveTab }) => {
                 )}
             </div>
           </div>
-        </Dialog>
+        </DialogModal>
 
         {!isMobile && (
-          <div className="">
+          <div>
             <DataTable
               value={data.transactions}
+              dataKey="transaction_id"
               showGridlines
-              style={{ width: "100%" }}
+              stripedRows
             >
               <Column
+                style={{
+                  minWidth: "14rem",
+                  padding: "1rem",
+                }}
                 header={
                   <span style={{ fontWeight: "bold", padding: "10px" }}>
                     Producto
                   </span>
                 }
                 field="product_name"
-                style={{
-                  width: "15%",
-                  textAlign: "center",
-                }}
               ></Column>
               <Column
                 header={
@@ -347,7 +441,10 @@ const Customers = ({ setActiveTab }) => {
                   </span>
                 }
                 field="quantity"
-                style={{ width: "2%", textAlign: "center" }}
+                style={{
+                  minWidth: "4rem",
+                  padding: "1rem",
+                }}
               ></Column>
               <Column
                 header={
@@ -358,12 +455,15 @@ const Customers = ({ setActiveTab }) => {
                 body={(rowData) => {
                   return (
                     <span>
-                      {rowData.payment_method.currency}{" "}
+                      {getCurrencySymbol(rowData.payment_method.currency)}{" "}
                       {formatted(rowData.price)}
                     </span>
                   );
                 }}
-                style={{ width: "15%", textAlign: "center" }}
+                style={{
+                  minWidth: "10rem",
+                  padding: "1rem",
+                }}
               ></Column>
               <Column
                 header={
@@ -375,11 +475,15 @@ const Customers = ({ setActiveTab }) => {
                   const total = rowData.price * rowData.quantity;
                   return (
                     <span>
-                      {rowData.payment_method.currency} {formatted(total)}
+                      {getCurrencySymbol(rowData.payment_method.currency)}{" "}
+                      {formatted(total)}
                     </span>
                   );
                 }}
-                style={{ width: "15%", textAlign: "center" }}
+                style={{
+                  minWidth: "10rem",
+                  padding: "1rem",
+                }}
               ></Column>
               <Column
                 header={
@@ -390,7 +494,10 @@ const Customers = ({ setActiveTab }) => {
                 body={(rowData) => {
                   return <span>{formatDate(rowData.create_date)}</span>;
                 }}
-                style={{ width: "10%", textAlign: "center" }}
+                style={{
+                  minWidth: "4rem",
+                  padding: "1rem",
+                }}
               ></Column>
               <Column
                 header={
@@ -405,18 +512,22 @@ const Customers = ({ setActiveTab }) => {
                     </span>
                   );
                 }}
-                style={{ width: "10%", textAlign: "center" }}
+                style={{
+                  minWidth: "14rem",
+                  padding: "1rem",
+                }}
               ></Column>
 
               <Column
                 header="Acciones"
+                style={{
+                  minWidth: "10rem",
+                  padding: "1rem",
+                }}
                 body={(rowData) => {
                   return (
                     <div className="flex justify-content-center">
-                      <Button
-                        style={{ border: "none" }}
-                        outlined
-                        label="Ver detalles"
+                      <InfoButton
                         onClick={() => {
                           setProductInfo(rowData);
                           setShowProductDialog(true);
@@ -431,9 +542,25 @@ const Customers = ({ setActiveTab }) => {
         )}
         {isMobile && (
           <div>
-            <DataTable value={data.transactions} showGridlines>
-              <Column header="Producto" field="product_name"></Column>
+            <DataTable
+              value={data.transactions}
+              showGridlines
+              stripedRows
+              style={{ maxWidth: "30rem" }}
+            >
               <Column
+                style={{
+                  minWidth: "8rem",
+                  padding: "1rem",
+                }}
+                header="Producto"
+                field="product_name"
+              ></Column>
+              <Column
+                style={{
+                  minWidth: "8rem",
+                  padding: "1rem",
+                }}
                 header="Estado"
                 body={(rowData) => {
                   return (
@@ -444,14 +571,15 @@ const Customers = ({ setActiveTab }) => {
                 }}
               ></Column>
               <Column
+                style={{
+                  minWidth: "3rem",
+                  padding: "1rem",
+                }}
                 header="Acciones"
                 body={(rowData) => {
                   return (
                     <div className="flex justify-content-center">
-                      <Button
-                        style={{ border: "none" }}
-                        outlined
-                        label="Ver detalles"
+                      <InfoButton
                         onClick={() => {
                           setProductInfo(rowData);
                           setShowProductDialog(true);
@@ -584,169 +712,147 @@ const Customers = ({ setActiveTab }) => {
             </form>
           </div>
         )}
-        <div className="admin-card">
+        <div>
           <h2>Clientes Existentes</h2>
-          {customers.length === 0 ? (
-            <p>No hay Clientes creados aún.</p>
-          ) : (
-            <>
-              <DialogModal
-                title={dialogContent?.title || "Eliminar Producto"}
-                visible={showDialog}
-                onHide={() => setShowDialog(false)}
-                footer={dialogContent?.footer || null}
-              >
-                <p>
-                  {dialogContent?.children ||
-                    "¿Estás seguro de que deseas eliminar este producto?"}
-                </p>
-              </DialogModal>
-              {!isMobile && (
-                <div className="card">
-                  <DataTable
-                    value={customers}
-                    expandedRows={expandedRows}
-                    onRowToggle={(e) => setExpandedRows(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="customer_id"
-                    tableStyle={{ minWidth: "60rem" }}
-                  >
-                    <Column field="given_name" header="Nombre"></Column>
-                    <Column field="family_name" header="Apellido"></Column>
-                    <Column field="email" header="Email"></Column>
-                    <Column field="phone" header="Teléfono"></Column>
-                    <Column
-                      header="Acciones"
-                      body={(rowData) => {
-                        return (
-                          <div
-                            className="table-actions"
-                            style={{
-                              alignContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Button
-                              icon={<PencilIcon />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "var(--color-blue)",
-                                border: "none",
-                              }}
-                              onClick={() => handleEditCustomer(rowData)}
-                            />
-
-                            <Button
-                              icon={<Info />}
-                              outlined
-                              style={{
-                                height: "40px",
-                                width: "40px",
-                                color: "#3498db",
-                                border: "none",
-                              }}
-                              onClick={() => handleViewCustomer(rowData)}
-                            />
-                          </div>
-                        );
-                      }}
-                    ></Column>
-                    <Column expander style={{ width: "3em" }} />
-                  </DataTable>
-                </div>
-              )}
-              {isMobile && (
-                <div>
-                  <DataTable
-                    value={customers}
-                    expandedRows={expandedRows}
-                    onRowToggle={(e) => setExpandedRows(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="customer_id"
-                    tableStyle={{ minWidth: "6rem" }}
-                  >
-                    <Column
-                      header={
-                        <span style={{ fontWeight: "bold", fontSize: "1.2em" }}>
-                          Cliente
-                        </span>
-                      }
-                      body={(rowData) => {
-                        return (
-                          <>
-                            <Card
-                              style={{
-                                border: "none",
-                                boxShadow: "none",
-                                marginBottom: "0px",
-                                padding: "0px",
-                              }}
-                            >
-                              <div>
-                                <div
-                                  style={{
-                                    fontWeight: "800",
-                                    padding: "10px",
-                                    fontSize: "1.2em",
-                                    textDecoration: "underline",
-                                  }}
-                                >
-                                  {rowData.given_name} {rowData.family_name}
-                                </div>
+          <>
+            <DialogModal
+              title={dialogContent?.title || "Eliminar Producto"}
+              visible={showDialog}
+              onHide={() => setShowDialog(false)}
+              footer={dialogContent?.footer || null}
+            >
+              <p>
+                {dialogContent?.children ||
+                  "¿Estás seguro de que deseas eliminar este producto?"}
+              </p>
+            </DialogModal>
+            {!isMobile && (
+              <div>
+                <DataTable
+                  value={customers}
+                  expandedRows={expandedRows}
+                  onRowToggle={(e) => setExpandedRows(e.data)}
+                  rowExpansionTemplate={rowExpansionTemplate}
+                  dataKey="customer_id"
+                >
+                  <Column
+                    field="given_name"
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    header="Nombre"
+                  ></Column>
+                  <Column
+                    field="family_name"
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    header="Apellido"
+                  ></Column>
+                  <Column
+                    field="email"
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    header="Email"
+                  ></Column>
+                  <Column
+                    field="phone"
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    header="Teléfono"
+                  ></Column>
+                  <Column
+                    header="Acciones"
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    body={(rowData) => {
+                      return (
+                        <div
+                          className="table-actions"
+                          style={{
+                            alignContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <EditButton
+                            onClick={() => handleEditCustomer(rowData)}
+                          />
+                          <InfoButton
+                            onClick={() => handleViewCustomer(rowData)}
+                          />
+                        </div>
+                      );
+                    }}
+                  ></Column>
+                  <Column expander style={{ width: "3em" }} />
+                </DataTable>
+              </div>
+            )}
+            {isMobile && (
+              <div>
+                <DataTable
+                  value={customers}
+                  expandedRows={expandedRows}
+                  onRowToggle={(e) => setExpandedRows(e.data)}
+                  rowExpansionTemplate={rowExpansionTemplate}
+                  dataKey="customer_id"
+                >
+                  <Column
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    header={
+                      <span style={{ fontWeight: "bold", fontSize: "1.2em" }}>
+                        Cliente
+                      </span>
+                    }
+                    body={(rowData) => {
+                      return (
+                        <>
+                          <Card>
+                            <div className="p-3">
+                              <span
+                                style={{
+                                  fontWeight: "800",
+                                  fontSize: "1.14rem",
+                                }}
+                              >
+                                {rowData.given_name} {rowData.family_name}
+                              </span>
+                              <span style={{ display: "block" }}>
+                                {rowData.email}
+                              </span>
+                            </div>
+                            <div className="table-actions">
+                              <div className="table-actions p-2">
+                                <EditButton
+                                  onClick={() => handleEditCustomer(rowData)}
+                                />
+                                <InfoButton
+                                  onClick={() => handleViewCustomer(rowData)}
+                                />
                               </div>
-                              <div className="table-actions">
-                                <div className="table-actions">
-                                  <Button
-                                    icon={<PencilIcon />}
-                                    outlined
-                                    style={{
-                                      height: "40px",
-                                      width: "40px",
-                                      color: "var(--color-navy)",
-                                      border: "none",
-                                    }}
-                                    onClick={() => handleEditCustomer(rowData)}
-                                  />
-                                  <Button
-                                    icon={<Trash2 />}
-                                    outlined
-                                    style={{
-                                      height: "40px",
-                                      width: "40px",
-                                      color: "#e74c3c",
-                                      border: "none",
-                                    }}
-                                    onClick={() =>
-                                      handleDeleteCustomer(rowData)
-                                    }
-                                  />
-                                  <Button
-                                    icon={<Info />}
-                                    outlined
-                                    style={{
-                                      height: "40px",
-                                      width: "40px",
-                                      color: "#3498db",
-                                      border: "none",
-                                    }}
-                                    onClick={() => handleViewCustomer(rowData)}
-                                  />
-                                </div>
-                              </div>
-                            </Card>
-                          </>
-                        );
-                      }}
-                    ></Column>
+                            </div>
+                          </Card>
+                        </>
+                      );
+                    }}
+                  ></Column>
 
-                    <Column expander style={{ width: "3em" }} />
-                  </DataTable>
-                </div>
-              )}
-            </>
-          )}
+                  <Column expander style={{ width: "1em" }} />
+                </DataTable>
+              </div>
+            )}
+          </>
         </div>
       </div>
     </>

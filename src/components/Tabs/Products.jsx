@@ -29,6 +29,9 @@ import Loading from "../UI/Loading";
 import { Image } from "primereact/image";
 import DialogModal from "../DialogModal";
 import "../../styles/catalog.css";
+import { DeleteButton, EditButton, InfoButton } from "../Buttons";
+import { title } from "process";
+import { currencies } from "../../helpers/utils";
 
 let once = true;
 const Products = ({ setActiveTab }) => {
@@ -191,10 +194,6 @@ const Products = ({ setActiveTab }) => {
     className: "btn_image",
   };
 
-  const currencies = [
-    { code: "USD", name: "Dólar estadounidense", symbol: "$" },
-    { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
-  ];
   const statuses = [
     { code: "available", name: "Disponible" },
     { code: "unavailable", name: "Agotado" },
@@ -300,7 +299,7 @@ const Products = ({ setActiveTab }) => {
         });
         setIsLoading(false);
         setEditingProduct(false);
-      }, 1500);
+      }, 4500);
     }
   };
 
@@ -323,34 +322,14 @@ const Products = ({ setActiveTab }) => {
 
   const handleDeleteProduct = (rowData) => {
     const children = (
-      <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}>
-        <div className="dialog-title ">
-          <div className="grid">
-            <div className="col-2"></div>
-            <div className="col-7 text-center">
-              <span
-                style={{ color: "var(--color-yellow)", textAlign: "center" }}
-              >
-                Eliminar Producto
-              </span>
-            </div>
-            <div className="col-2 justify-content-end align-items-end flex">
-              <Button
-                icon={<X />}
-                outlined
-                rounded
-                raised
-                style={{
-                  height: "40px",
-                  width: "40px",
-                  border: "1px solid ",
-                  color: "var(--color-sea)",
-                }}
-                onClick={() => setShowDialog(false)}
-              />
-            </div>
-          </div>
-        </div>
+      <div
+        style={{
+          textAlign: "left",
+          padding: "30px",
+          overflowX: "hidden",
+          maxWidth: "800px",
+        }}
+      >
         <div style={{ color: "white", fontSize: "20px", textAlign: "center" }}>
           ¿Estás seguro de que deseas eliminar este producto?
         </div>
@@ -389,45 +368,27 @@ const Products = ({ setActiveTab }) => {
                 setIsLoading(false);
                 setShowDialog(false);
                 setEditingProduct(false);
-              }, 1500);
+              }, 4500);
             }}
           />
         </div>
       </div>
     );
-    setDialogContent({ children });
+    setDialogContent({ title: "Eliminar Producto", children });
     setShowDialog(true);
   };
   const handleViewProduct = (productInfo) => {
     let available = productInfo.is_available === "available" ? true : false;
 
     const children = (
-      <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}>
-        <div className="dialog-title ">
-          <div className="grid">
-            <div className="col"></div>
-            <div className="col-9 text-center">
-              <span style={{ color: "var(--color-yellow)" }}>
-                Detalles del Producto
-              </span>
-            </div>
-            <div className="col-2 justify-content-end align-items-end flex">
-              <Button
-                icon={<X />}
-                outlined
-                rounded
-                raised
-                style={{
-                  height: "40px",
-                  width: "40px",
-                  border: "1px solid ",
-                  color: "var(--color-sea)",
-                }}
-                onClick={() => setShowDialog(false)}
-              />
-            </div>
-          </div>
-        </div>
+      <div
+        style={{
+          textAlign: "left",
+          padding: "30px",
+          overflowX: "hidden",
+          maxWidth: "800px",
+        }}
+      >
         <div className="grid flex gap-2">
           <div className="col-12">
             <label className="form-label">
@@ -495,7 +456,7 @@ const Products = ({ setActiveTab }) => {
         </div>
       </div>
     );
-    setDialogContent({ children });
+    setDialogContent({ title: "Detalles del Producto", children });
     setShowDialog(true);
   };
 
@@ -550,19 +511,7 @@ const Products = ({ setActiveTab }) => {
             body={(rowData) => {
               return (
                 <div className="flex justify-content-center">
-                  <Button
-                    icon={<Trash2 />}
-                    raised
-                    label="Eliminar"
-                    style={{
-                      height: "40px",
-                      width: "108px",
-                      backgroundColor: "#e74c3c",
-                      border: "1px solid ",
-                      color: "white",
-                      borderRadius: "5px",
-                      paddingLeft: "5px",
-                    }}
+                  <DeleteButton
                     onClick={() => {
                       const children = (
                         <div
@@ -570,38 +519,9 @@ const Products = ({ setActiveTab }) => {
                             textAlign: "left",
                             padding: "5px",
                             overflowX: "hidden",
+                            maxWidth: "800px",
                           }}
                         >
-                          <div className="dialog-title ">
-                            <div className="grid">
-                              <div className="col"></div>
-                              <div className="col-9 text-center">
-                                <span
-                                  style={{
-                                    color: "var(--color-yellow)",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  Eliminar Imagen
-                                </span>
-                              </div>
-                              <div className="col-2 justify-content-end align-items-end flex">
-                                <Button
-                                  icon={<X />}
-                                  outlined
-                                  rounded
-                                  raised
-                                  style={{
-                                    height: "40px",
-                                    width: "40px",
-                                    border: "1px solid ",
-                                    color: "var(--color-sea)",
-                                  }}
-                                  onClick={() => setShowDialog(false)}
-                                />
-                              </div>
-                            </div>
-                          </div>
                           <div
                             style={{
                               color: "white",
@@ -651,13 +571,13 @@ const Products = ({ setActiveTab }) => {
                                   setIsLoading(false);
                                   setShowDialog(false);
                                   setEditingProduct(false);
-                                }, 1500);
+                                }, 4500);
                               }}
                             />
                           </div>
                         </div>
                       );
-                      setDialogContent({ children });
+                      setDialogContent({ title: "Eliminar Imagen", children });
                       setShowDialog(true);
                     }}
                   />
@@ -945,6 +865,7 @@ const Products = ({ setActiveTab }) => {
           <h2>Productos Existentes</h2>
           <>
             <DialogModal
+              title={dialogContent?.title || "Confirmación"}
               visible={showDialog}
               onHide={() => setShowDialog(false)}
             >
@@ -1005,58 +926,13 @@ const Products = ({ setActiveTab }) => {
                     body={(rowData) => {
                       return (
                         <div className="table-actions">
-                          <Button
-                            icon={<PencilIcon />}
-                            outlined={isMobile}
-                            raised={!isMobile}
-                            label={isMobile ? "" : " Editar"}
-                            style={{
-                              height: "40px",
-                              width: isMobile ? "40px" : "100px",
-                              backgroundColor: isMobile
-                                ? "transparent"
-                                : "var(--color-blue)",
-                              border: isMobile ? "none" : "1px solid ",
-                              color: isMobile ? "var(--color-blue)" : "white",
-                              borderRadius: "5px",
-                              paddingLeft: isMobile ? "0" : "5px",
-                            }}
+                          <EditButton
                             onClick={() => handleEditProduct(rowData)}
                           />
-                          <Button
-                            icon={<Trash2 />}
-                            outlined={isMobile}
-                            raised={!isMobile}
-                            label={isMobile ? "" : " Eliminar"}
-                            style={{
-                              height: "40px",
-                              width: isMobile ? "40px" : "108px",
-                              backgroundColor: isMobile
-                                ? "transparent"
-                                : "#e74c3c",
-                              border: isMobile ? "none" : "1px solid ",
-                              color: isMobile ? "#e74c3c" : "white",
-                              borderRadius: "5px",
-                              paddingLeft: isMobile ? "0" : "5px",
-                            }}
+                          <DeleteButton
                             onClick={() => handleDeleteProduct(rowData)}
                           />
-                          <Button
-                            icon={<Info />}
-                            outlined={isMobile}
-                            raised={!isMobile}
-                            label={isMobile ? "" : " Info"}
-                            style={{
-                              height: "40px",
-                              width: isMobile ? "40px" : "100px",
-                              backgroundColor: isMobile
-                                ? "transparent"
-                                : "#3498db",
-                              border: isMobile ? "none" : "1px solid ",
-                              color: isMobile ? "#3498db" : "white",
-                              borderRadius: "5px",
-                              paddingLeft: isMobile ? "0" : "5px",
-                            }}
+                          <InfoButton
                             onClick={() => handleViewProduct(rowData)}
                           />
                         </div>
@@ -1105,53 +981,17 @@ const Products = ({ setActiveTab }) => {
                             <div>
                               <div className="grid">
                                 <div className="col m-auto">
-                                  <Button
-                                    icon={<PencilIcon />}
-                                    raised
-                                    label={"Editar"}
-                                    style={{
-                                      height: "40px",
-                                      width: "108px",
-                                      backgroundColor: "var(--color-blue)",
-                                      border: "1px solid ",
-                                      color: "white",
-                                      borderRadius: "5px",
-                                      paddingLeft: "5px",
-                                    }}
+                                  <EditButton
                                     onClick={() => handleEditProduct(rowData)}
                                   />
                                 </div>
                                 <div className="col m-auto">
-                                  <Button
-                                    icon={<Trash2 />}
-                                    raised
-                                    label="Eliminar"
-                                    style={{
-                                      height: "40px",
-                                      width: "108px",
-                                      backgroundColor: "#e74c3c",
-                                      border: "1px solid ",
-                                      color: "white",
-                                      borderRadius: "5px",
-                                      paddingLeft: "5px",
-                                    }}
+                                  <DeleteButton
                                     onClick={() => handleDeleteProduct(rowData)}
                                   />
                                 </div>
                                 <div className="col m-auto">
-                                  <Button
-                                    icon={<Info />}
-                                    raised={!isMobile}
-                                    label="Info"
-                                    style={{
-                                      height: "40px",
-                                      width: "108px",
-                                      backgroundColor: "#3498db",
-                                      border: "1px solid ",
-                                      color: "white",
-                                      borderRadius: "5px",
-                                      paddingLeft: "5px",
-                                    }}
+                                  <InfoButton
                                     onClick={() => handleViewProduct(rowData)}
                                   />
                                 </div>

@@ -20,6 +20,9 @@ import { getTokenInfo } from "../../helpers/token";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Card } from "primereact/card";
+import { DeleteButton, EditButton, InfoButton } from "../Buttons";
+import { title } from "process";
+import { currencies } from "../../helpers/utils";
 
 let once = true;
 const PaymentMethods = ({ setActiveTab }) => {
@@ -42,9 +45,9 @@ const PaymentMethods = ({ setActiveTab }) => {
   const [selectedPaymentType, setSelectedPaymentType] = useState(null);
   const [selectedAccountType, setSelectedAccountType] = useState(null);
   const [selectedCurrency, setSelectedCurrency] = useState({
-    code: "DOP",
-    name: "Peso dominicano",
-    symbol: "RD$",
+    code: "",
+    name: "",
+    symbol: "",
   });
 
   const [dialogContent, setDialogContent] = useState({
@@ -64,10 +67,7 @@ const PaymentMethods = ({ setActiveTab }) => {
     { name: "Ahorros", code: "savings" },
     { name: "Corriente", code: "current" },
   ];
-  const currencies = [
-    { code: "USD", name: "Dólar estadounidense", symbol: "$" },
-    { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
-  ];
+  
 
   useEffect(() => {
     if (paymentMethods.length === 0 && once) {
@@ -125,6 +125,8 @@ const PaymentMethods = ({ setActiveTab }) => {
 
     if (!data.payment_type)
       errors.payment_type = "El tipo de pago es requerido";
+    if (!data.payment_method_name)
+      errors.payment_method_name = "El nombre del método de pago es requerido";
     if (data.payment_type === "bank_transfer") {
       if (!data.account_number)
         errors.account_number = "El número de cuenta es requerido";
@@ -182,7 +184,9 @@ const PaymentMethods = ({ setActiveTab }) => {
         dispatch(paymentMethodActions.startPaymentMethod());
         setEditingPaymentMethod(false);
         setIsLoading(false);
-      }, 1500);
+        setSelectedPaymentType(null);
+        setSelectedAccountType(null);
+      }, 4500);
     }
   };
 
@@ -208,128 +212,175 @@ const PaymentMethods = ({ setActiveTab }) => {
   };
 
   const handleDeletePaymentMethod = (paymentMethod) => {
-    const title = "Eliminar Método de Pago";
     const children = (
-      <div>¿Estás seguro de que deseas eliminar este método de pago?</div>
-    );
-    const footer = (
-      <div>
-        <Button
-          className="btn btn-secondary"
-          label="No"
-          icon={<X />}
-          onClick={() => setShowDialog(false)}
-          style={{ width: "100px", margin: "2px" }}
-        />
-        <Button
-          className="btn btn-danger"
-          label="Si"
-          icon={<Trash2 />}
-          onClick={() => {
-            setIsLoading(true);
-            setLoadingMessage("Eliminando método de pago...");
-            dispatch(
-              DeletePaymentMethod(
-                paymentMethod.payment_method_id,
-                showError,
-                showWarning,
-                showSuccess
-              )
-            );
+      <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden", maxWidth: "800px" }}>
+        
+        <div style={{ color: "white", fontSize: "20px", textAlign: "center" }}>
+          ¿Estás seguro de que deseas eliminar este método de pago?
+        </div>
+        <div className="flex justify-content-end mt-3">
+          <Button
+            className="btn btn-outline"
+            label="No"
+            onClick={() => setShowDialog(false)}
+            style={{ width: "100px", margin: "2px" }}
+          />
+          <Button
+            className="btn btn-primary"
+            label="Si"
+            style={{ width: "100px", margin: "2px" }}
+            onClick={() => {
+              setIsLoading(true);
+              setLoadingMessage("Eliminando método de pago...");
+              dispatch(
+                DeletePaymentMethod(
+                  paymentMethod.payment_method_id,
+                  showError,
+                  showWarning,
+                  showSuccess
+                )
+              );
 
-            setTimeout(() => {
-              setActiveTab("paymentMethods");
-              dispatch(GetPaymentMethods(showError));
-              dispatch(paymentMethodActions.startPaymentMethod());
-              setEditingPaymentMethod(false);
-              setIsLoading(false);
-              setShowDialog(false);
-            }, 1500);
-          }}
-          style={{ width: "100px", margin: "2px" }}
-        />
+              setTimeout(() => {
+                setActiveTab("paymentMethods");
+                dispatch(GetPaymentMethods(showError));
+                dispatch(paymentMethodActions.startPaymentMethod());
+                setEditingPaymentMethod(false);
+                setIsLoading(false);
+                setShowDialog(false);
+              }, 4500);
+            }}
+          />
+        </div>
       </div>
     );
-    setDialogContent({ title, children, footer });
+
+    setDialogContent({title: "Eliminar Método de Pago", children });
     setShowDialog(true);
   };
 
+  
+
   const handleViewPaymentMethod = (paymentMethodInfo) => {
-    const title = "Detalles del Producto";
+      console.log(paymentMethodInfo);
     const children = (
-      <div className="admin-card" style={{ textAlign: "left", width: "100%" }}>
-        <label className="form-label">
-          Método:{" "}
-          <span style={{ fontWeight: "bold" }}>
-            {getPaymentMethodName(paymentMethodInfo.payment_type)}
-          </span>
-        </label>
-        {paymentMethodInfo.payment_type === "bank_transfer" && (
-          <>
+      <div
+        style={{
+          textAlign: "left",
+          padding: "5px",
+          overflowX: "hidden",
+          maxWidth: "800px",
+        }}
+      >
+        <div className="grid p-4">
+          <div className={isMobile ? "col-12" : "col-6"}>
             <label className="form-label">
-              Nombre:{" "}
+             Tipo de Método:{" "}
               <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.owner_name}
+                {getPaymentMethodName(paymentMethodInfo.payment_type)}
               </span>
             </label>
+          </div>
+          <div className={isMobile ? "col-12" : "col-6"}>
             <label className="form-label">
-              Documento:{" "}
+              Método:{" "}
               <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.owner_document}
+                {paymentMethodInfo.payment_method_name}
               </span>
             </label>
-            <label className="form-label">
-              Email:{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.owner_email}
-              </span>
-            </label>
-            <label className="form-label">
-              Tipo de cuenta:{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.account_type === "savings"
-                  ? "Ahorros"
-                  : "Corriente"}
-              </span>
-            </label>
-            <label className="form-label">
-              Moneda:{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.currency}
-              </span>
-            </label>
-            <label className="form-label">
-              Nombre del banco:{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.bank_name}
-              </span>
-            </label>
-            <label className="form-label">
-              SWIFT:{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.swift}
-              </span>
-            </label>
-            <label className="form-label">
-              Cuenta estándar:{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {paymentMethodInfo.standard_account}
-              </span>
-            </label>
-          </>
-        )}
-        {paymentMethodInfo.payment_type === "payment_link" && (
-          <label className="form-label">
-            Enlace de pago:{" "}
-            <span style={{ fontWeight: "bold" }}>
-              {paymentMethodInfo.payment_link}
-            </span>
-          </label>
-        )}
+          </div>
+          {paymentMethodInfo.payment_type === "bank_transfer" && (
+            <>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Titular de la cuenta:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.owner_name}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Documento:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.owner_document}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Email:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.owner_email}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Tipo de cuenta:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.account_type === "savings"
+                      ? "Ahorros"
+                      : "Corriente"}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Moneda:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.currency}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Nombre del banco:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.bank_name}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  SWIFT:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.swift}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Número de ruta:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.routing_number}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Cuenta estándar:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.standard_account}
+                  </span>
+                </label>
+              </div>
+            </>
+          )}
+          {paymentMethodInfo.payment_type === "payment_link" && (
+            <div className="col-12">
+              <label className="form-label">
+                Enlace de pago:{" "}
+                <span style={{ fontWeight: "bold" }}>
+                  {paymentMethodInfo.payment_link}
+                </span>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
     );
-    const footer = null;
-    setDialogContent({ title, children, footer });
+    setDialogContent({ title: "Detalles del Método de Pago", children });
     setShowDialog(true);
   };
 
@@ -358,7 +409,6 @@ const PaymentMethods = ({ setActiveTab }) => {
         title={dialogContent.title}
         visible={showDialog}
         onHide={() => setShowDialog(false)}
-        footer={dialogContent.footer}
       >
         <p>{dialogContent.children}</p>
       </DialogModal>
@@ -405,6 +455,30 @@ const PaymentMethods = ({ setActiveTab }) => {
             {selectedPaymentType &&
               selectedPaymentType.code === "bank_transfer" && (
                 <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Nombre del método *</label>
+                      <InputText
+                        type="text"
+                        className="input"
+                        value={paymentMethod.payment_method_name}
+                        onChange={(e) => {
+                          dispatch(
+                            paymentMethodActions.modifyPropertyValue({
+                              id: "payment_method_name",
+                              value: e.target.value,
+                            })
+                          );
+                        }}
+                        placeholder="PayPal, Banco XYZ, etc."
+                      />
+                      {paymentMethodErrors.payment_method_name && (
+                        <div className="error-message">
+                          {paymentMethodErrors.payment_method_name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Número de Cuenta *</label>
@@ -636,29 +710,54 @@ const PaymentMethods = ({ setActiveTab }) => {
               )}
             {selectedPaymentType &&
               selectedPaymentType.code === "payment_link" && (
-                <div className="form-group">
-                  <label className="form-label">Link de pago *</label>
-                  <InputText
-                    type="text"
-                    className={`input ${
-                      paymentMethodErrors.payment_link ? "error" : ""
-                    }`}
-                    value={paymentMethod.payment_link}
-                    onChange={(e) => {
-                      dispatch(
-                        paymentMethodActions.modifyPropertyValue({
-                          id: "payment_link",
-                          value: e.target.value,
-                        })
-                      );
-                    }}
-                    placeholder="https://example.com/payment-link"
-                  />
-                  {paymentMethodErrors.payment_link && (
-                    <div className="error-message">
-                      {paymentMethodErrors.payment_link}
-                    </div>
-                  )}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Nombre del método *</label>
+                    <InputText
+                      type="text"
+                      className="input"
+                      value={paymentMethod.payment_method_name}
+                      onChange={(e) => {
+                        dispatch(
+                          paymentMethodActions.modifyPropertyValue({
+                            id: "payment_method_name",
+                            value: e.target.value,
+                          })
+                        );
+                      }}
+                      placeholder="PayPal, Banco XYZ, etc."
+                    />
+                    {paymentMethodErrors.payment_method_name && (
+                      <div className="error-message">
+                        {paymentMethodErrors.payment_method_name}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Link de pago *</label>
+                    <InputText
+                      type="text"
+                      className={`input ${
+                        paymentMethodErrors.payment_link ? "error" : ""
+                      }`}
+                      value={paymentMethod.payment_link}
+                      onChange={(e) => {
+                        dispatch(
+                          paymentMethodActions.modifyPropertyValue({
+                            id: "payment_link",
+                            value: e.target.value,
+                          })
+                        );
+                      }}
+                      placeholder="https://example.com/payment-link"
+                    />
+                    {paymentMethodErrors.payment_link && (
+                      <div className="error-message">
+                        {paymentMethodErrors.payment_link}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -673,6 +772,9 @@ const PaymentMethods = ({ setActiveTab }) => {
                   onClick={() => {
                     dispatch(paymentMethodActions.startPaymentMethod());
                     setEditingPaymentMethod(false);
+                    setSelectedAccountType(null);
+                    setSelectedPaymentType(null);
+                    setPaymentMethodErrors({});
                   }}
                 >
                   Cancelar
@@ -694,77 +796,40 @@ const PaymentMethods = ({ setActiveTab }) => {
                   stripedRows
                 >
                   <Column
-                    header="Método"
+                    header="Método de Pago"
+                    field="payment_method_name"
                     style={{
-                      minWidth: "15rem",
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                  ></Column>
+                  <Column
+                    header="Tipo de Método de Pago"
+                    style={{
+                      minWidth: "14rem",
                       padding: "1rem",
                     }}
                     body={(rowData) => {
                       return getPaymentMethodName(rowData.payment_type);
                     }}
                   ></Column>
-                  <Column
-                    header="Link de pago"
-                    body={(rowData) => {
-                      return (
-                        <>
-                          {rowData.payment_type === "payment_link"
-                            ? rowData.payment_link
-                            : "N/A"}
-                        </>
-                      );
-                    }}
-                  ></Column>
-                  <Column
-                    header="Número de cuenta"
-                    body={(rowData) => {
-                      return (
-                        <>
-                          {rowData.payment_type === "bank_transfer"
-                            ? rowData.account_number
-                            : "N/A"}
-                        </>
-                      );
-                    }}
-                  ></Column>
-                  <Column field="bank_name" header="Nombre del banco"></Column>
 
                   <Column
                     header="Acciones"
+                    style={{
+                      minWidth: "15rem",
+                      padding: "1rem",
+                    }}
                     body={(rowData) => {
                       return (
                         <div className="table-actions">
-                          <Button
-                            icon={<PencilIcon />}
-                            outlined
-                            style={{
-                              height: "40px",
-                              width: "40px",
-                              color: "var(--color-blue)",
-                              border: "none",
-                            }}
+                          <EditButton
                             onClick={() => handleEditPaymentMethod(rowData)}
                           />
-                          <Button
-                            icon={<Trash2 />}
-                            outlined
-                            style={{
-                              height: "40px",
-                              width: "40px",
-                              color: "#e74c3c",
-                              border: "none",
-                            }}
+                          <DeleteButton
                             onClick={() => handleDeletePaymentMethod(rowData)}
                           />
-                          <Button
-                            icon={<Info />}
-                            outlined
-                            style={{
-                              height: "40px",
-                              width: "40px",
-                              color: "#3498db",
-                              border: "none",
-                            }}
+                          <InfoButton
                             onClick={() => handleViewPaymentMethod(rowData)}
                           />
                         </div>
@@ -778,61 +843,43 @@ const PaymentMethods = ({ setActiveTab }) => {
               <div>
                 <DataTable
                   value={paymentMethods}
-                  dataKey="product_id"
-                  tableStyle={{ minWidth: "6rem" }}
+                  dataKey="payment_method_id"
+                  showGridlines
+                  stripedRows
                 >
                   <Column
-                    header="Método"
+                    style={{
+                      minWidth: "14rem",
+                      padding: "1rem",
+                    }}
+                    header="Método de pago"
                     body={(rowData) => {
                       return (
                         <>
                           <Card>
-                            <div>
+                            <div className="p-3">
                               <span
                                 style={{
-                                  fontWeight: "400",
+                                  fontWeight: "800",
+                                  fontSize: "1.1rem",
                                 }}
                               >
-                                {getPaymentMethodName(rowData)}
+                                {rowData.payment_method_name}
                               </span>
                             </div>
                             <div className="table-actions">
-                              <div className="table-actions">
-                                <Button
-                                  icon={<PencilIcon />}
-                                  outlined
-                                  style={{
-                                    height: "40px",
-                                    width: "40px",
-                                    color: "var(--color-blue)",
-                                    border: "none",
-                                  }}
+                              <div className="table-actions p-2">
+                                <EditButton
                                   onClick={() =>
                                     handleEditPaymentMethod(rowData)
                                   }
                                 />
-                                <Button
-                                  icon={<Trash2 />}
-                                  outlined
-                                  style={{
-                                    height: "40px",
-                                    width: "40px",
-                                    color: "#e74c3c",
-                                    border: "none",
-                                  }}
+                                <DeleteButton
                                   onClick={() =>
                                     handleDeletePaymentMethod(rowData)
                                   }
                                 />
-                                <Button
-                                  icon={<Info />}
-                                  outlined
-                                  style={{
-                                    height: "40px",
-                                    width: "40px",
-                                    color: "#3498db",
-                                    border: "none",
-                                  }}
+                                <InfoButton
                                   onClick={() =>
                                     handleViewPaymentMethod(rowData)
                                   }
@@ -844,8 +891,6 @@ const PaymentMethods = ({ setActiveTab }) => {
                       );
                     }}
                   ></Column>
-
-                  <Column expander style={{ width: "3em" }} />
                 </DataTable>
               </div>
             )}

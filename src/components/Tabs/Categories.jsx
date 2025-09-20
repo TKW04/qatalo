@@ -18,6 +18,7 @@ import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
 import "../../styles/catalog.css";
+import { DeleteButton, EditButton } from "../Buttons";
 
 let once = true;
 const Categories = ({ setActiveTab }) => {
@@ -121,7 +122,7 @@ const Categories = ({ setActiveTab }) => {
             dispatch(categoryActions.startCategory());
             setIsLoading(false);
             setShowDeleteDialog(false);
-          }, 1500);
+          }, 4500);
         }}
         style={{ width: "100px", margin: "2px" }}
       />
@@ -215,41 +216,13 @@ const Categories = ({ setActiveTab }) => {
                   <div>
                     <div className="grid justify-content-center">
                       <div className={isMobile ? "col-12" : "col"}>
-                        <Button
-                          icon={<PencilIcon />}
-                          raised
-                          label={"Editar"}
-                          style={{
-                            height: "40px",
-                            width: "100px",
-                            backgroundColor: "var(--color-blue)",
-                            border: "1px solid ",
-                            color: "white",
-                            borderRadius: "5px",
-                            paddingLeft: "5px",
-                          }}
-                          onClick={() => {
-                            handleEditCategory(rowData);
-                          }}
+                        <EditButton
+                          onClick={() => handleEditCategory(rowData)}
                         />
                       </div>
                       <div className={isMobile ? "col-12" : "col"}>
-                        <Button
-                          raised
-                          label={"Eliminar"}
-                          style={{
-                            height: "40px",
-                            width: "108px",
-                            backgroundColor: "#e74c3c",
-                            border: "1px solid ",
-                            color: "white",
-                            borderRadius: "5px",
-                            paddingLeft: "5px",
-                          }}
-                          onClick={() => {
-                            handleDeleteCategory(true, rowData);
-                          }}
-                          icon={<Trash2 />}
+                        <DeleteButton
+                          onClick={() => handleDeleteCategory(true, rowData)}
                         />
                       </div>
                     </div>

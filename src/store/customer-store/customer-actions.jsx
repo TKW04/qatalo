@@ -265,6 +265,7 @@ export const CancelTransaction = (
 export const CancelTransactionAdmin = (
   customer_id,
   transaction_id,
+  cancellationReason,
   showError,
   showWarning,
   showSuccess
@@ -278,6 +279,7 @@ export const CancelTransactionAdmin = (
           body: JSON.stringify({
             customer_id: customer_id,
             transaction_id: transaction_id,
+            cancellation_reason: cancellationReason,
           }),
           headers: {
             "Content-Type": "application/json",
