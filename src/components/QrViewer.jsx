@@ -89,7 +89,12 @@ async function qrWithLogoDataURL({
         ctx.lineTo(boxX + boxW - r, boxY);
         ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
         ctx.lineTo(boxX + boxW, boxY + boxH - r);
-        ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+        ctx.quadraticCurveTo(
+          boxX + boxW,
+          boxY + boxH,
+          boxX + boxW - r,
+          boxY + boxH
+        );
         ctx.lineTo(boxX + r, boxY + boxH);
         ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
         ctx.lineTo(boxX, boxY + r);
@@ -382,12 +387,6 @@ const QrViewer = () => {
 
 export default QrViewer;
 
-
-
-
-
-
-
 // import { useState, useEffect, useRef } from "react";
 // import QRCode from "qrcode";
 // import { Card } from "primereact/card";
@@ -515,9 +514,9 @@ export default QrViewer;
 //         <head>
 //           <title>QR - ${business.name}</title>
 //           <style>
-//             body { 
-//               font-family: 'Roboto', sans-serif;; 
-//               text-align: center; 
+//             body {
+//               font-family: 'Roboto', sans-serif;;
+//               text-align: center;
 //               padding: 20px;
 //               margin: 0;
 //             }
@@ -527,25 +526,25 @@ export default QrViewer;
 //               border: 2px solid #113F67;
 //               border-radius: 8px;
 //             }
-//             .logo { 
-//               width: 80px; 
-//               height: 80px; 
-//               border-radius: 50%; 
+//             .logo {
+//               width: 80px;
+//               height: 80px;
+//               border-radius: 50%;
 //               margin-bottom: 10px;
 //               object-fit: cover;
 //             }
-//             .business-name { 
-//               font-size: 24px; 
-//               font-weight: bold; 
-//               color: #113F67; 
+//             .business-name {
+//               font-size: 24px;
+//               font-weight: bold;
+//               color: #113F67;
 //               margin: 10px 0;
 //             }
-//             .qr-code { 
-//               margin: 20px 0; 
+//             .qr-code {
+//               margin: 20px 0;
 //             }
-//             .url { 
-//               font-size: 14px; 
-//               color: #666; 
+//             .url {
+//               font-size: 14px;
+//               color: #666;
 //               margin-top: 10px;
 //             }
 //           </style>

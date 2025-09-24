@@ -72,8 +72,8 @@ const Business = () => {
         setLoadingMessage("Actualizando negocio...");
         dispatch(UpdateBusiness(business, showError, showWarning, showSuccess));
       }
-      dispatch(GetBusiness(auth.sub, showError));
       setTimeout(() => {
+        dispatch(GetBusiness(auth.sub, showError));
         setIsLoading(false);
       }, 4500);
     }
