@@ -1,14 +1,14 @@
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getTokenInfo } from "../../helpers/token";
 import { GetSubscription } from "../../store/payment-store/plan-actions";
 import { useNotification } from "../UI/NotificationProvider";
 import "../../styles/catalog.css";
-import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { formatDate, formatted } from "../../helpers/utils";
 import { Link } from "react-router-dom";
+import Loading from "../UI/Loading";
 
 let once = true;
 const Subscription = () => {
@@ -17,7 +17,8 @@ const Subscription = () => {
   const subscription = useSelector((state) => state.plan.subscription);
   const { showError } = useNotification();
   const isMobile = window.innerWidth <= 480;
-  console.log(subscription);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Cargando...");
 
   useEffect(() => {
     if (
@@ -29,6 +30,11 @@ const Subscription = () => {
     ) {
       dispatch(GetSubscription(auth["custom:transaction_id"], showError));
       once = false;
+      setIsLoading(true);
+      setLoadingMessage("Cargando suscripción...");
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 4500);
     }
   }, [auth, dispatch, showError, subscription.subscription_id]);
 
@@ -75,6 +81,7 @@ const Subscription = () => {
 
   return (
     <div>
+      <Loading message={loadingMessage} visible={isLoading} />
       <div className="admin-header">
         <h1>Gestión de Suscripción</h1>
       </div>
@@ -164,7 +171,7 @@ const Subscription = () => {
                     rel="noopener noreferrer"
                     className="btn btn-outline"
                   >
-                    Ver Catálogo Público
+                    Administrar Suscripción
                   </Link>
                 </div>
               </div>

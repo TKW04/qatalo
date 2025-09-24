@@ -14,6 +14,7 @@ import "../styles/admin.css";
 import Customers from "../components/Tabs/Customers";
 import { Menu } from "lucide-react";
 import Subscription from "../components/Tabs/Subscription";
+import Password from "../components/Tabs/Password";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
@@ -70,6 +71,7 @@ const AdminDashboard = () => {
         {activeTab === "customers" && <Customers setActiveTab={setActiveTab} />}
         {activeTab === "qr" && <QrTab setActiveTab={setActiveTab} />}
         {activeTab === "subscription" && <Subscription setActiveTab={setActiveTab} />}
+        {activeTab === "changepassword" && <Password setActiveTab={setActiveTab} />}
       </main>
     </div>
   );

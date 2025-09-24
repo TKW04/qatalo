@@ -30,10 +30,7 @@ const Login = () => {
         (data) => {
           setToken(data.idToken.jwtToken);
           const userInfo = getTokenInfo();
-          if (
-            (userInfo && userInfo["custom:transaction_status"] === "pending") ||
-            userInfo["custom:transaction_status"] === "canceled"
-          ) {
+          if (userInfo && userInfo["custom:transaction_status"] === "pending") {
             window.location.href = "/payment";
           } else {
             window.location.href = "/admin";
@@ -85,7 +82,10 @@ const Login = () => {
               />
             </div>
             <div className="form-links">
-              <a href="#" onClick={() => (window.location.href = "/forgot-password")}>
+              <a
+                href="#"
+                onClick={() => (window.location.href = "/forgot-password")}
+              >
                 ¿Olvidaste tu contraseña?
               </a>
             </div>

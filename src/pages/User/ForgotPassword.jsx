@@ -7,13 +7,15 @@ import { useNotification } from "../../components/UI/NotificationProvider";
 import { userActions } from "../../store/user-store/user-slice";
 import { Forgot_Password } from "../../store/user-store/user-actions";
 import "./ForgotPassword.css";
+import Loading from "../../components/UI/Loading";
 
 const ForgotPassword = () => {
   const user = useSelector((state) => state.user.user);
   const dispatch = useDispatch();
   const { showWarning, showError, showSuccess } = useNotification();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Cargando...");
   const [isValidEmail, setIsValidEmail] = useState(false);
 
   const onChange = (id, value) => {
@@ -22,11 +24,19 @@ const ForgotPassword = () => {
 
   const handleForgot = (event) => {
     event.preventDefault();
+    setIsLoading(true);
+    setLoadingMessage("Enviando correo...");
     dispatch(Forgot_Password(user.email, showError, showWarning, showSuccess));
+    setTimeout(() => {
+      setIsLoading(false);
+      setLoadingMessage("");
+      window.location.href = "/login";
+    }, 4500);
   };
 
   return (
     <>
+    <Loading message={loadingMessage} visible={isLoading} />
       <div className="auth-container-forgot">
         <div id="register" className={`form-section active`}>
           <div className="logo_forgot">
