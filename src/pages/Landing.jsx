@@ -7,7 +7,6 @@ import {
   Package,
   QrCode,
   MessageCircle,
-  ChartNoAxesCombined,
   Menu,
   Users,
 } from "lucide-react";
@@ -23,13 +22,15 @@ import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "primereact/resources/primereact.min.css";
 import LandingSidebar from "../components/LandingSideBar";
 import { Link } from "react-router-dom";
+import Navbar from "./NavBar";
 
 const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
   const dispatch = useDispatch();
   const { showError } = useNotification();
   const [showMenu, setShowMenu] = useState(false);
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 768;
+  const isIPad = window.innerWidth <= 1024 && window.innerWidth > 768;
 
   useEffect(() => {
     if (plans.length === 0) {
@@ -58,8 +59,9 @@ const Landing = () => {
           position: "fixed",
         }}
       >
-        {!isMobile && (
-          <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+        <Navbar />
+        {/* {!isMobile && !isIPad && (
+          <>
             <div className="flex">
               <Image
                 src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
@@ -67,9 +69,8 @@ const Landing = () => {
                 width={130}
               />
             </div>
-
-            <>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+            <div className="flex grid" style={{width:"100%", marginTop:"10px"}}>
+              <div className="col-1 align-items-center justify-content-center" >
                 <a
                   href="#inicio"
                   style={{
@@ -83,7 +84,7 @@ const Landing = () => {
                   Inicio
                 </a>
               </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+              <div className="col align-items-center justify-content-center">
                 <a
                   href="#caracteristicas"
                   style={{
@@ -97,7 +98,7 @@ const Landing = () => {
                   Características
                 </a>
               </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+              <div className="col-3 align-items-center justify-content-center">
                 <a
                   href="#como-funciona"
                   style={{
@@ -111,7 +112,7 @@ const Landing = () => {
                   Cómo Funciona
                 </a>
               </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+              <div className="col align-items-start justify-content-start">
                 <a
                   href="#planes-precios"
                   style={{
@@ -125,7 +126,7 @@ const Landing = () => {
                   Precios
                 </a>
               </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+              <div className="col-3 align-items-center justify-content-center">
                 <a
                   href="/register"
                   style={{
@@ -139,7 +140,7 @@ const Landing = () => {
                   Comenzar Gratis
                 </a>
               </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
+              <div className="col align-items-center justify-content-center">
                 <a
                   href="/login"
                   style={{
@@ -153,10 +154,10 @@ const Landing = () => {
                   Iniciar Sesión
                 </a>
               </div>
-            </>
-          </div>
+            </div>
+          </>
         )}
-        {isMobile && (
+        {(isMobile || isIPad) && (
           <>
             <div className="flex-auto flex align-items-center justify-content-start bg-primary font-bold  border-round">
               <div className="flex">
@@ -185,7 +186,7 @@ const Landing = () => {
             isOpen={showMenu}
             onClose={() => setShowMenu(false)}
           />
-        )}
+        )} */}
       </div>
 
       <div>

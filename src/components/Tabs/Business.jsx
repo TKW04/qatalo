@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputTextarea } from "primereact/inputtextarea";
 
 import { businessActions } from "../../store/business-store/business-slice";
 import { useNotification } from "../UI/NotificationProvider";
@@ -214,9 +215,10 @@ const Business = () => {
 
             <div className="form-group">
               <label className="form-label">Descripción</label>
-              <InputText
+              <InputTextarea
                 className="input"
                 value={business.description}
+                rows={6}
                 onChange={(e) => {
                   dispatch(
                     businessActions.modifyPropertyValue({

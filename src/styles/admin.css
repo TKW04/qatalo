@@ -1,6 +1,6 @@
 .admin-layout {
   display: flex;
-  width: 1200px !important;
+  /* width: 1200px !important; */
   min-height: 100vh;
 }
 
@@ -253,7 +253,7 @@
   background-color: var(--color-blue) !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .admin-layout {
     display: flex;
     width: 400px !important;
