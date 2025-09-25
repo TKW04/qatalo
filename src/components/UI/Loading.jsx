@@ -1,5 +1,3 @@
-"use client";
-
 import "./Loading.css";
 
 const Loading = ({ visible = true, message = "Cargando..." }) => {

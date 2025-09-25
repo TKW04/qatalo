@@ -332,7 +332,7 @@ const Landing = () => {
         </section>
         <section className="pricing-section" id="planes-precios">
           <h1 className="section-title">Planes y Precios</h1>
-          <div className="plans-grid">
+          <div className="grid">
             {plans.map((plan) => (
               <PlanCard plan={plan} key={plan.price_id} />
             ))}
