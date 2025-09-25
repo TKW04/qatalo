@@ -7,10 +7,8 @@ import {
   Package,
   QrCode,
   MessageCircle,
-  Menu,
   Users,
 } from "lucide-react";
-import { Image } from "primereact/image";
 
 import "./Landing.css";
 
@@ -18,11 +16,10 @@ import { GetPlans } from "../store/payment-store/plan-actions";
 import { useNotification } from "../components/UI/NotificationProvider";
 import PlanCard from "../components/PlanCard";
 
+import { Link } from "react-router-dom";
+import Navbar from "./Navbar";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "primereact/resources/primereact.min.css";
-import LandingSidebar from "../components/LandingSideBar";
-import { Link } from "react-router-dom";
-import Navbar from "./NavBar";
 
 const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
