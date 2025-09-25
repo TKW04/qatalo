@@ -14,7 +14,7 @@ const Password = () => {
   const { showWarning, showError, showSuccess } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
 
   const maskaredEmail = (email) => {
     const [localPart, domain] = email.split("@");

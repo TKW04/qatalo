@@ -29,7 +29,8 @@
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  /* border: 3px solid rgba(255, 255, 255, 0.2); */
+  background-color: white;
 }
 
 .catalog-business-info {

@@ -36,7 +36,7 @@ const ProductModal = ({ product, business, onClose }) => {
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [showBuyDialog, setShowBuyDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
 
   const paymentMethods = useSelector(
     (state) => state.paymentMethod.paymentMethods

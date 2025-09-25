@@ -51,7 +51,7 @@ const Customers = ({ setActiveTab }) => {
   // const customer_id = customer.customer_id;
 
   const [imageSize, setImageSize] = useState({ width: 100, height: 200 });
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
   const [expandedRows, setExpandedRows] = useState(null);
 
   const [editingCustomer, setEditingCustomer] = useState(false);

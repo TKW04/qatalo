@@ -26,7 +26,7 @@ import { currencies } from "../../helpers/utils";
 
 let once = true;
 const PaymentMethods = ({ setActiveTab }) => {
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
   const auth = getTokenInfo();
   const business = useSelector((state) => state.business.business);
   const paymentMethod = useSelector(

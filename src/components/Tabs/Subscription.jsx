@@ -16,7 +16,7 @@ const Subscription = () => {
   const auth = getTokenInfo();
   const subscription = useSelector((state) => state.plan.subscription);
   const { showError } = useNotification();
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
 
