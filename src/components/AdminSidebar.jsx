@@ -41,7 +41,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   useEffect(() => {
     if (
       auth["custom:transaction_status"] !== "trialing" &&
-      auth["custom:transaction_status"] !== "activated"
+      auth["custom:transaction_status"] !== "active"
     ) {
       if (activeTab !== "subscription") {
         onTabChange("subscription");
@@ -52,7 +52,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const setEnabled = (itemId) => {
     if (
       auth["custom:transaction_status"] !== "trialing" &&
-      auth["custom:transaction_status"] !== "activated"
+      auth["custom:transaction_status"] !== "active"
     ) {
       if (itemId === "subscription") {
         return true;
