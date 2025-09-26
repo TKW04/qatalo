@@ -262,7 +262,6 @@ const PaymentMethods = ({ setActiveTab }) => {
   
 
   const handleViewPaymentMethod = (paymentMethodInfo) => {
-      console.log(paymentMethodInfo);
     const children = (
       <div
         style={{

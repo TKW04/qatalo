@@ -1,19 +1,5 @@
 const PlanCard = ({ plan, button }) => {
   const isMobile = window.innerWidth <= 760;
-  const getSpanishBillingCycle = (cycle) => {
-    console.log(plan);
-    
-    switch (cycle) {
-      case "month":
-        return "mes";
-      case "3 months":
-        return "3 meses";
-      case "year":
-        return "año";
-      default:
-        return cycle;
-    }
-  }
   return (
     <div className={`plan-card col${isMobile ? '-12 mb-3' : ' ml-3'}  p-3`} key={plan.price_id}>
       <h3 className="plan-name">{plan.name}</h3>

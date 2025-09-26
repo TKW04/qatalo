@@ -1,238 +1,136 @@
-import { useState, useEffect, useRef } from "react";
-import QRCode from "qrcode";
-import { Card } from "primereact/card";
-import { Download, Printer, BookUp2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { QRCodeSVG } from "qrcode.react";
+import { Card } from "primereact/card";
+import { Button } from "primereact/button";
+
 import { getTokenInfo } from "../helpers/token";
 import { useNotification } from "./UI/NotificationProvider";
-import { GetBusiness } from "../store/business-store/business-actions";
+import { GetBusinessBySlug } from "../store/business-store/business-actions";
+
+import { BookUp2, Download, Link, Printer } from "lucide-react";
+import { useParams } from "react-router-dom";
+import Loading from "./UI/Loading";
 
 let once = true;
 
-/* ==================== Helpers anti-CORS / composición ==================== */
-
-function withBust(url) {
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}v=${Date.now()}`;
-}
-
-// Descarga el logo con fetch CORS y lo convierte a data:URL (base64)
-async function fetchAsDataURL(url) {
-  const res = await fetch(withBust(url), { mode: "cors", cache: "no-store" });
-  if (!res.ok) throw new Error(`Logo HTTP ${res.status}`);
+// Utilidad: descarga una imagen y la convierte a data URL (evita CORS)
+const toDataURL = async (url) => {
+  const res = await fetch(url, { mode: "cors", credentials: "omit" });
   const blob = await res.blob();
-  const dataUrl = await new Promise((resolve, reject) => {
+  return await new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => resolve(reader.result);
+    reader.onloadend = () => resolve(reader.result); // "data:image/...;base64,xxxx"
     reader.readAsDataURL(blob);
   });
-  return dataUrl;
-}
-
-async function loadImageFromDataURL(dataUrl) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    // para data URLs no se requiere crossOrigin
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = dataUrl;
-  });
-}
-
-/**
- * Genera un dataURL de QR con un logo centrado encima.
- * Usa nivel de corrección "H" y un parche blanco detrás del logo.
- */
-async function qrWithLogoDataURL({
-  text,
-  opts = {},
-  logoUrl,
-  size = 256,
-  logoScale = 0.2,
-  drawSafeZone = true,
-  safeZonePadding = 8,
-}) {
-  // 1) QR en canvas temporal
-  const canvas = document.createElement("canvas");
-  await QRCode.toCanvas(canvas, text, {
-    errorCorrectionLevel: "H",
-    width: size,
-    margin: 2,
-    ...opts,
-  });
-  const ctx = canvas.getContext("2d");
-
-  // 2) Logo (si hay) — usando data:URL para evitar contaminar el canvas
-  if (logoUrl) {
-    try {
-      const dataUrl = await fetchAsDataURL(logoUrl);
-      const logoImg = await loadImageFromDataURL(dataUrl);
-
-      const logoSize = Math.floor(size * logoScale);
-      const x = Math.floor((size - logoSize) / 2);
-      const y = Math.floor((size - logoSize) / 2);
-
-      if (drawSafeZone) {
-        const pad = safeZonePadding;
-        const boxX = x - pad;
-        const boxY = y - pad;
-        const boxW = logoSize + pad * 2;
-        const boxH = logoSize + pad * 2;
-        const r = 8;
-
-        ctx.save();
-        ctx.fillStyle = "#FFFFFF";
-        ctx.beginPath();
-        ctx.moveTo(boxX + r, boxY);
-        ctx.lineTo(boxX + boxW - r, boxY);
-        ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
-        ctx.lineTo(boxX + boxW, boxY + boxH - r);
-        ctx.quadraticCurveTo(
-          boxX + boxW,
-          boxY + boxH,
-          boxX + boxW - r,
-          boxY + boxH
-        );
-        ctx.lineTo(boxX + r, boxY + boxH);
-        ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
-        ctx.lineTo(boxX, boxY + r);
-        ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-
-      ctx.drawImage(logoImg, x, y, logoSize, logoSize);
-    } catch (e) {
-      console.warn("Logo no embebido (data URL):", e);
-    }
-  }
-
-  // 3) Exportar PNG del QR ya compuesto
-  return canvas.toDataURL("image/png");
-}
-
-/* ==================== Componente ==================== */
+};
 
 const QrViewer = () => {
   const auth = getTokenInfo();
-  const business = useSelector((state) => state.business.business);
+  const business = useSelector((state) => state.business.business) || {};
   const dispatch = useDispatch();
+  const params = useParams();
   const { showError } = useNotification();
-  const [qrDataUrl, setQrDataUrl] = useState("");
-  const [loading, setLoading] = useState(true);
-  const canvasRef = useRef(null);
 
-  const catalogUrl = `${window.location.origin}/catalog/${business.slug}`;
+  const [logoDataUrl, setLogoDataUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (business !== null && business.business_id === "" && once) {
-      dispatch(GetBusiness(auth.sub, showError));
+      setIsLoading(true);
+      dispatch(GetBusinessBySlug(params.slug, showError));
       once = false;
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 4500);
     }
-  }, [auth, business, business.business_id, dispatch, showError]);
+  }, [auth, business, business?.business_id, dispatch, showError]);
 
-  // Generar QR con logo centrado (robusto a CORS)
   useEffect(() => {
+    if (
+      business !== null &&
+      business.business_id !== "" &&
+      logoDataUrl === null
+    ) {
+      const data = toDataURL(business.logo_url);
+      data.then((d) => setLogoDataUrl(d)).catch(() => setLogoDataUrl(null));
+    }
+  }, [auth, business, business?.business_id, dispatch, showError]);
+
+  const catalogUrl = useMemo(() => {
+    const slug = business?.slug || "";
+    return `${window.location.origin}/catalog/${slug}`;
+  }, [business?.slug]);
+
+  // Carga el logo y lo convierte a Data URL para incrustarlo en el SVG
+  useEffect(() => {
+    const src = business.logo_url;
     let cancelled = false;
-    const generateQR = async () => {
+
+    (async () => {
       try {
-        setLoading(true);
-
-        const qrOpts = {
-          color: { dark: "#113F67", light: "#FFFFFF" },
-        };
-
-        const composed = await qrWithLogoDataURL({
-          text: catalogUrl,
-          opts: qrOpts,
-          logoUrl: business?.logo_url || null,
-          size: 256,
-          logoScale: 0.39, // ajusta 0.16–0.22 según legibilidad
-          drawSafeZone: true,
-          safeZonePadding: 8,
-        });
-
-        if (!cancelled) setQrDataUrl(composed);
-      } catch (error) {
-        console.error("Error generating QR code:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!src) {
+          setLogoDataUrl(null);
+          return;
+        }
+        const data = await toDataURL(src);
+        if (!cancelled) setLogoDataUrl(data);
+      } catch (e) {
+        setLogoDataUrl(null);
       }
-    };
-    generateQR();
+    })();
+
     return () => {
       cancelled = true;
     };
-  }, [catalogUrl, business?.logoUrl]);
+  }, [business?.logo_url]);
 
-  // Descargar “flyer” con encabezado + QR ya compuesto
-  const downloadQR = async () => {
-    try {
-      const canvas = canvasRef.current;
+  // Exporta el SVG (que ya contiene el logo incrustado) a PNG
+  const downloadPNG = () => {
+    const wrapper = svgRef.current;
+    if (!wrapper) return;
+    const svg = wrapper.querySelector("svg");
+    if (!svg) return;
+
+    const svgString = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
       const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
 
-      canvas.width = 400;
-      canvas.height = 500;
-
-      // Fondo blanco
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const drawHeaderThenQR = () => {
-        // Nombre
-        ctx.fillStyle = "#113F67";
-        ctx.font = "bold 24px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(business.name, 200, business.logoUrl ? 130 : 50);
-
-        // QR (ya con logo centrado)
-        const qrImg = new Image();
-        qrImg.onload = () => {
-          ctx.drawImage(qrImg, 72, business.logoUrl ? 150 : 80, 256, 256);
-
-          // URL
-          ctx.fillStyle = "#666666";
-          ctx.font = "14px Arial";
-          ctx.fillText(catalogUrl, 200, business.logoUrl ? 430 : 360);
-
-          // Descargar
-          const link = document.createElement("a");
-          link.download = `qr-${business.slug}.png`;
-          link.href = canvas.toDataURL("image/png");
-          link.click();
-        };
-        qrImg.src = qrDataUrl;
-      };
-
-      if (business.logoUrl) {
-        try {
-          // Encabezado: logo de empresa arriba (no el del centro del QR)
-          const headerDataUrl = await fetchAsDataURL(business.logoUrl);
-          const headerImg = await loadImageFromDataURL(headerDataUrl);
-          ctx.drawImage(headerImg, 160, 20, 80, 80);
-          drawHeaderThenQR();
-        } catch (error) {
-          console.warn("No se pudo cargar logo de encabezado:", error);
-          drawHeaderThenQR();
-        }
-      } else {
-        drawHeaderThenQR();
-      }
-    } catch (error) {
-      console.error("Error downloading QR:", error);
-    }
+      const pngUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = pngUrl;
+      link.download = `qrcode-${business?.slug || "catalog"}.png`;
+      link.click();
+    };
+    // No es estrictamente necesario porque ya incrustamos data URL, pero es buena práctica
+    img.crossOrigin = "anonymous";
+    img.src = url;
   };
 
-  // Imprimir tarjeta con el QR compuesto
+  // Imprime el SVG tal cual (con el logo inline)
   const printQR = () => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
+    const wrapper = svgRef.current;
+    if (!wrapper) return;
+    const svg = wrapper.querySelector("svg");
+    if (!svg) return;
+
+    const svgHTML = svg.outerHTML;
+    const w = window.open("", "_blank");
+
+    w.document.write(`
       <html>
         <head>
-          <title>QR - ${business.name}</title>
+          <title>QR - ${business?.name || ""}</title>
           <style>
             body { 
               font-family: 'Roboto', sans-serif; 
@@ -273,114 +171,133 @@ const QrViewer = () => {
         <body>
           <div class="qr-container">
             ${
-              business.logoUrl
-                ? `<img src="${business.logoUrl}" alt="Logo" class="logo">`
+              logoDataUrl
+                ? `<img src="${logoDataUrl}" alt="Logo" class="logo">`
                 : ""
             }
-            <div class="business-name">${business.name}</div>
+            <div class="business-name">${business?.name || ""}</div>
             <div class="qr-code">
-              <img src="${qrDataUrl}" alt="QR Code" style="width: 256px; height: 256px;">
+              ${svgHTML}
             </div>
             <div class="url">${catalogUrl}</div>
           </div>
         </body>
       </html>
     `);
-    printWindow.document.close();
-    printWindow.print();
+    w.document.close();
+    w.focus();
+    w.print();
   };
 
   const footer = (
-    <>
-      <div className="qr-actions" style={{ gap: "10px" }}>
-        <Link
-          className="btn btn-primary"
-          onClick={downloadQR}
-          disabled={loading}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", margin: "5px" }}
-        >
-          <Download /> Descargar
-        </Link>
-        <Link
-          className="btn btn-secondary"
-          onClick={printQR}
-          disabled={loading}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", margin: "5px" }}
-        >
-          <Printer /> Imprimir
-        </Link>
-
-        <Link
-          to={catalogUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-outline"
-          style={{ display: "flex", alignItems: "center", margin: "5px" }}
-        >
-          <BookUp2 /> Catálogo
-        </Link>
-      </div>
-    </>
+    <div
+      className="qr-actions"
+      style={{ gap: "10px", display: "flex", flexWrap: "wrap" }}
+    >
+      <Button
+        className="btn btn-primary"
+        onClick={downloadPNG}
+        style={{ display: "flex", alignItems: "center", margin: "5px" }}
+        label="Descargar"
+        icon={<Download />}
+      />
+      <Button
+        className="btn btn-secondary"
+        onClick={printQR}
+        style={{ display: "flex", alignItems: "center", margin: "5px" }}
+        label="Imprimir"
+        icon={<Printer />}
+      />
+      <Button
+        className="btn btn-outline"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          margin: "5px",
+          width: "100%",
+        }}
+        label="Catálogo"
+        icon={<BookUp2 />}
+        onClick={() => {
+          window.location.href = catalogUrl;
+        }}
+      />
+    </div>
   );
+
+  const size = 300;
+  const defaultLogoSize = Math.round(size * 0.8); // ~80% del QR (lectura segura)
 
   return (
     <>
-      <div style={{ marginLeft: "0px", maxWidth: "530px" }}>
-        <Card
-          footer={footer}
-          style={{
-            border: "8px solid #34699a",
-            borderRadius: "8px",
-            width: "100%",
-            padding: "20px",
-          }}
+      <Loading visible={isLoading} />
+      {isLoading === false && (
+        <div
+          className="qr-viewer-container"
         >
-          <div className="qr-viewer" style={{ textAlign: "center" }}>
-            <h1>Código QR del Catálogo</h1>
-            <div
-              className="qr-code"
-              style={{
-                width: "256px",
-                height: "256px",
-                alignItems: "center",
-                display: "flex",
-                justifyContent: "center",
-                margin: "auto",
-              }}
-            >
-              {loading ? (
-                <div className="loading-spinner"></div>
-              ) : (
-                <img
-                  src={qrDataUrl || "/placeholder.svg"}
-                  alt="Código QR del catálogo"
-                  width={256}
-                  height={256}
+          <Card
+            footer={footer}
+            className="qr-card"
+           
+          >
+            <div className="qr-viewer" style={{ textAlign: "center" }}>
+              <h1>Código QR del Catálogo</h1>
+
+              <div
+                className="qr-code"
+              >
+                <QRCodeSVG
+                  value={catalogUrl}
+                  size={size}
+                  level="H"
+                  marginSize={1}
+                  boostLevel
+                  imageSettings={{
+                    // Forzamos data URL para evitar CORS y que se incluya en PNG
+                    src: logoDataUrl || undefined,
+                    x: undefined,
+                    y: undefined,
+                    width: defaultLogoSize,
+                    height: defaultLogoSize,
+                    excavate: false,
+                    opacity: 0.9,
+                  }}
                 />
-              )}
-            </div>
-            <div className="qr-container">
-              <div className="qr-business-info">
-                {business.logoUrl && (
-                  <img
-                    src={business.logoUrl || "/placeholder.svg"}
-                    alt={`Logo de ${business.name}`}
-                    className="qr-business-logo"
-                  />
-                )}
-                <div className="qr-business-name">{business.name}</div>
-                <div className="qr-business-url">{catalogUrl}</div>
+              </div>
+
+              <div className="qr-container" style={{ marginTop: 12 }}>
+                <div className="qr-business-info">
+                  {logoDataUrl && (
+                    <img
+                      src={logoDataUrl}
+                      alt={`Logo de ${business?.name || ""}`}
+                      className="qr-business-logo"
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  )}
+                  <div
+                    className="qr-business-name"
+                    style={{ fontWeight: "bold", marginTop: 8 }}
+                  >
+                    {business?.name}
+                  </div>
+                  <div
+                    className="qr-business-url"
+                    style={{ fontSize: 12, color: "#666" }}
+                  >
+                    {catalogUrl}
+                  </div>
+                </div>
               </div>
             </div>
-
-            <canvas ref={canvasRef} style={{ display: "none" }} />
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
     </>
   );
 };

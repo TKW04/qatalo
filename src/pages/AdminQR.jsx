@@ -1,4 +1,4 @@
-import QrViewer2 from "../components/QrViewer2";
+import QrViewer from "../components/QrViewer";
 import "../styles/admin.css";
 import { useSelector } from "react-redux";
 
@@ -15,7 +15,7 @@ const AdminQR = () => {
   }
 
   return (
-     <QrViewer2 />
+     <QrViewer />
   );
 };
 
