@@ -86,7 +86,7 @@ const AdminDashboard = () => {
         </main>
       </div>
       <footer>
-          <div className="container">
+          <div className="container_admin">
             <p>
               <Link
                 target="_blank"

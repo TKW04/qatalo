@@ -224,7 +224,7 @@ body {
 .input {
   width: 100%;
   padding: 0.75rem;
-   padding-left: 15px;
+  padding-left: 15px;
   border: 2px solid #e1e5e9;
   border-radius: var(--border-radius);
   font-size: 1rem;
@@ -377,8 +377,8 @@ body {
   }
 }
 
-@media (min-width: 761px) {
-  .container {
+@media (max-width: 761px) {
+  .container_admin {
     padding: 0 0.5rem;
     margin-left: 250px !important;
     align-items: center !important;
