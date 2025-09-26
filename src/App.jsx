@@ -12,6 +12,8 @@ import PaymentValidation from "./pages/PaymentValidation";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import NotFoundPage from "./pages/NotFoundPage";
 import ResetPassword from "./pages/User/ResetPassword";
+import PrivacyNotice from "./pages/PrivacyNotice";
+import RefundPolicy from "./pages/RefundPolicy";
 
 function App() {
   return (
@@ -23,6 +25,9 @@ function App() {
             path="/terms-and-conditions"
             element={<TermsAndConditions />}
           />
+          <Route path="/privacy-policy" element={<PrivacyNotice />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+
           <Route path="/catalog/:slug" element={<CatalogPublic />} />
           <Route path="/admin/qr/:slug" element={<AdminQR />} />
           <Route path="/register" element={<Register />} />

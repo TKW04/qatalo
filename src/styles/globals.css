@@ -366,9 +366,23 @@ body {
   overflow: hidden;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 760px) {
   .container {
     padding: 0 0.5rem;
+  }
+
+  .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 761px) {
+  .container {
+    padding: 0 0.5rem;
+    margin-left: 250px !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .btn {

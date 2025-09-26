@@ -57,133 +57,6 @@ const Landing = () => {
         }}
       >
         <Navbar />
-        {/* {!isMobile && !isIPad && (
-          <>
-            <div className="flex">
-              <Image
-                src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-                alt="CatalogQR Logo"
-                width={130}
-              />
-            </div>
-            <div className="flex grid" style={{width:"100%", marginTop:"10px"}}>
-              <div className="col-1 align-items-center justify-content-center" >
-                <a
-                  href="#inicio"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Inicio
-                </a>
-              </div>
-              <div className="col align-items-center justify-content-center">
-                <a
-                  href="#caracteristicas"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Características
-                </a>
-              </div>
-              <div className="col-3 align-items-center justify-content-center">
-                <a
-                  href="#como-funciona"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Cómo Funciona
-                </a>
-              </div>
-              <div className="col align-items-start justify-content-start">
-                <a
-                  href="#planes-precios"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Precios
-                </a>
-              </div>
-              <div className="col-3 align-items-center justify-content-center">
-                <a
-                  href="/register"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Comenzar Gratis
-                </a>
-              </div>
-              <div className="col align-items-center justify-content-center">
-                <a
-                  href="/login"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Iniciar Sesión
-                </a>
-              </div>
-            </div>
-          </>
-        )}
-        {(isMobile || isIPad) && (
-          <>
-            <div className="flex-auto flex align-items-center justify-content-start bg-primary font-bold  border-round">
-              <div className="flex">
-                <Image
-                  src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-                  alt="CatalogQR Logo"
-                  width={130}
-                />
-              </div>
-            </div>
-            <div className="flex-auto flex align-items-center justify-content-end bg-primary m-3 font-bold  border-round">
-              <div className="flex">
-                <a href="#">
-                  <Menu
-                    color="white"
-                    size={40}
-                    onClick={() => setShowMenu(!showMenu)}
-                  />
-                </a>
-              </div>
-            </div>
-          </>
-        )}
-        {showMenu && (
-          <LandingSidebar
-            isOpen={showMenu}
-            onClose={() => setShowMenu(false)}
-          />
-        )} */}
       </div>
 
       <div>
@@ -352,10 +225,26 @@ const Landing = () => {
           <div className="container">
             <p>
               <Link
+                target="_blank"
                 to="/terms-and-conditions"
                 style={{ textDecoration: "none", color: "inherit" }}
               >
-                Términos y Condiciones
+                Términos de Servicio
+              </Link>{" | "}
+              <Link
+                target="_blank"
+                to="/privacy-policy"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                Política de Privacidad
+              </Link>
+              {" | "}
+              <Link
+                target="_blank"
+                to="/refund-policy"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                Política de Reembolso
               </Link>
             </p>
             <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
