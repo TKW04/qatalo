@@ -16,7 +16,7 @@ const QrTab = () => {
           </p>
           <div className="form-actions">
             <a
-              href={`/admin/qr`}
+              href={`/admin/qr/${business.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"

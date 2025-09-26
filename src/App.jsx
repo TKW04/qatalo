@@ -24,7 +24,7 @@ function App() {
             element={<TermsAndConditions />}
           />
           <Route path="/catalog/:slug" element={<CatalogPublic />} />
-          <Route path="/admin/qr" element={<AdminQR />} />
+          <Route path="/admin/qr/:slug" element={<AdminQR />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
