@@ -24,13 +24,15 @@ const Payment = () => {
     }
   }, [dispatch, plans, showError]);
 
-  if (
-    auth !== null &&
-    auth["custom:transaction_status"] !== null &&
-    auth["custom:transaction_status"] !== "pending"
-  ) {
-    window.location.href = "/admin";
-  }
+  useEffect(() => {
+    if (
+      auth !== null &&
+      auth["custom:transaction_status"] !== null &&
+      auth["custom:transaction_status"] !== "pending"
+    ) {
+      window.location.href = "/admin";
+    }
+  }, [auth]);
 
   return (
     <div className="container-payment">
