@@ -58,7 +58,7 @@ const RefundPolicy = () => {
           <p>
             <ul>
               <li>
-                Se ofrecen reembolsos únicamente dentro de los [7] días
+                Se ofrecen reembolsos únicamente dentro de los [14] días
                 posteriores a la compra de una suscripción o servicio, siempre
                 que el usuario no haya hecho uso significativo de la plataforma.
               </li>
