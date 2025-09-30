@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { InputText } from "primereact/inputtext";
@@ -6,11 +6,10 @@ import { Dropdown } from "primereact/dropdown";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
-
 import { InputNumber } from "primereact/inputnumber";
-
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { InputSwitch } from "primereact/inputswitch";
 
 import { BookImage, Info, PencilIcon, Trash2, X } from "lucide-react";
 
@@ -30,8 +29,8 @@ import { Image } from "primereact/image";
 import DialogModal from "../DialogModal";
 import "../../styles/catalog.css";
 import { DeleteButton, EditButton, InfoButton } from "../Buttons";
-import { title } from "process";
 import { currencies } from "../../helpers/utils";
+import { InputTextarea } from "primereact/inputtextarea";
 
 let once = true;
 const Products = ({ setActiveTab }) => {
@@ -44,10 +43,10 @@ const Products = ({ setActiveTab }) => {
 
   const fileUploadRef = useRef(null);
 
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(false);
   const [productErrors, setProductErrors] = useState({});
   const [showDialog, setShowDialog] = useState(false);
-  const [dialogContent, setDialogContent] = useState(null);
+  const [dialogContent, setDialogContent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [selectedCategory, setSelectedCategory] = useState({
@@ -66,6 +65,24 @@ const Products = ({ setActiveTab }) => {
   });
 
   const [expandedRows, setExpandedRows] = useState(null);
+
+  const statuses = useMemo(
+    () => [
+      { code: "available", name: "Disponible" },
+      { code: "unavailable", name: "Agotado" },
+    ],
+    []
+  );
+
+  const getCategoryName = useMemo(
+    () => (category_id) => {
+      const category = categories.find(
+        (cat) => cat.category_id === category_id
+      );
+      return category ? category.name : "Sin categoría";
+    },
+    [categories]
+  );
 
   useEffect(() => {
     if (categories.length === 0 && once) {
@@ -98,6 +115,9 @@ const Products = ({ setActiveTab }) => {
         name: getCategoryName(product.category_id),
       });
     }
+  }, [editingProduct, getCategoryName, product, selectedCategory]);
+
+  useEffect(() => {
     if (
       product &&
       product.product_id &&
@@ -118,7 +138,13 @@ const Products = ({ setActiveTab }) => {
       let currency = currencies.find((cur) => cur.symbol === product.currency);
       setSelectedCurrency(currency || { code: "", name: "", symbol: "" });
     }
-  }, [product, selectedCategory, selectedStatus, selectedCurrency]);
+  }, [
+    editingProduct,
+    product,
+    selectedCurrency.code,
+    selectedStatus.code,
+    statuses,
+  ]);
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -192,16 +218,6 @@ const Products = ({ setActiveTab }) => {
     icon: <BookImage />,
     iconOnly: true,
     className: "btn_image",
-  };
-
-  const statuses = [
-    { code: "available", name: "Disponible" },
-    { code: "unavailable", name: "Agotado" },
-  ];
-
-  const getCategoryName = (category_id) => {
-    const category = categories.find((cat) => cat.category_id === category_id);
-    return category ? category.name : "Sin categoría";
   };
 
   const validateProduct = (data) => {
@@ -434,6 +450,7 @@ const Products = ({ setActiveTab }) => {
               <span style={{ fontWeight: "bold" }}>{productInfo.quantity}</span>
             </label>
           </div>
+
           <div className="col">
             <label className="form-label">
               Estado:{" "}
@@ -669,9 +686,6 @@ const Products = ({ setActiveTab }) => {
                   Precio * {selectedCurrency?.symbol || ""}
                 </label>
                 <InputNumber
-                  // className={`${productErrors.price ? "error" : ""}`}
-                  // className="input"
-
                   value={product.price}
                   onChange={(e) => {
                     dispatch(
@@ -837,6 +851,56 @@ const Products = ({ setActiveTab }) => {
                   <div className="error-message">{productErrors.quantity}</div>
                 )}
               </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Mostrar cantidad</label>
+                <InputSwitch
+                  checked={product.show_quantity}
+                  onChange={(e) => {
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "show_quantity",
+                        value: e.value,
+                      })
+                    );
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Solo uno</label>
+                <InputSwitch
+                  checked={product.just_one}
+                  onChange={(e) => {
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "just_one",
+                        value: e.value,
+                      })
+                    );
+                  }}
+                />
+              </div>
+            </div>
+            <div >
+               <label className="form-label">Términos y condiciones (optional)</label>
+               <InputTextarea
+                 value={product.terms}
+                 onChange={(e) => {
+                   dispatch(
+                     productActions.modifyPropertyValue({
+                       id: "terms",
+                       value: e.value,
+                     })
+                   );
+                 }}
+                 rows={5}
+                 cols={30}
+                 className="input"
+                 placeholder="Escribe los términos y condiciones del producto"
+                 autoResize
+               />
             </div>
 
             <div className="form-actions">

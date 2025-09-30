@@ -12,7 +12,9 @@ import { useNotification } from "../components/UI/NotificationProvider";
 import { GetProductsByBusinessId } from "../store/product-store/product-actions";
 import Loading from "../components/UI/Loading";
 import "../styles/catalog.css";
+import { productActions } from "../store/product-store/product-slice";
 
+let orderProducts = true;
 const CatalogPublic = () => {
   const business = useSelector((state) => state.business.business);
   const categories = useSelector((state) => state.category.categories);
@@ -45,6 +47,21 @@ const CatalogPublic = () => {
       }, 4500);
     }
   }, [business, categories, dispatch, products, showError]);
+
+  useEffect(() => {
+     if (
+      business &&
+      business.business_id !== undefined &&
+      business.business_id !== null &&
+      business.business_id !== ""
+    ) {
+      if (products.length > 0 && orderProducts) {
+        const sortedProducts = [...products].sort((a, b) => a.order - b.order);
+        dispatch(productActions.setProducts({products: sortedProducts}) );
+        orderProducts = false;
+      }
+    }
+  },[business, dispatch, products]);
 
   // Filtrar productos
   const filteredProducts = useMemo(() => {
