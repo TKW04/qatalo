@@ -14,14 +14,12 @@ import { paymentMethodActions } from "../../store/paymentMethod-store/paymentMet
 import Loading from "../UI/Loading";
 import DialogModal from "../DialogModal";
 import { Button } from "primereact/button";
-import { Info, PencilIcon, Trash2, X } from "lucide-react";
 import { Dropdown } from "primereact/dropdown";
 import { getTokenInfo } from "../../helpers/token";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Card } from "primereact/card";
 import { DeleteButton, EditButton, InfoButton } from "../Buttons";
-import { title } from "process";
 import { currencies } from "../../helpers/utils";
 
 let once = true;
@@ -67,7 +65,6 @@ const PaymentMethods = ({ setActiveTab }) => {
     { name: "Ahorros", code: "savings" },
     { name: "Corriente", code: "current" },
   ];
-  
 
   useEffect(() => {
     if (paymentMethods.length === 0 && once) {
@@ -213,8 +210,14 @@ const PaymentMethods = ({ setActiveTab }) => {
 
   const handleDeletePaymentMethod = (paymentMethod) => {
     const children = (
-      <div style={{ textAlign: "left", padding: "5px", overflowX: "hidden", maxWidth: "800px" }}>
-        
+      <div
+        style={{
+          textAlign: "left",
+          padding: "5px",
+          overflowX: "hidden",
+          maxWidth: "800px",
+        }}
+      >
         <div style={{ color: "white", fontSize: "20px", textAlign: "center" }}>
           ¿Estás seguro de que deseas eliminar este método de pago?
         </div>
@@ -255,11 +258,9 @@ const PaymentMethods = ({ setActiveTab }) => {
       </div>
     );
 
-    setDialogContent({title: "Eliminar Método de Pago", children });
+    setDialogContent({ title: "Eliminar Método de Pago", children });
     setShowDialog(true);
   };
-
-  
 
   const handleViewPaymentMethod = (paymentMethodInfo) => {
     const children = (
@@ -274,7 +275,7 @@ const PaymentMethods = ({ setActiveTab }) => {
         <div className="grid p-4">
           <div className={isMobile ? "col-12" : "col-6"}>
             <label className="form-label">
-             Tipo de Método:{" "}
+              Tipo de Método:{" "}
               <span style={{ fontWeight: "bold" }}>
                 {getPaymentMethodName(paymentMethodInfo.payment_type)}
               </span>
@@ -367,14 +368,28 @@ const PaymentMethods = ({ setActiveTab }) => {
             </>
           )}
           {paymentMethodInfo.payment_type === "payment_link" && (
-            <div className="col-12">
-              <label className="form-label">
-                Enlace de pago:{" "}
-                <span style={{ fontWeight: "bold" }}>
-                  {paymentMethodInfo.payment_link}
-                </span>
-              </label>
-            </div>
+            <>
+              <div className="col-12">
+                <label className="form-label">
+                  Enlace de pago:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {paymentMethodInfo.payment_link}
+                  </span>
+                </label>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Moneda:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {
+                      currencies.find(
+                        (c) => c.code === paymentMethodInfo.currency
+                      )?.symbol
+                    }{" "}
+                  </span>
+                </label>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -729,6 +744,32 @@ const PaymentMethods = ({ setActiveTab }) => {
                     {paymentMethodErrors.payment_method_name && (
                       <div className="error-message">
                         {paymentMethodErrors.payment_method_name}
+                      </div>
+                    )}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Moneda *</label>
+                    <Dropdown
+                      value={selectedCurrency}
+                      className={`input ${
+                        paymentMethodErrors.currency ? "error" : ""
+                      }`}
+                      onChange={(e) => {
+                        setSelectedCurrency(e.value);
+                        dispatch(
+                          paymentMethodActions.modifyPropertyValue({
+                            id: "currency",
+                            value: e.value.code,
+                          })
+                        );
+                      }}
+                      options={currencies}
+                      optionLabel="name"
+                      placeholder="Seleccionar moneda"
+                    />
+                    {paymentMethodErrors.currency && (
+                      <div className="error-message">
+                        {paymentMethodErrors.currency}
                       </div>
                     )}
                   </div>

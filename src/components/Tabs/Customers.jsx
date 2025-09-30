@@ -5,7 +5,7 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Search, X, BookImage, Check, Trash2 } from "lucide-react";
+import { Search, BookImage, Check, Trash2 } from "lucide-react";
 import { customerActions } from "../../store/customer-store/customer-slice";
 
 import {
@@ -26,9 +26,9 @@ import {
 import "../../styles/catalog.css";
 import { Card } from "primereact/card";
 import { Image } from "primereact/image";
-import { Dialog } from "primereact/dialog";
 import { EditButton, InfoButton } from "../Buttons";
 import { InputTextarea } from "primereact/inputtextarea";
+import { InputSwitch } from "primereact/inputswitch";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -317,6 +317,13 @@ const Customers = ({ setActiveTab }) => {
                   ? "Transferencia Bancaria"
                   : "Link de Pago"}
               </span>
+            </label>
+            <label className="form-label">
+              Términos Aceptados:{" "}
+              <InputSwitch
+                checked={productInfo.accept_terms || false}
+                disabled
+              />
             </label>
             <label className="form-label">
               Estado:{" "}

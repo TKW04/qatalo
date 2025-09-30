@@ -11,7 +11,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { InputSwitch } from "primereact/inputswitch";
 
-import { BookImage, Info, PencilIcon, Trash2, X } from "lucide-react";
+import { BookImage, Trash2, X } from "lucide-react";
 
 import { productActions } from "../../store/product-store/product-slice";
 import { GetCategories } from "../../store/categories-store/category-actions";
@@ -29,7 +29,7 @@ import { Image } from "primereact/image";
 import DialogModal from "../DialogModal";
 import "../../styles/catalog.css";
 import { DeleteButton, EditButton, InfoButton } from "../Buttons";
-import { currencies } from "../../helpers/utils";
+import { currencies, formatted } from "../../helpers/utils";
 import { InputTextarea } from "primereact/inputtextarea";
 
 let once = true;
@@ -290,6 +290,7 @@ const Products = ({ setActiveTab }) => {
             showSuccess
           )
         );
+        console.log("Update Product:", modifiedProduct);
       } else {
         setIsLoading(true);
         setLoadingMessage("Creando producto...");
@@ -305,13 +306,14 @@ const Products = ({ setActiveTab }) => {
       }
       setTimeout(() => {
         setActiveTab("products");
-        dispatch(GetProducts(showError));
+
         dispatch(productActions.startProduct());
+        dispatch(GetProducts(showError));
         fileUploadRef.current.clear();
         setSelectedCurrency({
-          code: "DOP",
-          name: "Peso dominicano",
-          symbol: "RD$",
+          code: "",
+          name: "",
+          symbol: "",
         });
         setIsLoading(false);
         setEditingProduct(false);
@@ -420,13 +422,43 @@ const Products = ({ setActiveTab }) => {
               </span>
             </label>
           </div>
-          <div className="col">
+          <div className="col-4">
+            <label className="form-label">Solo uno</label>
+            <InputSwitch
+              checked={productInfo.just_one}
+              disabled
+              onChange={(e) => {
+                dispatch(
+                  productActions.modifyPropertyValue({
+                    id: "just_one",
+                    value: e.value,
+                  })
+                );
+              }}
+            />
+          </div>
+          <div className="col-3">
+            <label className="form-label">Mostrar cantidad</label>
+            <InputSwitch
+              checked={productInfo.show_quantity}
+              disabled
+              onChange={(e) => {
+                dispatch(
+                  productActions.modifyPropertyValue({
+                    id: "show_quantity",
+                    value: e.value,
+                  })
+                );
+              }}
+            />
+          </div>
+          <div className="col-4">
             <label className="form-label">
               Precio:{" "}
               <span style={{ fontWeight: "bold" }}>
                 {" "}
                 {productInfo.currency}
-                {productInfo.price}
+                {formatted(productInfo.price)}
               </span>
             </label>
           </div>
@@ -468,6 +500,14 @@ const Products = ({ setActiveTab }) => {
             <label className="form-label">
               Moneda:{" "}
               <span style={{ fontWeight: "bold" }}>{productInfo.currency}</span>
+            </label>
+          </div>
+          <div className="col-12">
+            <label className="form-label">
+              Términos y condiciones:{" "}
+              <p style={{ fontWeight: "bold" }}>
+                {productInfo.terms ? productInfo.terms : "N/A"}
+              </p>
             </label>
           </div>
         </div>
@@ -856,7 +896,12 @@ const Products = ({ setActiveTab }) => {
               <div className="form-group">
                 <label className="form-label">Mostrar cantidad</label>
                 <InputSwitch
-                  checked={product.show_quantity}
+                  checked={
+                    product.show_quantity === "true" ||
+                    product.show_quantity === true
+                      ? true
+                      : false
+                  }
                   onChange={(e) => {
                     dispatch(
                       productActions.modifyPropertyValue({
@@ -871,7 +916,11 @@ const Products = ({ setActiveTab }) => {
               <div className="form-group">
                 <label className="form-label">Solo uno</label>
                 <InputSwitch
-                  checked={product.just_one}
+                  checked={
+                    product.just_one === "true" || product.just_one === true
+                      ? true
+                      : false
+                  }
                   onChange={(e) => {
                     dispatch(
                       productActions.modifyPropertyValue({
@@ -883,24 +932,26 @@ const Products = ({ setActiveTab }) => {
                 />
               </div>
             </div>
-            <div >
-               <label className="form-label">Términos y condiciones (optional)</label>
-               <InputTextarea
-                 value={product.terms}
-                 onChange={(e) => {
-                   dispatch(
-                     productActions.modifyPropertyValue({
-                       id: "terms",
-                       value: e.value,
-                     })
-                   );
-                 }}
-                 rows={5}
-                 cols={30}
-                 className="input"
-                 placeholder="Escribe los términos y condiciones del producto"
-                 autoResize
-               />
+            <div>
+              <label className="form-label">
+                Términos y condiciones (optional)
+              </label>
+              <InputTextarea
+                value={product.terms}
+                onChange={(e) => {
+                  dispatch(
+                    productActions.modifyPropertyValue({
+                      id: "terms",
+                      value: e.target.value,
+                    })
+                  );
+                }}
+                rows={5}
+                cols={30}
+                className="input"
+                placeholder="Escribe los términos y condiciones del producto"
+                autoResize
+              />
             </div>
 
             <div className="form-actions">
@@ -961,7 +1012,7 @@ const Products = ({ setActiveTab }) => {
                       return (
                         <>
                           {rowData.currency}
-                          {rowData.price}
+                          {formatted(rowData.price)}
                         </>
                       );
                     }}

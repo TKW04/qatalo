@@ -16,6 +16,8 @@ const initialState = {
       quantity: 1,
       price: 0,
       status: "pending",
+      accept_terms: false,
+
       payment_method: {
         payment_method_id: "",
         payment_type: "",
@@ -48,6 +50,7 @@ const customerSlice = createSlice({
           quantity: 1,
           price: 0,
           status: "pending",
+          accept_terms: false,
           payment_method: {
             payment_method_id: "",
             payment_type: "",

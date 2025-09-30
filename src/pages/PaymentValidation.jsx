@@ -15,11 +15,12 @@ import {
 } from "../store/customer-store/customer-actions";
 import { useNotification } from "../components/UI/NotificationProvider";
 
-import { formatted, getStatusStyle } from "../helpers/utils";
+import { currencies, formatted, getStatusStyle } from "../helpers/utils";
 import DialogModal from "../components/DialogModal";
 import { FileUpload } from "primereact/fileupload";
 import Loading from "../components/UI/Loading";
 import { InputTextarea } from "primereact/inputtextarea";
+import { InfoButton } from "../components/Buttons";
 
 const PaymentValidation = () => {
   const customer = useSelector((state) => state.customer.customer);
@@ -97,61 +98,45 @@ const PaymentValidation = () => {
   const actionsButtons = (rowData) => {
     return (
       <div className="flex justify-content-center">
-        {rowData.status !== "Cancelada" && (
-          <>
-            <Button
-              icon={<Info />}
-              outlined
-              tooltip="Ver información"
-              style={{
-                height: "40px",
-                width: "40px",
-                color: "#2980b9",
-                border: "none",
-              }}
-              onClick={() => {
-                handleInfo(rowData);
-              }}
-            />
+        {rowData.status === "Pendiente de pago" && (
+          <div className="flex flex-column gap-2 m-4">
+            <InfoButton onClick={() => handleInfo(rowData)} />
             <Button
               icon={<CreditCard />}
-              disabled={rowData.payment_method.payment_type === "bank_transfer"}
-              visible={rowData.payment_method.payment_type !== "bank_transfer"}
-              outlined
+              raised
+              label="Pagar"
               style={{
                 height: "40px",
-                width: "40px",
-                color: "green",
-                border: "none",
+                width: "108px",
+                backgroundColor: "#green",
+                border: "1px solid ",
+                color: "white",
+                borderRadius: "5px",
+                paddingLeft: "5px",
               }}
               onClick={() => {
-                dispatch(
-                  CancelTransaction(
-                    customer.customer_id,
-                    rowData.transaction_id,
-                    showError,
-                    showWarning,
-                    showSuccess
-                  )
-                );
+                window.location.href = `${rowData.payment_method.payment_link}`;
               }}
             />
             <Button
               icon={<X />}
-              outlined
-              tooltip="Cancelar transacción"
+              raised
+              label="Cancelar"
               style={{
                 height: "40px",
-                width: "40px",
-                color: "#e74c3c",
-                border: "none",
+                width: "108px",
+                backgroundColor: "#e74c3c",
+                border: "1px solid ",
+                color: "white",
+                borderRadius: "5px",
+                paddingLeft: "5px",
               }}
               onClick={() => {
                 setTransaction(rowData);
                 setShowDialogCancel(true);
               }}
             />
-          </>
+          </div>
         )}
       </div>
     );
@@ -662,7 +647,15 @@ const PaymentValidation = () => {
                     body={(rowData) => {
                       return (
                         <span>
-                          {rowData.payment_method.currency}{" "}
+                          {rowData.payment_method !== undefined &&
+                          rowData.payment_method.currency !== undefined &&
+                          rowData.payment_method.currency !== null &&
+                          rowData.payment_method.currency !== ""
+                            ? currencies.find(
+                                (c) =>
+                                  c.code === rowData.payment_method.currency
+                              ).symbol
+                            : ""}{" "}
                           {formatted(rowData.price)}
                         </span>
                       );
@@ -692,7 +685,12 @@ const PaymentValidation = () => {
                       const total = rowData.price * rowData.quantity;
                       return (
                         <span>
-                          {rowData.payment_method.currency} {formatted(total)}
+                          {
+                            currencies.find(
+                              (c) => c.code === rowData.payment_method.currency
+                            )?.symbol
+                          }{" "}
+                          {formatted(total)}
                         </span>
                       );
                     }}

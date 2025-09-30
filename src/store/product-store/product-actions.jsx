@@ -1,7 +1,13 @@
 import { getToken } from "../../helpers/token";
 import { productActions } from "./product-slice";
 
-export const CreateProduct = (product,business, showError, showWarning, showSuccess) => {
+export const CreateProduct = (
+  product,
+  business,
+  showError,
+  showWarning,
+  showSuccess
+) => {
   return async () => {
     const RegisterProductInfo = async () => {
       const productForm = new FormData();
@@ -14,6 +20,9 @@ export const CreateProduct = (product,business, showError, showWarning, showSucc
       productForm.append("category_id", product.category_id);
       productForm.append("is_available", product.is_available);
       productForm.append("orden", product.orden);
+      productForm.append("just_one", product.just_one);
+      productForm.append("show_quantity", product.show_quantity);
+      productForm.append("terms", product.terms);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
       if (product.image3) productForm.append("image3", product.image3);
@@ -60,11 +69,18 @@ export const GetProducts = (showError) => {
     try {
       const response = await FetchProductInfo();
       if (response.status === 200) {
-        const data = await response.json();
+        let data = await response.json();
+        if (data === null) {
+          data = [];
+        } else {
+          data = data.map((product) => ({
+            ...product,
+            just_one: product.just_one === "true" ? true : false,
+            show_quantity: product.show_quantity === "true" ? true : false,
+          }));
+        }
 
-        dispatch(
-          productActions.setProducts({ products: data !== null ? data : [] })
-        );
+        dispatch(productActions.setProducts({ products: data }));
       }
     } catch (error) {
       console.log(error);
@@ -75,23 +91,33 @@ export const GetProducts = (showError) => {
 export const GetProductsByBusinessId = (businessId, showError) => {
   return async (dispatch) => {
     const FetchProductInfo = async () => {
-      return await fetch(`${import.meta.env.VITE_APP_API_URL}products/${businessId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: getToken(),
-        },
-      });
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}products/${businessId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
     };
 
     try {
       const response = await FetchProductInfo();
       if (response.status === 200) {
-        const data = await response.json();
+        let data = await response.json();
+        if (data === null) {
+          data = [];
+        } else {
+          data = data.map((product) => ({
+            ...product,
+            just_one: product.just_one === "true" ? true : false,
+            show_quantity: product.show_quantity === "true" ? true : false,
+          }));
+        }
 
-        dispatch(
-          productActions.setProducts({ products: data !== null ? data : [] })
-        );
+        dispatch(productActions.setProducts({ products: data }));
       }
     } catch (error) {
       console.log(error);
@@ -99,7 +125,13 @@ export const GetProductsByBusinessId = (businessId, showError) => {
     }
   };
 };
-export const UpdateProduct = (product,business, showError, showWarning, showSuccess) => {
+export const UpdateProduct = (
+  product,
+  business,
+  showError,
+  showWarning,
+  showSuccess
+) => {
   return async () => {
     const UpdateProductInfo = async () => {
       const productForm = new FormData();
@@ -112,6 +144,9 @@ export const UpdateProduct = (product,business, showError, showWarning, showSucc
       productForm.append("category_id", product.category_id);
       productForm.append("is_available", product.is_available);
       productForm.append("orden", product.orden);
+      productForm.append("just_one", product.just_one);
+      productForm.append("show_quantity", product.show_quantity);
+      productForm.append("terms", product.terms);
       productForm.append("imagesUrl", product.imagesUrl);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
@@ -194,7 +229,7 @@ export const DeleteImage = (
         `${import.meta.env.VITE_APP_API_URL}products/delete/image`,
         {
           method: "DELETE",
-          body: JSON.stringify({ "product_id": productId, "file_url": imageUrl }),
+          body: JSON.stringify({ product_id: productId, file_url: imageUrl }),
           headers: {
             Authorization: getToken(),
           },

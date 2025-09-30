@@ -165,6 +165,14 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+.termisModal {
+  width: 100%!important;
+  max-width: 600px;
+}
+.pii input{
+  color:var(--color-yellow) !important;
+  font-weight:700 !important;
+}
 
 @keyframes spin {
   0% {

@@ -35,14 +35,18 @@ const ProductCard = ({ product, onClick }) => {
         >
           {product.is_available === "available" ? "Disponible" : "Agotado"}
         </span>
-        {product.quantity>0 && (
+        {product.quantity > 0 && (
           <span
             className={`product-stock  product-stock_${
               product.quantity > 0 ? "in-stock" : "out-of-stock"
             }`}
           >
-            <span style={{ color: "black" }}>Cantidad disponible:</span>{" "}
-            {product.quantity}
+            {product.show_quantity && (
+              <>
+                <span style={{ color: "black" }}>Cantidad disponible:</span>
+                {product.quantity}
+              </>
+            )}
           </span>
         )}
       </div>

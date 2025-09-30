@@ -24,9 +24,13 @@ import { customerActions } from "../store/customer-store/customer-slice";
 import { GetPaymentMethodsByBusinessId } from "../store/paymentMethod-store/paymentMethod-actions";
 import { useNotification } from "./UI/NotificationProvider";
 import DialogModal from "./DialogModal";
-import "../styles/components.css";
+
 import { CreateCustomer } from "../store/customer-store/customer-actions";
 import Loading from "./UI/Loading";
+import { InputSwitch } from "primereact/inputswitch";
+import { Dialog } from "primereact/dialog";
+import "../styles/components.css";
+import { formatted } from "../helpers/utils";
 
 let once = true;
 const ProductModal = ({ product, business, onClose }) => {
@@ -51,6 +55,10 @@ const ProductModal = ({ product, business, onClose }) => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loaded, setLoaded] = useState(false);
+
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [termsDialog, setShowTermsDialog] = useState(false);
+
   const [sliderRef, instanceRef] = useKeenSlider({
     initial: 0,
     slideChanged(slider) {
@@ -66,7 +74,21 @@ const ProductModal = ({ product, business, onClose }) => {
       dispatch(GetPaymentMethodsByBusinessId(business.business_id, showError));
       once = false;
     }
-  }, [dispatch, business.id]);
+  }, [dispatch, business, showError]);
+
+  useEffect(() => {
+    if (
+      product &&
+      product.product_id !== undefined &&
+      product.product_id !== null &&
+      product.product_id !== "" &&
+      (product.terms === null ||
+        product.terms === undefined ||
+        product.terms === "")
+    ) {
+      setAcceptTerms(true);
+    }
+  }, [product]);
 
   const productTemplate = (image) => {
     return (
@@ -76,11 +98,12 @@ const ProductModal = ({ product, business, onClose }) => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            height: "100%",
           }}
         >
           <Button
             rounded
-            icon={<ChevronLeftIcon color="white" />}
+            icon={<ChevronLeftIcon color="var(--color-sea)" />}
             style={{
               width: "40px",
               height: "40px",
@@ -101,7 +124,7 @@ const ProductModal = ({ product, business, onClose }) => {
             />
           </div>
           <Button
-            icon={<ChevronRightIcon color="white" />}
+            icon={<ChevronRightIcon color="var(--color-sea)" />}
             className="image-arrow-right"
             style={{
               width: "40px",
@@ -136,6 +159,7 @@ const ProductModal = ({ product, business, onClose }) => {
       onClose();
     }
   };
+
   const onCreate = (action) => {
     setShowCustomerDialog(false);
     if (action === "whatsapp") {
@@ -145,6 +169,7 @@ const ProductModal = ({ product, business, onClose }) => {
       setShowBuyDialog(true);
     }
   };
+
   const onBuy = () => {
     const customerCreate = {
       ...customer,
@@ -155,6 +180,7 @@ const ProductModal = ({ product, business, onClose }) => {
         quantity: customer.transaction_quantity,
         price: product.price,
         status: "Pendiente de pago",
+        accept_terms: acceptTerms,
         payment_method: {
           payment_method_id: paymentMethods.find(
             (pm) => pm.payment_method_id === paymentMethod.code
@@ -169,6 +195,7 @@ const ProductModal = ({ product, business, onClose }) => {
         },
       },
     };
+
     setIsLoading(true);
     setLoadingMessage("Creando Solicitud...");
     dispatch(CreateCustomer(customerCreate, showWarning, showSuccess));
@@ -186,16 +213,56 @@ const ProductModal = ({ product, business, onClose }) => {
     setShowCustomerDialog(true);
   };
 
-  const formatted = Number(product.price).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  
-
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
       <div className="modal-overlay" onClick={handleOverlayClick}>
+        <Dialog
+          visible={termsDialog}
+          position={"center"}
+          className="termisModal"
+          onHide={() => setShowTermsDialog(false)}
+          draggable={false}
+          resizable={false}
+        >
+          <div
+            style={{
+              textAlign: "left",
+              padding: "5px",
+              overflowY: "hidden",
+            }}
+          >
+            <span
+              style={{
+                textAlign: "center",
+                fontSize: "24px",
+                fontWeight: "bold",
+                color: "#fff",
+                alignItems: "center",
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "10px",
+                borderBottom: "2px solid var(--color-yellow)",
+                paddingBottom: "5px",
+                width: "100%",
+              }}
+            >
+              Términos y Condiciones
+            </span>
+            <p
+              style={{
+                fontSize: "18px",
+                color: "#fff",
+                textAlign: "justify",
+                padding: "10px",
+                wordSpacing: "2px",
+                lineHeight: "1.6",
+              }}
+            >
+              {product.terms}
+            </p>
+          </div>
+        </Dialog>
         {/* Modal de creacion de usuario */}
         <DialogModal
           visible={showCustomerDialog}
@@ -204,7 +271,6 @@ const ProductModal = ({ product, business, onClose }) => {
           <div
             style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
           >
-            
             <div style={{ width: "100%", textAlign: "left" }}>
               <div className="field col">
                 <label className="form-label">Nombre</label>
@@ -299,7 +365,11 @@ const ProductModal = ({ product, business, onClose }) => {
           onHide={() => setShowBuyDialog(false)}
         >
           <div
-            style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
+            style={{
+              textAlign: "left",
+              padding: "5px",
+              overflowX: "hidden",
+            }}
           >
             <div style={{ width: "100%", textAlign: "left" }}>
               <div className="field col">
@@ -315,14 +385,34 @@ const ProductModal = ({ product, business, onClose }) => {
                     code: method.payment_method_id,
                   }))}
                   optionLabel="name"
-                  placeholder="Seleccionar metodo de pago"
+                  placeholder="Método de pago"
                 />
               </div>
               <div className="field col">
-                <label className="form-label">Cantidad  (<span style={{color: "white"}}>{product.quantity} Disponible</span>)</label>
+                <label className="form-label">
+                  Cantidad
+                  {product.show_quantity && (
+                    <span style={{ color: "white" }}>
+                      {" "}
+                      ({product.quantity} Disponible)
+                    </span>
+                  )}
+                </label>
                 <InputNumber
-                  className="input"
+                  className={`input ${product.just_one ? "pii" : ""}`}
                   value={customer.transaction_quantity}
+                  disabled={product.just_one}
+                  min={1}
+                  max={product.show_quantity ? product.quantity : 1000}
+                  style={{
+                    width: "100%",
+                    backgroundColor:
+                      product.just_one === true ? "gray" : "white",
+                    color:
+                      product.just_one === true
+                        ? "var(--color-yellow)"
+                        : "white",
+                  }}
                   onChange={(e) => {
                     if (e.value <= product.quantity) {
                       dispatch(
@@ -331,17 +421,55 @@ const ProductModal = ({ product, business, onClose }) => {
                           value: e.value,
                         })
                       );
-                    }else{
-                      showWarning("La cantidad excede el inventario disponible")
+                    } else {
+                      showWarning(
+                        "La cantidad excede el inventario disponible"
+                      );
                     }
                   }}
                 />
               </div>
+              {product.terms && (
+                <div className="field col flex align-items-center">
+                  <label className="form-label">
+                    <Button
+                      style={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        padding: 0,
+                        textDecoration: "underline",
+                        color: "var(--color-yellow)",
+                      }}
+                      label="Términos y condiciones"
+                      onClick={() => setShowTermsDialog(true)}
+                    />
+                    {product.show_quantity && (
+                      <span style={{ color: "white" }}>
+                        {product.quantity} Disponible
+                      </span>
+                    )}
+                  </label>{" "}
+                  <div className="field col-5 flex align-items-center">
+                    <InputSwitch
+                      checked={acceptTerms}
+                      onChange={(e) => {
+                        setAcceptTerms(e.value);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="flex justify-content-end">
                 <Button
-                  disabled={!paymentMethod || !customer.transaction_quantity}
+                  disabled={
+                    !paymentMethod ||
+                    !customer.transaction_quantity ||
+                    !acceptTerms
+                  }
                   className={`btn ${
-                    paymentMethod && customer.transaction_quantity
+                    paymentMethod &&
+                    customer.transaction_quantity &&
+                    acceptTerms
                       ? "btn-success"
                       : "btn-disabled"
                   }`}
@@ -362,38 +490,15 @@ const ProductModal = ({ product, business, onClose }) => {
           </div>
         </DialogModal>
         {/* Modal de información */}
-        <DialogModal
+        <Dialog
           visible={showPaymentDialog}
           onHide={() => setShowPaymentDialog(false)}
+          header={"Solicitud Enviada"}
+          className={"termisModal"}
         >
           <div
             style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
           >
-            <div className="dialog-title ">
-              <div className="grid">
-                <div className="col"></div>
-                <div className="col-9 text-center">
-                  <span style={{ color: "var(--color-yellow)" }}>
-                    Solicitud Enviada
-                  </span>
-                </div>
-                <div className="col justify-content-end align-items-end flex">
-                  <Button
-                    icon={<X />}
-                    outlined
-                    rounded
-                    raised
-                    style={{
-                      height: "40px",
-                      width: "40px",
-                      border: "1px solid ",
-                      color: "var(--color-sea)",
-                    }}
-                    onClick={() => setShowPaymentDialog(false)}
-                  />
-                </div>
-              </div>
-            </div>
             <div
               style={{
                 width: "100%",
@@ -415,10 +520,12 @@ const ProductModal = ({ product, business, onClose }) => {
               <p style={{ color: "white" }}>Gracias por su preferencia.</p>
             </div>{" "}
           </div>
-        </DialogModal>
+        </Dialog>
         <div
           className="modal-content product-modal-content"
-          style={{ height: "610px" }}
+          style={{
+            height: "610px",
+          }}
         >
           <div className="product-modal-header">
             <div className="navigation-wrapper">
@@ -448,10 +555,13 @@ const ProductModal = ({ product, business, onClose }) => {
             </button>
           </div>
 
-          <div className="product-modal-body">
+          <div
+            className="product-modal-body"
+            style={{ borderTop: "4px dashed var(--color-navy)" }}
+          >
             <h2 className="product-modal-title">{product.name}</h2>
             <div className="product-modal-price">
-              {product.currency} {formatted}
+              {product.currency} {formatted(product.price)}
             </div>
 
             {product.description && (
