@@ -10,6 +10,7 @@ import "./Payment.css";
 import { GetPlans } from "../store/payment-store/plan-actions";
 import { getTokenInfo } from "../helpers/token";
 import PlanCard from "../components/PlanCard";
+import { Button } from "primereact/button";
 const Payment = () => {
   const auth = getTokenInfo();
   const plans = useSelector((state) => state.plan.plans);
@@ -22,6 +23,16 @@ const Payment = () => {
       dispatch(GetPlans(showError()));
     }
   }, [dispatch, plans, showError]);
+
+  useEffect(() => {
+    if (
+      auth !== null &&
+      auth["custom:transaction_status"] !== null &&
+      auth["custom:transaction_status"] !== "pending"
+    ) {
+      window.location.href = "/admin";
+    }
+  }, [auth]);
 
   return (
     <div className="container-payment">
@@ -37,35 +48,52 @@ const Payment = () => {
         <div className="subtitle">
           Automatiza tu flujo de trabajo con la plataforma más avanzada
         </div>
+        {(auth === null || auth.email === null || auth.email === "") && (
+          <div className="subtitle">
+            <h3>¡Hola! Para poder acceder a los planes debes iniciar sesión</h3>
+            <Button
+              label="Iniciar Sesión"
+              className="btn btn-outline"
+              style={{ width: "200px" }}
+              onClick={() => {
+                window.location.href = "/login";
+              }}
+            />
+          </div>
+        )}
       </header>
 
       <section className="pricing-section">
-        <h1 className="section-title">Planes y Precios</h1>
-        <div className="plans-grid">
-          {plans.map((plan) => (
-            <PlanCard
-              plan={plan}
-              key={plan.price_id}
-              button={
-                <PaddleCheckoutButton
-                  mode="price"
-                  priceId={plan.price_id}
-                  quantity={1}
-                  email={auth.email}
-                  customerId={
-                    auth["custom:customer_id"] !== "" &&
-                    auth["custom:customer_id"]
-                      ? auth["custom:customer_id"]
-                      : null
+        {auth !== null && auth.email !== null && auth.email !== "" && (
+          <>
+            <h1 className="section-title">Planes y Precios</h1>
+            <div className="plans-grid">
+              {plans.map((plan) => (
+                <PlanCard
+                  plan={plan}
+                  key={plan.price_id}
+                  button={
+                    <PaddleCheckoutButton
+                      mode="price"
+                      priceId={plan.price_id}
+                      quantity={1}
+                      email={auth.email}
+                      customerId={
+                        auth["custom:customer_id"] !== "" &&
+                        auth["custom:customer_id"]
+                          ? auth["custom:customer_id"]
+                          : null
+                      }
+                      customData={{ appUserId: auth.sub }}
+                      locale="es"
+                      successUrl={import.meta.env.VITE_APP_LOGIN_REDIRECT_URL}
+                    />
                   }
-                  customData={{ appUserId: auth.sub }}
-                  locale="es"
-                  successUrl={import.meta.env.VITE_APP_LOGIN_REDIRECT_URL}
                 />
-              }
-            />
-          ))}
-        </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

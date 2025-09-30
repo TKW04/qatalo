@@ -5,7 +5,7 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { PencilIcon, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { categoryActions } from "../../store/categories-store/category-slice";
 
 import {
@@ -34,7 +34,7 @@ const Categories = ({ setActiveTab }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
 
   useEffect(() => {
     if (categories.length === 0 && once) {
@@ -149,25 +149,26 @@ const Categories = ({ setActiveTab }) => {
         <div className="admin-card">
           <h2>{editingCategory ? "Editar Categoría" : "Nueva Categoría"}</h2>
           <form onSubmit={handleCategorySubmit}>
-            <div className="form-group">
-              <label className="form-label">Nombre *</label>
-              <InputText
-                type="text"
-                className="input"
-                value={category.name}
-                onChange={(e) => {
-                  dispatch(
-                    categoryActions.modifyPropertyValue({
-                      id: "name",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="Ropa"
-                required
-              />
+            <div className="grid">
+              <div className="col-12 form-group">
+                <label className="form-label">Nombre *</label>
+                <InputText
+                  type="text"
+                  className="input"
+                  value={category.name}
+                  onChange={(e) => {
+                    dispatch(
+                      categoryActions.modifyPropertyValue({
+                        id: "name",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="Ropa"
+                  required
+                />
+              </div>
             </div>
-
             <div className="form-actions">
               <Button type="submit" className="btn btn-primary">
                 {editingCategory ? "Actualizar" : "Crear"} Categoría

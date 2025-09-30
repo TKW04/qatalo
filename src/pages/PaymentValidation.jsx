@@ -35,7 +35,7 @@ const PaymentValidation = () => {
   const [transaction, setTransaction] = useState(null);
   const [cancellationReason, setCancellationReason] = useState("");
 
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
 
   const customer_id = params.customer_id;
 

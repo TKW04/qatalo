@@ -11,12 +11,12 @@ const QrTab = () => {
 
       <div className="admin-card">
         <div style={{ textAlign: "center" }}>
-          <p style={{ marginBottom: "2rem", color: "#666" }}>
+          <p style={{ marginBottom: "2rem", color: "white", fontSize: "1.2rem" }}>
             Comparte este código QR para que tus clientes accedan a tu catálogo
           </p>
           <div className="form-actions">
             <a
-              href={`/admin/qr`}
+              href={`/admin/qr/${business.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"

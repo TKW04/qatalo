@@ -1,0 +1,217 @@
+/* Variables simples (ajusta a tu paleta) */
+:root {
+  --nav-bg: #0b1f2e; /* fondo del header */
+  --nav-txt: #ffffff; /* texto normal */
+  --nav-txt-dim: #dfe7ee; /* texto atenuado */
+  --nav-cta-bg: #2aa16a; /* botón CTA */
+  --nav-cta-bg-hover: #238b5a;
+  --nav-link-hover: #9fd3ff;
+  --shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Contenedor Header */
+.nav {
+  background: var(--color-navy);
+  border-bottom: 1px solid var(--color-yellow);
+  margin-top: 10px;
+  color: var(--nav-txt);
+  width: 100%;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 50;
+}
+
+/* Wrapper interno */
+.nav__wrap {
+  /* max-width: 1200px; */
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 12px;
+}
+
+/* Marca / Logo */
+.nav__brand {
+  margin-top: 40px;
+  margin-bottom: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Botón Hamburguesa (hidden en desktop) */
+.nav__toggle {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 1002;
+  margin-left: auto;
+}
+.nav__bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--nav-txt);
+  margin: 0 auto;
+  transition: transform 0.2s ease;
+}
+.nav__toggle:focus {
+  outline: 2px solid #7cc0ff;
+  outline-offset: 2px;
+}
+
+/* Ocultar menú por defecto en mobile */
+.nav__menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 64px; /* altura aprox. del header */
+  background: var(--color-navy);
+  display: none;
+  flex-direction: column;
+  padding: 12px 16px;
+  gap: 8px;
+}
+
+/* Mostrar cuando está abierto */
+.nav__menu.is-open {
+  display: flex;
+}
+
+/* Links */
+.nav__link {
+  color: var(--nav-txt-dim);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 3px;
+}
+.nav__link:hover,
+.nav__link:focus {
+  color: var(--nav-link-hover);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+/* CTA destacado */
+.nav__cta {
+  background: var(--nav-cta-bg);
+  color: #fff;
+}
+.nav__cta:hover,
+.nav__cta:focus {
+  background: var(--nav-cta-bg-hover);
+  color: #fff;
+}
+
+/* Accesibilidad: clase utilitaria para texto solo para lectores de pantalla */
+.nav__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* ---  ≥768px (tablets y arriba) --- */
+@media (max-width: 760px) {
+  /* Menú horizontal en línea */
+  .nav__menu {
+    border: 1.8px solid var(--color-yellow);
+    border-radius: 10px;
+    margin-top: 60px;
+    left: 40%;
+    padding: 10px 14px;
+    width: 60%;
+    height: 420px;
+    
+  }
+
+  .nav__link {
+    border-top: 0.2px solid transparent;
+    border-right: 0.2px solid transparent;
+    border-left: 0.2px solid transparent;
+    border-bottom: 1px solid var(--color-yellow);
+    border-radius: 0px;
+
+  }
+
+  .nav__toggle {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 1002;
+  }
+}
+
+/* ---  ≥768px (tablets y arriba) --- */
+@media (min-width: 768px) {
+  /* Menú horizontal en línea */
+  .nav__menu {
+    position: static;
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    border-top: 0;
+    top: auto;
+    border: none;
+    left: 0;
+  }
+  .nav__link {
+    border-top: none;
+    border-right: none;
+    border-left: none;
+    border-bottom: none;
+    border-radius: 0px;
+    font-size: 16px;
+  }
+
+  .nav__toggle {
+    display: none; /* ocultar hamburguesa en ≥768px */
+  }
+}
+
+/* --- ≥1024px (desktop) --- */
+@media (min-width: 1024px) {
+  .nav__menu {
+    border: none;
+  }
+
+  .nav__link {
+   border: none;
+   font-size: larger;
+  }
+  .nav__wrap {
+    padding: 14px 20px;
+  }
+  .nav__link.nav__cta {
+    padding: 10px 14px;
+  }
+}

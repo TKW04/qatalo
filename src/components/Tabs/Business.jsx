@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputTextarea } from "primereact/inputtextarea";
 
 import { businessActions } from "../../store/business-store/business-slice";
 import { useNotification } from "../UI/NotificationProvider";
@@ -72,8 +73,9 @@ const Business = () => {
         setLoadingMessage("Actualizando negocio...");
         dispatch(UpdateBusiness(business, showError, showWarning, showSuccess));
       }
-      dispatch(GetBusiness(auth.sub, showError));
       setTimeout(() => {
+        window.location.reload();
+        dispatch(GetBusiness(auth.sub, showError));
         setIsLoading(false);
       }, 4500);
     }
@@ -88,11 +90,11 @@ const Business = () => {
           <p>Configura la información básica de tu negocio</p>
         </div>
 
-        <div className="admin-card">
+        <div className="admin-card" >
           <h2>Información General</h2>
           <form onSubmit={handleBusinessSubmit}>
-            <div className="form-row">
-              <div className="form-group">
+            <div className="grid">
+              <div className="col-12 form-group">
                 <label className="form-label">
                   Nombre del negocio <span className="important">*</span>
                 </label>
@@ -121,7 +123,7 @@ const Business = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="col-12 form-group">
                 <label className="form-label">
                   Slug <span className="important">*</span>
                 </label>
@@ -143,10 +145,8 @@ const Business = () => {
                   <div className="error-message">{businessErrors.slug}</div>
                 )}
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
+              <div className="col-12 form-group">
                 <label className="form-label">
                   Teléfono (WhatsApp) <span className="important">*</span>
                 </label>
@@ -170,63 +170,70 @@ const Business = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="col-12form-group ml-2">
                 <label className="form-label">Logo</label>
-                <div className="card flex justify-content-center">
-                  <div className="flex flex-column align-items-center">
-                    {business.logo_url && (
-                      <Image
-                        src={business.logo_url}
-                        alt="CatalogQR Logo"
-                        width={110}
-                        style={{ marginTop: "0px", borderRadius: "8px" }}
-                      />
-                    )}
-
-                    <input
-                      className={`input ${businessErrors.slug ? "error" : ""}`}
-                      accept="image/*"
-                      type="file"
-                      label="Seleccionar Imagen"
-                      onChange={(e) => {
-                        dispatch(
-                          businessActions.modifyPropertyValue({
-                            id: "logoUrl",
-                            value: URL.createObjectURL(e.target.files[0]),
-                          })
-                        );
-                        dispatch(
-                          businessActions.modifyPropertyValue({
-                            id: "logo",
-                            value: e.target.files[0],
-                          })
-                        );
-                      }}
+                <div className="flex flex-column">
+                  {business.logo_url && (
+                    <Image
+                      src={business.logo_url}
+                      alt="CatalogQR Logo"
+                      width={200}
+                      style={{ marginTop: "10px", borderRadius: "100px" }}
                     />
-                  </div>
+                  )}
                 </div>
-
-                {businessErrors.logo && (
-                  <div className="error-message">{businessErrors.logo}</div>
-                )}
+                <div className="flex flex-column">
+                  <input
+                    className={`input ${businessErrors.slug ? "error" : ""}`}
+                    style={{
+                      // width: "180px",
+                      marginTop: "10px",
+                      marginLeft: "0px",
+                      fontSize: "1rem",
+                      color: "#6b7280",
+                      padding: "10px",
+                      border: "2px solid #e1e5e9",
+                      borderRadius: "8px",
+                      backgroundColor: "#f9fafb",
+                    }}
+                    accept="image/*"
+                    type="file"
+                    label="Seleccionar Imagen"
+                    onChange={(e) => {
+                      dispatch(
+                        businessActions.modifyPropertyValue({
+                          id: "logoUrl",
+                          value: URL.createObjectURL(e.target.files[0]),
+                        })
+                      );
+                      dispatch(
+                        businessActions.modifyPropertyValue({
+                          id: "logo",
+                          value: e.target.files[0],
+                        })
+                      );
+                    }}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Descripción</label>
-              <InputText
-                className="input"
-                value={business.description}
-                onChange={(e) => {
-                  dispatch(
-                    businessActions.modifyPropertyValue({
-                      id: "description",
-                      value: e.target.value,
-                    })
-                  );
-                }}
-                placeholder="Productos artesanales hechos a mano"
-              />
+              <div className="col-12 form-group">
+                <label className="form-label">Descripción</label>
+                <InputTextarea
+                  className="input"
+                  value={business.description}
+                  rows={6}
+                  onChange={(e) => {
+                    dispatch(
+                      businessActions.modifyPropertyValue({
+                        id: "description",
+                        value: e.target.value,
+                      })
+                    );
+                  }}
+                  placeholder="Productos artesanales hechos a mano"
+                />
+              </div>
             </div>
 
             <div className="form-actions">

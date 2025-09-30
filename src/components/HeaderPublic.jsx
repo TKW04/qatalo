@@ -38,7 +38,8 @@ const HeaderPublic = ({ setIsLoading }) => {
               <img
                 src={business.logo_url || "/placeholder.svg"}
                 alt={`Logo de ${business.name}`}
-                className="catalog-logo"
+                width={300}
+                height={300}
               />
             )}
             <div className="catalog-business-details">

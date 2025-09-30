@@ -98,9 +98,6 @@ export const Forgot_Password = (email, showError, showWarning, showSuccess) => {
           "Enlace enviado",
           "Se ha enviado un enlace de recuperación a su correo electrónico"
         );
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 4500);
       } else {
         showWarning(
           "No se pudo enviar el enlace",

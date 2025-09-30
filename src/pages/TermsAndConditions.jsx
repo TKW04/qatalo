@@ -1,5 +1,6 @@
 import { Card } from "primereact/card";
 import { Image } from "primereact/image";
+import { formatDate } from "../helpers/utils";
 
 const TermsAndConditions = () => {
   const header = (
@@ -35,7 +36,6 @@ const TermsAndConditions = () => {
   return (
     <div className="card flex justify-content-center">
       <Card
-        title="Detalle de sus compras"
         header={header}
         style={{
           marginTop: "0rem",
@@ -46,12 +46,14 @@ const TermsAndConditions = () => {
         }}
       >
         <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-          <h1>Términos y Condiciones</h1>
+          <h1 style={{ textAlign: "center", margin: "10px" }}>
+            Términos de Servicio
+          </h1>
           <p>
-            Última actualización: [Fecha de hoy] Bienvenido a Qatalo.online. Al
-            acceder y utilizar nuestra plataforma, aceptas cumplir con los
-            presentes Términos y Condiciones. Si no estás de acuerdo con ellos,
-            te recomendamos no utilizar nuestros servicios.
+            Última actualización: [{formatDate(new Date())}] Bienvenido a
+            Qatalo.online. Al acceder y utilizar nuestra plataforma, aceptas
+            cumplir con los presentes Términos de Servicio. Si no estás de
+            acuerdo con ellos, te recomendamos no utilizar nuestros servicios.
           </p>
           <h2>1. Objeto del Servicio</h2>
           <p>
@@ -164,19 +166,19 @@ const TermsAndConditions = () => {
           </p>
           <h2>9. Modificaciones</h2>
           <p>
-            Qatalo.online podrá modificar los presentes Términos y Condiciones
-            en cualquier momento. Los cambios se publicarán en esta página y
+            Qatalo.online podrá modificar los presentes Términos de Servicio en
+            cualquier momento. Los cambios se publicarán en esta página y
             entrarán en vigor inmediatamente después de su publicación.
           </p>
           <h2>10. Legislación Aplicable</h2>
           <p>
-            Estos Términos y Condiciones se regirán por las leyes de la
-            República Dominicana. Cualquier disputa se someterá a los tribunales
+            Estos Términos de Servicio se regirán por las leyes de la República
+            Dominicana. Cualquier disputa se someterá a los tribunales
             competentes de Santo Domingo.
           </p>
           <h2>11. Contacto</h2>
           <p>
-            Si tienes preguntas sobre estos Términos y Condiciones, puedes
+            Si tienes preguntas sobre estos Términos de Servicio, puedes
             escribirnos a: correo@qatalo.online
           </p>
         </div>

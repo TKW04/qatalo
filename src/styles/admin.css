@@ -1,6 +1,6 @@
 .admin-layout {
   display: flex;
-  width: 1200px !important;
+  width: 1200px;
   min-height: 100vh;
 }
 
@@ -68,7 +68,7 @@
 }
 
 .admin-card {
-  background: linear-gradient(135deg, #113F67 0%, #34699A 100%);
+  background: linear-gradient(135deg, #113f67 0%, #34699a 100%);
   border-radius: var(--border-radius);
   padding: 2rem;
   box-shadow: var(--shadow);
@@ -129,7 +129,7 @@
 }
 
 .btn-small {
-  padding:5px !important;
+  padding: 5px !important;
   font-size: 0.875rem;
   width: 60px !important;
 }
@@ -162,15 +162,10 @@
   border-radius: var(--border-radius);
 }
 
-.input {
-  padding-left: 15px;
-}
-
 .p-inputnumber-input {
   border: none !important;
   margin: 3px !important;
   padding: 0px !important;
-
 }
 
 .p-inputnumber-input:focus {
@@ -203,7 +198,7 @@
   color: var(--color-navy);
   font-weight: 600;
   padding: 1rem;
-  width: 400px ;
+  width: 400px;
   border-radius: 6px;
   border: 1px solid #113f67;
 }
@@ -222,27 +217,6 @@
   visibility: hidden;
 }
 
-
-
-
-
-@media (max-width: 480px) {
-  .admin-card {
-     background: linear-gradient(135deg, #113F67 0%, #34699A 100%);
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    box-shadow: var(--shadow);
-    margin-bottom: 2rem;
-    width: 360px;
-  }
-
-  .btn-small {
-    /* padding: 10px !important; */
-    padding-right: 1px !important;
-    width: 40px !important;
-  }
-}
-
 .fileUploadBasic {
   width: 60%;
   border: 1px solid #113f67 !important;
@@ -253,7 +227,8 @@
   background-color: var(--color-blue) !important;
 }
 
-@media (max-width: 768px) {
+/* ---  ≥768px (tablets y arriba) --- */
+@media (max-width: 760px) {
   .admin-layout {
     display: flex;
     width: 400px !important;
@@ -294,5 +269,28 @@
   .data-table th,
   .data-table td {
     padding: 0.5rem;
+  }
+}
+@media (min-width: 761px) {
+  .admin-layout {
+    display: flex;
+    width: 840px !important;
+    min-height: 100vh;
+  }
+}
+@media (min-width: 1023px) {
+  .admin-layout {
+    display: flex;
+    width: 1140px !important;
+    min-height: 100vh;
+  }
+}
+
+/* --- ≥1024px (desktop) --- */
+@media (min-width: 1200px) {
+  .admin-layout {
+    display: flex;
+    width: 1500px !important;
+    min-height: 100vh;
   }
 }

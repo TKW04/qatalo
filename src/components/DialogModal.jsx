@@ -7,7 +7,7 @@ const DialogModal = ({
   visible,
   onHide
 }) => {
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
   return (
     <Dialog
       header={title}

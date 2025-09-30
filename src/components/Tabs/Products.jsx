@@ -477,7 +477,7 @@ const Products = ({ setActiveTab }) => {
     setShowDialog(true);
   };
 
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
 
   const onSubmit = (e) => {
     e.preventDefault();

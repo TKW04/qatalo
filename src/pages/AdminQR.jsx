@@ -15,17 +15,7 @@ const AdminQR = () => {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#fafafa",
-        padding: "2rem 0",
-      }}
-    >
-      <div className="container">
-        <QrViewer />
-      </div>
-    </div>
+     <QrViewer />
   );
 };
 

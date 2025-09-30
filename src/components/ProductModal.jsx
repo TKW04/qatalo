@@ -36,7 +36,7 @@ const ProductModal = ({ product, business, onClose }) => {
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [showBuyDialog, setShowBuyDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 760;
 
   const paymentMethods = useSelector(
     (state) => state.paymentMethod.paymentMethods
@@ -190,6 +190,7 @@ const ProductModal = ({ product, business, onClose }) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  
 
   return (
     <>
@@ -203,31 +204,7 @@ const ProductModal = ({ product, business, onClose }) => {
           <div
             style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
           >
-            <div className="dialog-title ">
-              <div className="grid">
-                <div className="col"></div>
-                <div className="col-9 text-center">
-                  <span style={{ color: "var(--color-yellow)" }}>
-                    Información del Cliente
-                  </span>
-                </div>
-                <div className="col justify-content-end align-items-end flex">
-                  <Button
-                    icon={<X />}
-                    outlined
-                    rounded
-                    raised
-                    style={{
-                      height: "40px",
-                      width: "40px",
-                      border: "1px solid ",
-                      color: "var(--color-sea)",
-                    }}
-                    onClick={() => setShowCustomerDialog(false)}
-                  />
-                </div>
-              </div>
-            </div>
+            
             <div style={{ width: "100%", textAlign: "left" }}>
               <div className="field col">
                 <label className="form-label">Nombre</label>
@@ -324,31 +301,6 @@ const ProductModal = ({ product, business, onClose }) => {
           <div
             style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
           >
-            <div className="dialog-title ">
-              <div className="grid">
-                <div className="col"></div>
-                <div className="col-9 text-center">
-                  <span style={{ color: "var(--color-yellow)" }}>
-                    Forma de pago
-                  </span>
-                </div>
-                <div className="col justify-content-end align-items-end flex">
-                  <Button
-                    icon={<X />}
-                    outlined
-                    rounded
-                    raised
-                    style={{
-                      height: "40px",
-                      width: "40px",
-                      border: "1px solid ",
-                      color: "var(--color-sea)",
-                    }}
-                    onClick={() => setShowBuyDialog(false)}
-                  />
-                </div>
-              </div>
-            </div>
             <div style={{ width: "100%", textAlign: "left" }}>
               <div className="field col">
                 <label className="form-label">Método de pago</label>
@@ -367,27 +319,31 @@ const ProductModal = ({ product, business, onClose }) => {
                 />
               </div>
               <div className="field col">
-                <label className="form-label">Cantidad</label>
-                <InputText
+                <label className="form-label">Cantidad  (<span style={{color: "white"}}>{product.quantity} Disponible</span>)</label>
+                <InputNumber
                   className="input"
                   value={customer.transaction_quantity}
                   onChange={(e) => {
-                    if (!isNaN(e.target.value)) {
+                    if (e.value <= product.quantity) {
                       dispatch(
                         customerActions.modifyPropertyValue({
                           id: "transaction_quantity",
-                          value: e.target.value,
+                          value: e.value,
                         })
                       );
+                    }else{
+                      showWarning("La cantidad excede el inventario disponible")
                     }
                   }}
                 />
               </div>
               <div className="flex justify-content-end">
                 <Button
-                  disabled={!paymentMethod}
+                  disabled={!paymentMethod || !customer.transaction_quantity}
                   className={`btn ${
-                    paymentMethod ? "btn-success" : "btn-disabled"
+                    paymentMethod && customer.transaction_quantity
+                      ? "btn-success"
+                      : "btn-disabled"
                   }`}
                   label="Guardar"
                   icon={<Check />}
@@ -450,12 +406,13 @@ const ProductModal = ({ product, business, onClose }) => {
               <p style={{ color: "white" }}>
                 Su solicitud ha sido enviada con éxito. En breve recibirá una
                 notificación. En caso de no encontrarla en su bandeja de
-                entrada, por favor verifique su carpeta de <span style={{ color: "var(--color-yellow)" }}>spam, promociones o
-                correo no deseado</span>.
+                entrada, por favor verifique su carpeta de{" "}
+                <span style={{ color: "var(--color-yellow)" }}>
+                  spam, promociones o correo no deseado
+                </span>
+                .
               </p>
-              <p style={{ color: "white" }}>
-                Gracias por su preferencia.
-              </p>
+              <p style={{ color: "white" }}>Gracias por su preferencia.</p>
             </div>{" "}
           </div>
         </DialogModal>

@@ -7,11 +7,8 @@ import {
   Package,
   QrCode,
   MessageCircle,
-  ChartNoAxesCombined,
-  Menu,
   Users,
 } from "lucide-react";
-import { Image } from "primereact/image";
 
 import "./Landing.css";
 
@@ -19,17 +16,18 @@ import { GetPlans } from "../store/payment-store/plan-actions";
 import { useNotification } from "../components/UI/NotificationProvider";
 import PlanCard from "../components/PlanCard";
 
+import { Link } from "react-router-dom";
+import Navbar from "./Navbar";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "primereact/resources/primereact.min.css";
-import LandingSidebar from "../components/LandingSideBar";
-import { Link } from "react-router-dom";
 
 const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
   const dispatch = useDispatch();
   const { showError } = useNotification();
   const [showMenu, setShowMenu] = useState(false);
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 768;
+  const isIPad = window.innerWidth <= 1024 && window.innerWidth > 768;
 
   useEffect(() => {
     if (plans.length === 0) {
@@ -58,134 +56,7 @@ const Landing = () => {
           position: "fixed",
         }}
       >
-        {!isMobile && (
-          <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-            <div className="flex">
-              <Image
-                src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-                alt="CatalogQR Logo"
-                width={130}
-              />
-            </div>
-
-            <>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-                <a
-                  href="#inicio"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Inicio
-                </a>
-              </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-                <a
-                  href="#caracteristicas"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Características
-                </a>
-              </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-                <a
-                  href="#como-funciona"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Cómo Funciona
-                </a>
-              </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-                <a
-                  href="#planes-precios"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Precios
-                </a>
-              </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-                <a
-                  href="/register"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Comenzar Gratis
-                </a>
-              </div>
-              <div className="flex-auto flex align-items-center justify-content-center bg-primary font-bold m-2 px-5 py-3 border-round">
-                <a
-                  href="/login"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    marginRight: "auto",
-                    fontWeight: "bold",
-                    fontSize: "24px",
-                  }}
-                >
-                  Iniciar Sesión
-                </a>
-              </div>
-            </>
-          </div>
-        )}
-        {isMobile && (
-          <>
-            <div className="flex-auto flex align-items-center justify-content-start bg-primary font-bold  border-round">
-              <div className="flex">
-                <Image
-                  src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-                  alt="CatalogQR Logo"
-                  width={130}
-                />
-              </div>
-            </div>
-            <div className="flex-auto flex align-items-center justify-content-end bg-primary m-3 font-bold  border-round">
-              <div className="flex">
-                <a href="#">
-                  <Menu
-                    color="white"
-                    size={40}
-                    onClick={() => setShowMenu(!showMenu)}
-                  />
-                </a>
-              </div>
-            </div>
-          </>
-        )}
-        {showMenu && (
-          <LandingSidebar
-            isOpen={showMenu}
-            onClose={() => setShowMenu(false)}
-          />
-        )}
+        <Navbar />
       </div>
 
       <div>
@@ -331,7 +202,7 @@ const Landing = () => {
         </section>
         <section className="pricing-section" id="planes-precios">
           <h1 className="section-title">Planes y Precios</h1>
-          <div className="plans-grid">
+          <div className="grid">
             {plans.map((plan) => (
               <PlanCard plan={plan} key={plan.price_id} />
             ))}
@@ -354,10 +225,26 @@ const Landing = () => {
           <div className="container">
             <p>
               <Link
+                target="_blank"
                 to="/terms-and-conditions"
                 style={{ textDecoration: "none", color: "inherit" }}
               >
-                Términos y Condiciones
+                Términos de Servicio
+              </Link>{" | "}
+              <Link
+                target="_blank"
+                to="/privacy-policy"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                Política de Privacidad
+              </Link>
+              {" | "}
+              <Link
+                target="_blank"
+                to="/refund-policy"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                Política de Reembolso
               </Link>
             </p>
             <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
