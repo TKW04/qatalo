@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { initializePaddle } from "@paddle/paddle-js";
 
+
 export function usePaddle() {
   const [ready, setReady] = useState(false);
   const paddleRef = useRef(null);
