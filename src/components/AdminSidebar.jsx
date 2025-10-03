@@ -30,6 +30,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     { id: "changepassword", label: "Cambiar Contraseña", icon: <KeyRound /> },
   ];
   const business = useSelector((state) => state.business.business);
+  const enviroment =import.meta.env.VITE_APP_PADDLE_ENV;
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
@@ -107,6 +108,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
       );
     }
   };
+  
 
   return (
     <aside
@@ -115,7 +117,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     >
       <h2 style={{ marginRight: isOpen ? "20px" : "" }}>
         <Image
-          src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
+          src={enviroment === "production" ? "https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png" : "https://qatalo.s3.us-east-1.amazonaws.com/qatalo_dev.png"}
           alt="CatalogQR Logo"
           width={isOpen ? 150 : 110}
           style={{ marginLeft: isOpen ? "20px" : "40px" }}
