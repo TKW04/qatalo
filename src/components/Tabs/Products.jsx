@@ -969,6 +969,8 @@ const Products = ({ setActiveTab }) => {
                     setSelectedCategory({ code: "", name: "" });
                     setSelectedStatus({ code: "", name: "" });
                     setSelectedCurrency({ code: "", name: "", symbol: "" });
+                    setEditingProduct(false);
+                    fileUploadRef.current.clear();
                   }}
                 />
               )}
