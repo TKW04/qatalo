@@ -524,7 +524,9 @@ const ProductModal = ({ product, business, onClose }) => {
         <div
           className="modal-content product-modal-content"
           style={{
-            height: "610px",
+            // height: "610px",
+            maxHeight: "800px",
+            overflowY: "auto",
           }}
         >
           <div className="product-modal-header">
