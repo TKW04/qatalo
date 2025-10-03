@@ -15,7 +15,7 @@ import { logout } from "../services/authenticate";
 import { useSelector } from "react-redux";
 import { Button } from "primereact/button";
 import { getTokenInfo } from "../helpers/token";
-import { act, useEffect } from "react";
+import {  useEffect } from "react";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const auth = getTokenInfo();
