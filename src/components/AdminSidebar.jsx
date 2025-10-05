@@ -117,7 +117,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     >
       <h2 style={{ marginRight: isOpen ? "20px" : "" }}>
         <Image
-          src={enviroment === "production" ? "https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png" : "https://qatalo.s3.us-east-1.amazonaws.com/qatalo_dev.png"}
+          src={"https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"}
           alt="CatalogQR Logo"
           width={isOpen ? 150 : 110}
           style={{ marginLeft: isOpen ? "20px" : "40px" }}
