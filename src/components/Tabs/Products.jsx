@@ -29,7 +29,7 @@ import { Image } from "primereact/image";
 import DialogModal from "../DialogModal";
 import "../../styles/catalog.css";
 import { DeleteButton, EditButton, InfoButton } from "../Buttons";
-import { currencies, formatted } from "../../helpers/utils";
+import { currencies, formatted, getAges } from "../../helpers/utils";
 import { InputTextarea } from "primereact/inputtextarea";
 
 let once = true;
@@ -63,6 +63,7 @@ const Products = ({ setActiveTab }) => {
     name: "",
     symbol: "",
   });
+  const [selectedMinAge, setSelectedMinAge] = useState({ code: 0, name: 0 });
 
   const [expandedRows, setExpandedRows] = useState(null);
 
@@ -145,6 +146,20 @@ const Products = ({ setActiveTab }) => {
     selectedStatus.code,
     statuses,
   ]);
+  useEffect(() => {
+    if (
+      product &&
+      product.product_id &&
+      selectedMinAge.code === 0 &&
+      editingProduct === true
+    ) {
+      
+      setSelectedMinAge({
+        code: product.min_age,
+        name: product.min_age,
+      });
+    }
+  }, [editingProduct, getCategoryName, product, selectedCategory]);
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -290,7 +305,6 @@ const Products = ({ setActiveTab }) => {
             showSuccess
           )
         );
-        console.log("Update Product:", modifiedProduct);
       } else {
         setIsLoading(true);
         setLoadingMessage("Creando producto...");
@@ -396,6 +410,8 @@ const Products = ({ setActiveTab }) => {
     setShowDialog(true);
   };
   const handleViewProduct = (productInfo) => {
+
+    
     let available = productInfo.is_available === "available" ? true : false;
 
     const children = (
@@ -422,7 +438,7 @@ const Products = ({ setActiveTab }) => {
               </span>
             </label>
           </div>
-          <div className="col-4">
+          <div className="col-3">
             <label className="form-label">Solo uno</label>
             <InputSwitch
               checked={productInfo.just_one}
@@ -452,6 +468,30 @@ const Products = ({ setActiveTab }) => {
               }}
             />
           </div>
+          <div className="col-3">
+            <label className="form-label">Edad mínima</label>
+            <InputSwitch
+              checked={productInfo.min_age_allow}
+              disabled
+              onChange={(e) => {
+                dispatch(
+                  productActions.modifyPropertyValue({
+                    id: "min_age_allow",
+                    value: e.value,
+                  })
+                );
+              }}
+            />
+          </div>
+          {productInfo.min_age_allow && (
+            <div className="col-2">
+              <label className="form-label">
+                <span style={{ fontWeight: "bold" }}>
+                  {productInfo.min_age} años
+                </span>
+              </label>
+            </div>
+          )}
           <div className="col-4">
             <label className="form-label">
               Precio:{" "}
@@ -505,7 +545,7 @@ const Products = ({ setActiveTab }) => {
           <div className="col-12">
             <label className="form-label">
               Términos y condiciones:{" "}
-              <p style={{ fontWeight: "bold" }}>
+              <p style={{ fontWeight: "bold", color: "white" }}>
                 {productInfo.terms ? productInfo.terms : "N/A"}
               </p>
             </label>
@@ -516,7 +556,7 @@ const Products = ({ setActiveTab }) => {
     setDialogContent({ title: "Detalles del Producto", children });
     setShowDialog(true);
   };
-
+  
   const isMobile = window.innerWidth <= 760;
 
   const onSubmit = (e) => {
@@ -646,6 +686,7 @@ const Products = ({ setActiveTab }) => {
       </div>
     );
   };
+
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
@@ -931,6 +972,48 @@ const Products = ({ setActiveTab }) => {
                   }}
                 />
               </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Edad mínima</label>
+                <InputSwitch
+                  checked={
+                    product.min_age_allow === "true" ||
+                    product.min_age_allow === true
+                      ? true
+                      : false
+                  }
+                  onChange={(e) => {
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "min_age_allow",
+                        value: e.value,
+                      })
+                    );
+                  }}
+                />
+              </div>
+              {product.min_age_allow && (
+                <div className="form-group">
+                  <label className="form-label">Edad</label>
+                  <Dropdown
+                    value={selectedMinAge}
+                    className="input"
+                    onChange={(e) => {
+                      setSelectedMinAge(e.value);
+                      dispatch(
+                        productActions.modifyPropertyValue({
+                          id: "min_age",
+                          value: e.value.code,
+                        })
+                      );
+                    }}
+                    options={getAges()}
+                    optionLabel="name"
+                    placeholder="Seleccionar edad mínima"
+                  />
+                </div>
+              )}
             </div>
             <div>
               <label className="form-label">

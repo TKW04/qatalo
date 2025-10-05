@@ -23,6 +23,8 @@ export const CreateProduct = (
       productForm.append("just_one", product.just_one);
       productForm.append("show_quantity", product.show_quantity);
       productForm.append("terms", product.terms);
+      productForm.append("min_age_allow", product.min_age_allow);
+      productForm.append("min_age", product.min_age);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
       if (product.image3) productForm.append("image3", product.image3);
@@ -72,14 +74,7 @@ export const GetProducts = (showError) => {
         let data = await response.json();
         if (data === null) {
           data = [];
-        } else {
-          data = data.map((product) => ({
-            ...product,
-            just_one: product.just_one === "true" ? true : false,
-            show_quantity: product.show_quantity === "true" ? true : false,
-          }));
         }
-
         dispatch(productActions.setProducts({ products: data }));
       }
     } catch (error) {
@@ -109,12 +104,6 @@ export const GetProductsByBusinessId = (businessId, showError) => {
         let data = await response.json();
         if (data === null) {
           data = [];
-        } else {
-          data = data.map((product) => ({
-            ...product,
-            just_one: product.just_one === "true" ? true : false,
-            show_quantity: product.show_quantity === "true" ? true : false,
-          }));
         }
 
         dispatch(productActions.setProducts({ products: data }));
@@ -147,6 +136,8 @@ export const UpdateProduct = (
       productForm.append("just_one", product.just_one);
       productForm.append("show_quantity", product.show_quantity);
       productForm.append("terms", product.terms);
+      productForm.append("min_age_allow", product.min_age_allow);
+      productForm.append("min_age", product.min_age);
       productForm.append("imagesUrl", product.imagesUrl);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);

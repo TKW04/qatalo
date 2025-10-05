@@ -30,7 +30,7 @@ import Loading from "./UI/Loading";
 import { InputSwitch } from "primereact/inputswitch";
 import { Dialog } from "primereact/dialog";
 import "../styles/components.css";
-import { formatted } from "../helpers/utils";
+import { formatted, getAges } from "../helpers/utils";
 
 let once = true;
 const ProductModal = ({ product, business, onClose }) => {
@@ -58,6 +58,10 @@ const ProductModal = ({ product, business, onClose }) => {
 
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [termsDialog, setShowTermsDialog] = useState(false);
+  const [selectedAge, setSelectedAge] = useState({
+    code: 0,
+    name: 0,
+  });
 
   const [sliderRef, instanceRef] = useKeenSlider({
     initial: 0,
@@ -161,6 +165,24 @@ const ProductModal = ({ product, business, onClose }) => {
   };
 
   const onCreate = (action) => {
+    if (product.min_age_allow) {
+      if (selectedAge.code === 0) {
+        showWarning("Debe seleccionar una edad válida");
+        return;
+      } else if (selectedAge.code < parseInt(product.min_age)) {
+        showWarning(
+          `La edad mínima para este producto es ${product.min_age} años`
+        );
+        return;
+      } else {
+        dispatch(
+          customerActions.modifyPropertyValue({
+            id: "age",
+            value: selectedAge.code,
+          })
+        );
+      }
+    }
     setShowCustomerDialog(false);
     if (action === "whatsapp") {
       handleWhatsApp();
@@ -181,6 +203,7 @@ const ProductModal = ({ product, business, onClose }) => {
         price: product.price,
         status: "Pendiente de pago",
         accept_terms: acceptTerms,
+        age: selectedAge.code,
         payment_method: {
           payment_method_id: paymentMethods.find(
             (pm) => pm.payment_method_id === paymentMethod.code
@@ -209,10 +232,11 @@ const ProductModal = ({ product, business, onClose }) => {
   };
 
   const handleCustomerCreation = (customer_action) => {
+    dispatch(customerActions.startCustomer());
     setAction(customer_action);
     setShowCustomerDialog(true);
   };
-
+  
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
@@ -340,6 +364,21 @@ const ProductModal = ({ product, business, onClose }) => {
                   placeholder="809-555-1234"
                 />
               </div>
+              {product.min_age_allow && (
+                <div className="field col">
+                  <label className="form-label">Edad</label>
+                  <Dropdown
+                    value={selectedAge}
+                    className="input"
+                    onChange={(e) => {
+                      setSelectedAge(e.value);
+                    }}
+                    options={getAges()}
+                    optionLabel="name"
+                    placeholder="Seleccionar edad"
+                  />
+                </div>
+              )}
               <div className="flex justify-content-end">
                 <Button
                   className="btn btn-primary"
@@ -388,7 +427,7 @@ const ProductModal = ({ product, business, onClose }) => {
                   placeholder="Método de pago"
                 />
               </div>
-              <div className="field col">
+              <div className="field col-12">
                 <label className="form-label">
                   Cantidad
                   {product.show_quantity && (
@@ -443,11 +482,7 @@ const ProductModal = ({ product, business, onClose }) => {
                       label="Términos y condiciones"
                       onClick={() => setShowTermsDialog(true)}
                     />
-                    {product.show_quantity && (
-                      <span style={{ color: "white" }}>
-                        {product.quantity} Disponible
-                      </span>
-                    )}
+                    
                   </label>{" "}
                   <div className="field col-5 flex align-items-center">
                     <InputSwitch

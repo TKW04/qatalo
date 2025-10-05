@@ -142,6 +142,10 @@ const Customers = ({ setActiveTab }) => {
           Teléfono:{" "}
           <span style={{ fontWeight: "bold" }}>{customerInfo.phone}</span>
         </label>
+        <label className="form-label">
+          Edad:{" "}
+          <span style={{ fontWeight: "bold" }}>{customerInfo.age}</span>
+        </label>
       </div>
     );
     setDialogContent({ title, children });
@@ -743,20 +747,27 @@ const Customers = ({ setActiveTab }) => {
                   dataKey="customer_id"
                 >
                   <Column
-                    field="given_name"
+                    // field="given_name"
                     style={{
                       minWidth: "14rem",
                       padding: "1rem",
                     }}
-                    header="Nombre"
+                    header="Nombre Completo"
+                    body={(rowData) => {
+                      return (
+                        <span>
+                          {rowData.given_name} {rowData.family_name}
+                        </span>
+                      );
+                    }}  
                   ></Column>
                   <Column
-                    field="family_name"
+                    field="age"
                     style={{
-                      minWidth: "14rem",
+                      minWidth: "3rem",
                       padding: "1rem",
                     }}
-                    header="Apellido"
+                    header="Edad"
                   ></Column>
                   <Column
                     field="email"

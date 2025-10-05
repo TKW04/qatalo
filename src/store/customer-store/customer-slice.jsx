@@ -10,6 +10,7 @@ const initialState = {
     given_name: "",
     family_name: "",
     transaction_quantity: 1,
+    age: 0,
     transaction: {
       product_id: "",
       product_name: "",
@@ -44,6 +45,7 @@ const customerSlice = createSlice({
         given_name: "",
         family_name: "",
         transaction_quantity: 1,
+        age: 0,
         transaction: {
           product_id: "",
           product_name: "",

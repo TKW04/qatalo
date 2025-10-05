@@ -1,7 +1,6 @@
 import ProductCard from "./ProductCard";
 
 const ProductGrid = ({ products, onProductClick }) => {
-  
   if (products.length === 0) {
     return (
       <div className="no-products">
@@ -13,13 +12,15 @@ const ProductGrid = ({ products, onProductClick }) => {
 
   return (
     <div className="products-grid">
-      {products.map((product) => (
-        <ProductCard
-          key={product.product_id}
-          product={product}
-          onClick={onProductClick}
-        />
-      ))}
+      {products
+        .sort((a, b) => a.orden - b.orden)
+        .map((product) => (
+          <ProductCard
+            key={product.product_id}
+            product={product}
+            onClick={onProductClick}
+          />
+        ))}
     </div>
   );
 };

@@ -28,3 +28,13 @@ export const currencies = [
   { code: "USD", name: "Dólar estadounidense", symbol: "$" },
   { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
 ];
+export const getAges = () => {
+  const ages = [];
+  for (let i = 0; i <= 100; i++) {
+    ages.push({
+      code: i,
+      name: i,
+    });
+  }
+  return ages;
+};

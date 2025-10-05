@@ -6,7 +6,7 @@ import { Image } from "primereact/image";
 import { Button } from "primereact/button";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { CreditCard, Info, Save, Upload, X } from "lucide-react";
+import { CreditCard, Save, Upload, X } from "lucide-react";
 
 import {
   CancelTransaction,

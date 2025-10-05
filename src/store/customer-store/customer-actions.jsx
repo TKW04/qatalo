@@ -74,6 +74,7 @@ export const CreateCustomer = (customer, showWarning, showSuccess) => {
           email: customer.email,
           given_name: customer.given_name,
           family_name: customer.family_name,
+          age: customer.age,
           transaction: customer.transaction,
         }),
         headers: {
