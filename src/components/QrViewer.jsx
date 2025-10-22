@@ -31,6 +31,7 @@ const QrViewer = () => {
   const dispatch = useDispatch();
   const params = useParams();
   const { showError } = useNotification();
+  const svgRef = useRef(null);
 
   const [logoDataUrl, setLogoDataUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,8 +53,7 @@ const QrViewer = () => {
       business.business_id !== "" &&
       logoDataUrl === null
     ) {
-      const data = toDataURL(business.logo_url);
-      data.then((d) => setLogoDataUrl(d)).catch(() => setLogoDataUrl(null));
+      setLogoDataUrl(business.logo_url);
     }
   }, [auth, business, business?.business_id, dispatch, showError]);
 
@@ -227,25 +227,19 @@ const QrViewer = () => {
 
   const size = 300;
   const defaultLogoSize = Math.round(size * 0.8); // ~80% del QR (lectura segura)
+  console.log(logoDataUrl);
+  
 
   return (
     <>
       <Loading visible={isLoading} />
       {isLoading === false && (
-        <div
-          className="qr-viewer-container"
-        >
-          <Card
-            footer={footer}
-            className="qr-card"
-           
-          >
+        <div className="qr-viewer-container">
+          <Card footer={footer} className="qr-card" >
             <div className="qr-viewer" style={{ textAlign: "center" }}>
               <h1>Código QR del Catálogo</h1>
 
-              <div
-                className="qr-code"
-              >
+              <div className="qr-code" ref={svgRef}>
                 <QRCodeSVG
                   value={catalogUrl}
                   size={size}
