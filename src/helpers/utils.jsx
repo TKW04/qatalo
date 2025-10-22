@@ -25,7 +25,9 @@ export const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("es-ES", options);
 };
 export const formatTextDate = (dateString) => {
-  const date = new Date(dateString);
+  const dates = dateString.split("/");
+
+  const date = new Date(dates[2], dates[1] - 1, dates[0]);
   const weekday = date.toLocaleString("es-ES", { weekday: "long" });
 
   // Convert the weekday to uppercase
@@ -35,7 +37,7 @@ export const formatTextDate = (dateString) => {
     month: "long",
     day: "numeric",
   };
-  return `${capitalizedWeekday}, ${new Date(dateString).toLocaleDateString(
+  return `${capitalizedWeekday}, ${date.toLocaleDateString(
     "es-ES",
     options
   )}`;

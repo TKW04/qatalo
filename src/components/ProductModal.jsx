@@ -252,6 +252,15 @@ const ProductModal = ({ product, business, onClose }) => {
       disable = true;
     return disable;
   };
+   const setDefaultDate = (dateString) => {
+    if (dateString) {
+      const date = dateString.split("/");
+      return new Date(date[2], date[1] - 1, date[0]);
+    }
+
+    return null;
+  };
+
 
   return (
     <>
@@ -495,8 +504,8 @@ const ProductModal = ({ product, business, onClose }) => {
                   <Calendar
                     style={{ width: "100%", height: "60px" }}
                     inputStyle={{ height: "40px", fontSize: "18px", textAlign: "center" }}
-                    value={new Date(customer.delivery_day)}
-                    minDate={new Date(product.delivery_start_day)}
+                    value={setDefaultDate(customer.delivery_day)}
+                    minDate={setDefaultDate(product.delivery_start_day)}
                     dateFormat="mm/dd/yy"
                     onChange={(e) => {
                       dispatch(
