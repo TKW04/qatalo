@@ -250,8 +250,6 @@ const ProductModal = ({ product, business, onClose }) => {
     if (!acceptTerms) disable = true;
     if (product.required_delivery_day && customer.delivery_day === "")
       disable = true;
-    console.log(disable);
-
     return disable;
   };
 

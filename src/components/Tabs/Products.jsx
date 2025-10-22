@@ -172,8 +172,6 @@ const Products = ({ setActiveTab }) => {
     selectedMinAge.code,
   ]);
 
-  console.log(product);
-  
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -308,8 +306,7 @@ const Products = ({ setActiveTab }) => {
       }
 
       if (modifiedProduct.product_id) {
-        // console.log(modifiedProduct);
-        
+
         setIsLoading(true);
         setLoadingMessage("Actualizando producto...");
 
@@ -728,8 +725,12 @@ const Products = ({ setActiveTab }) => {
     );
   };
   const setDefaultDate = (dateString) => {
-    if (!dateString) return new Date();
-    return new Date(dateString);
+    if (dateString) {
+      const date = dateString.split("/");
+      return new Date(date[2], date[1] - 1, date[0]);
+    }
+
+    return null;
   };
 
   return (
@@ -1085,7 +1086,7 @@ const Products = ({ setActiveTab }) => {
                   <label className="form-label">A partir de</label>
                   <Calendar
                     value={setDefaultDate(product.delivery_start_day)}
-                    dateFormat="dd/mm/yy"
+                    dateFormat="mm/dd/yy"
                     onChange={(e) => {
                       dispatch(
                         productActions.modifyPropertyValue({
