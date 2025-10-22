@@ -5,7 +5,8 @@ const DialogModal = ({
   children,
   footer,
   visible,
-  onHide
+  onHide,
+  width,
 }) => {
   const isMobile = window.innerWidth <= 760;
   return (
@@ -13,7 +14,7 @@ const DialogModal = ({
       header={title}
       visible={visible}
       position={"center"}
-      style={{ width: isMobile ? "100%" : "50vw" }}
+      style={{ width: isMobile ? "100%" : width ? width : "50vw" }}
       onHide={onHide}
       footer={footer}
       draggable={false}

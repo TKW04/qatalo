@@ -30,7 +30,13 @@ import Loading from "./UI/Loading";
 import { InputSwitch } from "primereact/inputswitch";
 import { Dialog } from "primereact/dialog";
 import "../styles/components.css";
-import { formatted, getAges } from "../helpers/utils";
+import {
+  formatDate,
+  formatted,
+  formatTextDate,
+  getAges,
+} from "../helpers/utils";
+import { Calendar } from "primereact/calendar";
 
 let once = true;
 const ProductModal = ({ product, business, onClose }) => {
@@ -204,6 +210,7 @@ const ProductModal = ({ product, business, onClose }) => {
         status: "Pendiente de pago",
         accept_terms: acceptTerms,
         age: selectedAge.code,
+        delivery_day: customer.delivery_day,
         payment_method: {
           payment_method_id: paymentMethods.find(
             (pm) => pm.payment_method_id === paymentMethod.code
@@ -236,7 +243,18 @@ const ProductModal = ({ product, business, onClose }) => {
     setAction(customer_action);
     setShowCustomerDialog(true);
   };
-  
+  const disableButton = () => {
+    let disable = false;
+    if (!paymentMethod) disable = true;
+    if (!customer.transaction_quantity) disable = true;
+    if (!acceptTerms) disable = true;
+    if (product.required_delivery_day && customer.delivery_day === "")
+      disable = true;
+    console.log(disable);
+
+    return disable;
+  };
+
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
@@ -401,21 +419,23 @@ const ProductModal = ({ product, business, onClose }) => {
         {/* Modal de compra */}
         <DialogModal
           visible={showBuyDialog}
+          width="30vw"
           onHide={() => setShowBuyDialog(false)}
         >
           <div
             style={{
               textAlign: "left",
               padding: "5px",
-              overflowX: "hidden",
+              overflowX: "hidden"
             }}
           >
-            <div style={{ width: "100%", textAlign: "left" }}>
+            <div style={{  textAlign: "left" }}>
               <div className="field col">
                 <label className="form-label">Método de pago</label>
                 <Dropdown
                   value={paymentMethod}
                   className="input"
+                  style={{width:"100%"}}
                   onChange={(e) => {
                     setPaymentMethod(e.value);
                   }}
@@ -428,7 +448,7 @@ const ProductModal = ({ product, business, onClose }) => {
                 />
               </div>
               <div className="field col-12">
-                <label className="form-label">
+                <label className="form-label" >
                   Cantidad
                   {product.show_quantity && (
                     <span style={{ color: "white" }}>
@@ -444,7 +464,7 @@ const ProductModal = ({ product, business, onClose }) => {
                   min={1}
                   max={product.show_quantity ? product.quantity : 1000}
                   style={{
-                    width: "100%",
+                    width:"100%",
                     backgroundColor:
                       product.just_one === true ? "gray" : "white",
                     color:
@@ -468,6 +488,29 @@ const ProductModal = ({ product, business, onClose }) => {
                   }}
                 />
               </div>
+              {product.required_delivery_day && (
+                <div className="field col-12">
+                  <label className="form-label">
+                    Fecha de entrega <br />
+                    (A partir de : {formatTextDate(product.delivery_start_day)})
+                  </label>
+                  <Calendar
+                    style={{ width: "100%", height: "60px" }}
+                    inputStyle={{ height: "40px", fontSize: "18px", textAlign: "center" }}
+                    value={new Date(customer.delivery_day)}
+                    minDate={new Date(product.delivery_start_day)}
+                    dateFormat="mm/dd/yy"
+                    onChange={(e) => {
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "delivery_day",
+                          value: formatDate(e.value),
+                        })
+                      );
+                    }}
+                  />
+                </div>
+              )}
               {product.terms && (
                 <div className="field col flex align-items-center">
                   <label className="form-label">
@@ -482,7 +525,6 @@ const ProductModal = ({ product, business, onClose }) => {
                       label="Términos y condiciones"
                       onClick={() => setShowTermsDialog(true)}
                     />
-                    
                   </label>{" "}
                   <div className="field col-5 flex align-items-center">
                     <InputSwitch
@@ -496,20 +538,12 @@ const ProductModal = ({ product, business, onClose }) => {
               )}
               <div className="flex justify-content-end">
                 <Button
-                  disabled={
-                    !paymentMethod ||
-                    !customer.transaction_quantity ||
-                    !acceptTerms
-                  }
+                  disabled={disableButton()}
                   className={`btn ${
-                    paymentMethod &&
-                    customer.transaction_quantity &&
-                    acceptTerms
-                      ? "btn-success"
-                      : "btn-disabled"
+                    disableButton() ? "btn-disabled" : "btn-success"
                   }`}
                   label="Guardar"
-                  icon={<Check />}
+                  icon={<Check color="#ffffff" />}
                   onClick={() => onBuy()}
                   style={{ width: "100px", margin: "2px" }}
                 />

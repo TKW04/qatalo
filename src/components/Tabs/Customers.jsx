@@ -21,6 +21,7 @@ import {
   currencies,
   formatDate,
   formatted,
+  formatTextDate,
   getStatusStyle,
 } from "../../helpers/utils";
 import "../../styles/catalog.css";
@@ -143,8 +144,7 @@ const Customers = ({ setActiveTab }) => {
           <span style={{ fontWeight: "bold" }}>{customerInfo.phone}</span>
         </label>
         <label className="form-label">
-          Edad:{" "}
-          <span style={{ fontWeight: "bold" }}>{customerInfo.age}</span>
+          Edad: <span style={{ fontWeight: "bold" }}>{customerInfo.age}</span>
         </label>
       </div>
     );
@@ -156,10 +156,13 @@ const Customers = ({ setActiveTab }) => {
     const currency = currencies.find((c) => c.code === currencyCode);
     return currency ? currency.symbol : "";
   };
+
   const rowExpansionTemplate = (data) => {
     return (
       <>
         <DialogModal
+          title={"Cancelar Transacción"}
+          width={"30vw"}
           visible={showDialogCancel}
           onHide={() => setShowDialogCancel(false)}
         >
@@ -271,6 +274,7 @@ const Customers = ({ setActiveTab }) => {
         </DialogModal>
         <DialogModal
           title={"Información del producto"}
+          width={"30vw"}
           visible={showProductDialog}
           onHide={() => setShowProductDialog(false)}
         >
@@ -312,6 +316,16 @@ const Customers = ({ setActiveTab }) => {
                 {formatted(productInfo.price * productInfo.quantity)}
               </span>
             </label>
+            {productInfo.delivery_day &&
+              productInfo.delivery_day !== "" &&
+              productInfo.delivery_day !== null && (
+                <label className="form-label">
+                  Fecha de entrega:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {formatTextDate(productInfo.delivery_day)}
+                  </span>
+                </label>
+              )}
             <label className="form-label">
               Método de Pago:{" "}
               <span style={{ fontWeight: "bold" }}>
@@ -728,6 +742,7 @@ const Customers = ({ setActiveTab }) => {
           <>
             <DialogModal
               title={dialogContent?.title || "Eliminar Producto"}
+              width={"20vw"}
               visible={showDialog}
               onHide={() => setShowDialog(false)}
               footer={dialogContent?.footer || null}
@@ -747,7 +762,6 @@ const Customers = ({ setActiveTab }) => {
                   dataKey="customer_id"
                 >
                   <Column
-                    // field="given_name"
                     style={{
                       minWidth: "14rem",
                       padding: "1rem",
@@ -759,7 +773,7 @@ const Customers = ({ setActiveTab }) => {
                           {rowData.given_name} {rowData.family_name}
                         </span>
                       );
-                    }}  
+                    }}
                   ></Column>
                   <Column
                     field="age"

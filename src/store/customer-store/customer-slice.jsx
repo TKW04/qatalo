@@ -11,6 +11,7 @@ const initialState = {
     family_name: "",
     transaction_quantity: 1,
     age: 0,
+
     transaction: {
       product_id: "",
       product_name: "",
@@ -18,7 +19,7 @@ const initialState = {
       price: 0,
       status: "pending",
       accept_terms: false,
-
+      delivery_day: "",
       payment_method: {
         payment_method_id: "",
         payment_type: "",
@@ -53,6 +54,7 @@ const customerSlice = createSlice({
           price: 0,
           status: "pending",
           accept_terms: false,
+          delivery_day: "",
           payment_method: {
             payment_method_id: "",
             payment_type: "",

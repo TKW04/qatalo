@@ -29,8 +29,14 @@ import { Image } from "primereact/image";
 import DialogModal from "../DialogModal";
 import "../../styles/catalog.css";
 import { DeleteButton, EditButton, InfoButton } from "../Buttons";
-import { currencies, formatted, getAges } from "../../helpers/utils";
+import {
+  currencies,
+  formatDate,
+  formatted,
+  getAges,
+} from "../../helpers/utils";
 import { InputTextarea } from "primereact/inputtextarea";
+import { Calendar } from "primereact/calendar";
 
 let once = true;
 const Products = ({ setActiveTab }) => {
@@ -153,13 +159,21 @@ const Products = ({ setActiveTab }) => {
       selectedMinAge.code === 0 &&
       editingProduct === true
     ) {
-      
       setSelectedMinAge({
         code: product.min_age,
         name: product.min_age,
       });
     }
-  }, [editingProduct, getCategoryName, product, selectedCategory]);
+  }, [
+    editingProduct,
+    getCategoryName,
+    product,
+    selectedCategory,
+    selectedMinAge.code,
+  ]);
+
+  console.log(product);
+  
 
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
@@ -294,8 +308,11 @@ const Products = ({ setActiveTab }) => {
       }
 
       if (modifiedProduct.product_id) {
+        // console.log(modifiedProduct);
+        
         setIsLoading(true);
         setLoadingMessage("Actualizando producto...");
+
         dispatch(
           UpdateProduct(
             modifiedProduct,
@@ -409,9 +426,8 @@ const Products = ({ setActiveTab }) => {
     setDialogContent({ title: "Eliminar Producto", children });
     setShowDialog(true);
   };
-  const handleViewProduct = (productInfo) => {
 
-    
+  const handleViewProduct = (productInfo) => {
     let available = productInfo.is_available === "available" ? true : false;
 
     const children = (
@@ -492,6 +508,31 @@ const Products = ({ setActiveTab }) => {
               </label>
             </div>
           )}
+          <div className="col-3">
+            <label className="form-label">Requiere Fecha de entrega</label>
+            <InputSwitch
+              checked={productInfo.required_delivery_day}
+              disabled
+              onChange={(e) => {
+                dispatch(
+                  productActions.modifyPropertyValue({
+                    id: "required_delivery_day",
+                    value: e.value,
+                  })
+                );
+              }}
+            />
+          </div>
+          {productInfo.required_delivery_day && (
+            <div className="col-2">
+              <label className="form-label">Fecha de entrega mínima</label>
+              <label className="form-label">
+                <span style={{ fontWeight: "bold" }}>
+                  {formatDate(productInfo.delivery_start_day)}
+                </span>
+              </label>
+            </div>
+          )}
           <div className="col-4">
             <label className="form-label">
               Precio:{" "}
@@ -556,7 +597,7 @@ const Products = ({ setActiveTab }) => {
     setDialogContent({ title: "Detalles del Producto", children });
     setShowDialog(true);
   };
-  
+
   const isMobile = window.innerWidth <= 760;
 
   const onSubmit = (e) => {
@@ -685,6 +726,10 @@ const Products = ({ setActiveTab }) => {
         </DataTable>
       </div>
     );
+  };
+  const setDefaultDate = (dateString) => {
+    if (!dateString) return new Date();
+    return new Date(dateString);
   };
 
   return (
@@ -1011,6 +1056,44 @@ const Products = ({ setActiveTab }) => {
                     options={getAges()}
                     optionLabel="name"
                     placeholder="Seleccionar edad mínima"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Requiere Fecha de entrega</label>
+                <InputSwitch
+                  checked={
+                    product.required_delivery_day === "true" ||
+                    product.required_delivery_day === true
+                      ? true
+                      : false
+                  }
+                  onChange={(e) => {
+                    dispatch(
+                      productActions.modifyPropertyValue({
+                        id: "required_delivery_day",
+                        value: e.value,
+                      })
+                    );
+                  }}
+                />
+              </div>
+              {product.required_delivery_day && (
+                <div className="form-group">
+                  <label className="form-label">A partir de</label>
+                  <Calendar
+                    value={setDefaultDate(product.delivery_start_day)}
+                    dateFormat="dd/mm/yy"
+                    onChange={(e) => {
+                      dispatch(
+                        productActions.modifyPropertyValue({
+                          id: "delivery_start_day",
+                          value: formatDate(e.value),
+                        })
+                      );
+                    }}
                   />
                 </div>
               )}

@@ -294,7 +294,7 @@ body {
 .p-dialog-content,
 .p-dialog {
   background: linear-gradient(135deg, #113f67 0%, #34699a 100%);
-  width: auto !important;
+  width: auto ;
   padding: 0px !important;
 }
 .dialog-title {
