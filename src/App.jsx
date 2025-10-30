@@ -15,6 +15,7 @@ import ResetPassword from "./pages/User/ResetPassword";
 import PrivacyNotice from "./pages/PrivacyNotice";
 import RefundPolicy from "./pages/RefundPolicy";
 
+
 function App() {
   return (
     <NotificationProvider>

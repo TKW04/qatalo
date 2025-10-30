@@ -527,6 +527,20 @@ const Customers = ({ setActiveTab }) => {
               <Column
                 header={
                   <span style={{ fontWeight: "bold", padding: "10px" }}>
+                    Entrega
+                  </span>
+                }
+                body={(rowData) => {
+                  return <span>{rowData.delivery_day}</span>;
+                }}
+                style={{
+                  minWidth: "4rem",
+                  padding: "1rem",
+                }}
+              ></Column>
+              <Column
+                header={
+                  <span style={{ fontWeight: "bold", padding: "10px" }}>
                     Estado
                   </span>
                 }
