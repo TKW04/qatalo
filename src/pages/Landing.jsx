@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import {
   Building2,
@@ -25,9 +25,7 @@ const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
   const dispatch = useDispatch();
   const { showError } = useNotification();
-  const [showMenu, setShowMenu] = useState(false);
-  const isMobile = window.innerWidth <= 768;
-  const isIPad = window.innerWidth <= 1024 && window.innerWidth > 768;
+
 
   useEffect(() => {
     if (plans.length === 0) {
