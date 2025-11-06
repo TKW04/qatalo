@@ -21,6 +21,7 @@ import { Column } from "primereact/column";
 import { Card } from "primereact/card";
 import { DeleteButton, EditButton, InfoButton } from "../Buttons";
 import { currencies } from "../../helpers/utils";
+import { IoMdRefresh } from "react-icons/io";
 
 let once = true;
 const PaymentMethods = ({ setActiveTab }) => {
@@ -825,7 +826,27 @@ const PaymentMethods = ({ setActiveTab }) => {
         </div>
 
         <div>
-          <h2>Métodos de Pago Existentes</h2>
+          <h2>
+            Métodos de Pago Existentes{" "}
+            <Button
+              outlined
+              type="button"
+              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
+              value={""}
+              style={{
+                border: "none",
+                margin: "5px",
+              }}
+              onClick={() => {
+                setIsLoading(true);
+                setLoadingMessage("Cargando métodos de pago...");
+                dispatch(GetPaymentMethods(showError));
+                setTimeout(() => {
+                  setIsLoading(false);
+                }, 2500);
+              }}
+            />
+          </h2>
           <>
             {!isMobile && (
               <div>

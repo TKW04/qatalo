@@ -6,6 +6,7 @@ import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Trash2, X } from "lucide-react";
+import { IoMdRefresh } from "react-icons/io";
 import { categoryActions } from "../../store/categories-store/category-slice";
 
 import {
@@ -137,7 +138,7 @@ const Categories = ({ setActiveTab }) => {
         onHide={() => setShowDeleteDialog(false)}
         footer={footerContent}
       >
-        <p>¿Estás seguro de que deseas eliminar esta categoría?</p>
+        <p style={{color:"#ffffff"}}>¿Estás seguro de que deseas eliminar esta categoría?</p>
       </DialogModal>
       <Loading message={loadingMessage} visible={isLoading} />
       <div>
@@ -190,7 +191,27 @@ const Categories = ({ setActiveTab }) => {
         </div>
 
         <div>
-          <h2>Categorías Existentes</h2>
+          <h2>
+            Categorías Existentes{" "}
+            <Button
+              outlined
+              type="button"
+              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
+              value={""}
+              style={{
+                border: "none",
+                margin: "5px",
+              }}
+              onClick={() => {
+                setIsLoading(true);
+                setLoadingMessage("Cargando categorías...");
+                dispatch(GetCategories(showError));
+                setTimeout(() => {
+                  setIsLoading(false);
+                }, 2500);
+              }}
+            />
+          </h2>
           <div>
             <DataTable
               value={categories}

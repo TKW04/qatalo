@@ -30,6 +30,8 @@ import { Image } from "primereact/image";
 import { EditButton, InfoButton } from "../Buttons";
 import { InputTextarea } from "primereact/inputtextarea";
 import { InputSwitch } from "primereact/inputswitch";
+import { FaWhatsapp } from "react-icons/fa";
+import { IoMdRefresh } from "react-icons/io";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -381,7 +383,6 @@ const Customers = ({ setActiveTab }) => {
                           icon={<Check />}
                           raised
                           label="Validar"
-                          disabled={!productInfo.receipt_url}
                           style={{
                             padding: "10px",
                             backgroundColor: "green",
@@ -446,6 +447,7 @@ const Customers = ({ setActiveTab }) => {
               dataKey="transaction_id"
               showGridlines
               stripedRows
+              style={{ borderBottom: " 2px solid var(--color-navy)", paddingBottom: "1rem" }}
             >
               <Column
                 style={{
@@ -752,7 +754,27 @@ const Customers = ({ setActiveTab }) => {
           </div>
         )}
         <div>
-          <h2>Clientes Existentes</h2>
+          <h2>
+            Clientes Existentes{" "}
+            <Button
+              outlined
+              type="button"
+              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
+              value={""}
+              style={{
+                border: "none",
+                margin: "5px",
+              }}
+              onClick={() => {
+                setIsLoading(true);
+                setLoadingMessage("Cargando clientes...");
+                dispatch(GetCustomers(showError));
+                setTimeout(() => {
+                  setIsLoading(false);
+                }, 2500);
+              }}
+            />
+          </h2>
           <>
             <DialogModal
               title={dialogContent?.title || "Eliminar Producto"}
@@ -789,14 +811,7 @@ const Customers = ({ setActiveTab }) => {
                       );
                     }}
                   ></Column>
-                  <Column
-                    field="age"
-                    style={{
-                      minWidth: "3rem",
-                      padding: "1rem",
-                    }}
-                    header="Edad"
-                  ></Column>
+
                   <Column
                     field="email"
                     style={{
@@ -806,12 +821,25 @@ const Customers = ({ setActiveTab }) => {
                     header="Email"
                   ></Column>
                   <Column
-                    field="phone"
                     style={{
                       minWidth: "14rem",
                       padding: "1rem",
                     }}
                     header="Teléfono"
+                    body={(rowData) => {
+                      const message = `Hola, ${customer.given_name} ${
+                        customer.family_name || ""
+                      }, te escribo de "${business.name}".`;
+                      const whatsappUrl = `https://wa.me/${
+                        rowData.phone
+                      }?text=${encodeURIComponent(message)}`;
+
+                      return (
+                        <a href={whatsappUrl}>
+                          {rowData.phone} <FaWhatsapp color="#25D366" />
+                        </a>
+                      );
+                    }}
                   ></Column>
                   <Column
                     header="Acciones"

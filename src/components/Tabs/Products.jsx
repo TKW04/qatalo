@@ -37,6 +37,7 @@ import {
 } from "../../helpers/utils";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Calendar } from "primereact/calendar";
+import { IoMdRefresh } from "react-icons/io";
 
 let once = true;
 const Products = ({ setActiveTab }) => {
@@ -172,7 +173,6 @@ const Products = ({ setActiveTab }) => {
     selectedMinAge.code,
   ]);
 
-
   const headerTemplate = (options) => {
     const { className, chooseButton } = options;
 
@@ -306,7 +306,6 @@ const Products = ({ setActiveTab }) => {
       }
 
       if (modifiedProduct.product_id) {
-
         setIsLoading(true);
         setLoadingMessage("Actualizando producto...");
 
@@ -1146,7 +1145,27 @@ const Products = ({ setActiveTab }) => {
         </div>
 
         <div>
-          <h2>Productos Existentes</h2>
+          <h2>
+            Productos Existentes{" "}
+            <Button
+              outlined
+              type="button"
+              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
+              value={""}
+              style={{
+                border: "none",
+                margin: "5px",
+              }}
+              onClick={() => {
+                setIsLoading(true);
+                setLoadingMessage("Cargando productos...");
+                dispatch(GetProducts(showError));
+                setTimeout(() => {
+                  setIsLoading(false);
+                }, 2500);
+              }}
+            />
+          </h2>
           <>
             <DialogModal
               title={dialogContent?.title || "Confirmación"}
