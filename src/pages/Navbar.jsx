@@ -6,7 +6,7 @@ const Navbar = () => {
   const isMobile = window.innerWidth <= 760;
 
   return (
-    <header className="nav">
+    <header className="nav" style={{paddingTop:"0px", marginTop:"0px",marginBottom:"0px"}}>
       <div className="nav__wrap">
         {/* Logo */}
         <a href="#inicio" className="nav__brand" aria-label="Qatalo Home">

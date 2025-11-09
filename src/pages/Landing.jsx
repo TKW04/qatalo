@@ -39,13 +39,13 @@ const Landing = () => {
         style={{
           width: "100%",
           height: "100px",
-          paddingTop: "20px",
+          // paddingTop: "20px",
           background:
             "linear-gradient(135deg, var(--color-navy) 0%, var(--color-blue) 100%)",
           color: "white",
           zIndex: 1001,
-          marginBottom: "20px",
-          marginTop: "0px",
+          // marginBottom: "0px",
+          // marginTop: "0px",
           left: "0",
           top: "0",
           gap: "20px",
@@ -58,7 +58,7 @@ const Landing = () => {
       </div>
 
       <div>
-        <section className="hero" id="inicio">
+        <section className="hero" id="inicio" style={{marginTop:"10px"}}>
           <div className="hero-content" style={{ paddingTop: "0px" }}>
             <h1>Tu Catálogo Digital con QR</h1>
             <p>

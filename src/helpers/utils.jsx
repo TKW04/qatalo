@@ -8,6 +8,7 @@ export const formatted = (value) => {
 export const getStatusStyle = (status) => {
   switch (status) {
     case "Aprobada":
+    case "Pago Completado":
       return { color: "green" };
     case "Pendiente de pago":
       return { color: "var(--chart-5)" };
@@ -35,6 +36,24 @@ export const formatTextDate = (dateString) => {
   const options = {
     year: "numeric",
     month: "long",
+    day: "numeric",
+  };
+  return `${capitalizedWeekday}, ${date.toLocaleDateString(
+    "es-ES",
+    options
+  )}`;
+};
+export const formatTextDateShort = (dateString) => {
+  const dates = dateString.split("/");
+
+  const date = new Date(dates[2], dates[1] - 1, dates[0]);
+  const weekday = date.toLocaleString("es-ES", { weekday: "long" });
+
+  // Convert the weekday to uppercase
+  const capitalizedWeekday = weekday[0].toUpperCase() + weekday.slice(1);
+  const options = {
+    year: "numeric",
+    month: "short",
     day: "numeric",
   };
   return `${capitalizedWeekday}, ${date.toLocaleDateString(
