@@ -14,7 +14,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["buffer"],
     esbuildOptions: {
       define: {
         global: 'globalThis',
@@ -28,7 +27,6 @@ export default defineConfig({
     },
   },
   build: {
-    commonjsOptions: { transformMixedEsModules: true },
     rollupOptions: {
       plugins: [
         rollupNodePolyFill(),
