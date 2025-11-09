@@ -6,6 +6,9 @@ import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Search, BookImage, Check, Trash2 } from "lucide-react";
+import * as XLSX from "xlsx-js-style";
+import { saveAs } from "file-saver";
+
 import { customerActions } from "../../store/customer-store/customer-slice";
 
 import {
@@ -22,6 +25,7 @@ import {
   formatDate,
   formatted,
   formatTextDate,
+  formatTextDateShort,
   getStatusStyle,
 } from "../../helpers/utils";
 import "../../styles/catalog.css";
@@ -30,7 +34,7 @@ import { Image } from "primereact/image";
 import { EditButton, InfoButton } from "../Buttons";
 import { InputTextarea } from "primereact/inputtextarea";
 import { InputSwitch } from "primereact/inputswitch";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
 import { IoMdRefresh } from "react-icons/io";
 import SellReport from "../SellReport";
 
@@ -641,6 +645,95 @@ const Customers = ({ setActiveTab }) => {
       </>
     );
   };
+  const exportToExcel = () => {
+    //Lista de ventas
+    const customersData = [];
+    customers.forEach((customer) => {
+      customer.transactions.forEach((transaction) => {
+        customersData.push({
+          full_name: `${customer.given_name} ${customer.family_name}`,
+          product_name: transaction.product_name,
+          quantity: transaction.quantity,
+          price: transaction.price,
+          total: transaction.price * transaction.quantity,
+          currency: transaction.payment_method.currency,
+          delivery_day: transaction.delivery_day
+            ? formatTextDateShort(transaction.delivery_day)
+            : "",
+          status:
+            transaction.status === "Aprobada"
+              ? "Pago Completado"
+              : transaction.status === "Pendiente de pago"
+              ? "Pendiente de pago"
+              : transaction.status === "Pendiente de validación"
+              ? "Pendiente de validación"
+              : "Cancelada",
+        });
+      });
+    });
+
+    // 1️⃣ Crear la hoja
+    const header = [
+      "Nombre completo",
+      "Producto",
+      "Cantidad",
+      "Precio",
+      "Total",
+      "Fecha de entrega",
+      "Estado",
+    ];
+    const wsData = [
+      header,
+      ...customersData.map((item) => [
+        item.full_name,
+        item.product_name,
+        item.quantity,
+        item.price,
+        item.total,
+        item.delivery_day,
+        item.status,
+      ]),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // 2️⃣ Aplicar estilos de cabecera
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" }, sz: 16 },
+      alignment: { horizontal: "center", vertical: "center" },
+      fill: { fgColor: { rgb: "213448" } }, // azul oscuro (#213448)
+      border: {
+        top: { style: "thin", color: { rgb: "FFFFFF" } },
+        bottom: { style: "thin", color: { rgb: "FFFFFF" } },
+      },
+    };
+
+    // 3️⃣ Aplicar bordes a las filas de datos
+    const dataStyle = {
+      font: { bold: true, sz: 12 },
+      alignment: { vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "999999" } },
+        bottom: { style: "thin", color: { rgb: "999999" } },
+      },
+    };
+
+    customersData.forEach((row, rIdx) => {
+      header.forEach((_, cIdx) => {
+        const headerCell = ws[XLSX.utils.encode_cell({ r: 0, c: cIdx })];
+        if (headerCell) headerCell.s = headerStyle;
+        const cell = ws[XLSX.utils.encode_cell({ r: rIdx + 1, c: cIdx })];
+        if (cell) cell.s = dataStyle;
+      });
+    });
+
+    // 4️⃣ Crear libro y exportar
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+
+    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([buffer], { type: "application/octet-stream" });
+    saveAs(blob, "Ventas.xlsx");
+  };
 
   return (
     <>
@@ -796,19 +889,35 @@ const Customers = ({ setActiveTab }) => {
               />
             )}
             {showSellReport && (
-              <Button
-                outlined
-                type="button"
-                label="Ver Clientes"
-                style={{
-                  margin: "5px",
-                  padding: "10px",
-                  color: "var(--color-blue)",
-                }}
-                onClick={() => {
-                  setShowSellReport(false);
-                }}
-              />
+              <>
+                <Button
+                  outlined
+                  type="button"
+                  label="Ver Clientes"
+                  style={{
+                    margin: "5px",
+                    padding: "10px",
+                    color: "var(--color-blue)",
+                  }}
+                  onClick={() => {
+                    setShowSellReport(false);
+                  }}
+                />
+                <Button
+                  outlined
+                  type="button"
+                  label="Exportar a Excel"
+                  icon={<FaRegFileExcel />}
+                  style={{
+                    margin: "5px",
+                    padding: "10px",
+                    color: "green",
+                  }}
+                  onClick={() => {
+                    exportToExcel();
+                  }}
+                />
+              </>
             )}
           </h2>
           {!showSellReport && (

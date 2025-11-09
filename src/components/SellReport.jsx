@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { formatTextDateShort } from "../helpers/utils";
 import { ColumnGroup } from "primereact/columngroup";
 import { Row } from "primereact/row";
+// import * as XLSX from "xlsx-js-style";
+// import { saveAs } from "file-saver";
 
 const SellReport = ({
   customers,
@@ -75,6 +77,56 @@ const SellReport = ({
     return getCurrencySymbol(currency) + " " + formatted(total);
   };
 
+//   const exportToExcel = () => {
+//     // 1️⃣ Crear la hoja
+//     const header = ["Nombre completo", "Producto", "Cantidad", "Precio", "Total", "Fecha de entrega", "Estado"];
+//     const wsData = [header, ...customersData.map(item => [item.full_name, item.product_name, item.quantity, item.price, item.total, item.delivery_day, item.status])];
+//     const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+//     // 2️⃣ Aplicar estilos de cabecera
+//     const headerStyle = {
+//       font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
+//       alignment: { horizontal: "center", vertical: "center" },
+//       fill: { fgColor: { rgb: "213448" } }, // azul oscuro (#213448)
+//       border: {
+//         top: { style: "thin", color: { rgb: "FFFFFF" } },
+//         bottom: { style: "thin", color: { rgb: "FFFFFF" } },
+//       },
+//     };
+
+//     header.forEach((_, i) => {
+//       const cell = ws[XLSX.utils.encode_cell({ r: 0, c: i })];
+//       if (cell) cell.s = headerStyle;
+//       const col = String.fromCharCode(65 + i);
+//       ws["!cols"] = ws["!cols"] || [];
+//       ws["!cols"].push({ wch: 20 });
+//     });
+
+//     // 3️⃣ Aplicar bordes a las filas de datos
+//     const dataStyle = {
+//       alignment: { vertical: "center" },
+//       border: {
+//         top: { style: "thin", color: { rgb: "999999" } },
+//         bottom: { style: "thin", color: { rgb: "999999" } },
+//       },
+//     };
+
+//     customersData.forEach((row, rIdx) => {
+//       header.forEach((_, cIdx) => {
+//         const cell = ws[XLSX.utils.encode_cell({ r: rIdx + 1, c: cIdx })];
+//         if (cell) cell.s = dataStyle;
+//       });
+//     });
+
+//     // 4️⃣ Crear libro y exportar
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+
+//     const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+//     const blob = new Blob([buffer], { type: "application/octet-stream" });
+//     saveAs(blob, "Ventas.xlsx");
+//   };
+
   const footerGroup = (
     <ColumnGroup>
       <Row>
@@ -87,12 +139,28 @@ const SellReport = ({
 
         <Column
           colSpan={2}
-          style={{ textAlign: "center", color:"green" }}
+          style={{ textAlign: "center", color: "green" }}
           footer={"Recibido: " + getTotalReceived()}
         />
       </Row>
     </ColumnGroup>
   );
+  let isAscending = true; // variable global o externa para recordar el estado
+
+  const toggleSortByDate = (rows) => {
+    const sorted = [...rows.data].sort((a, b) => {
+      const [dayA, monthA, yearA] = a.delivery_day.split("/").map(Number);
+      const [dayB, monthB, yearB] = b.delivery_day.split("/").map(Number);
+      const dateA = new Date(yearA, monthA - 1, dayA);
+      const dateB = new Date(yearB, monthB - 1, dayB);
+      return isAscending ? dateA - dateB : dateB - dateA;
+    });
+
+    // Alternar el estado para la próxima llamada
+    isAscending = !isAscending;
+
+    return sorted;
+  }
 
   return (
     <div>
@@ -158,6 +226,9 @@ const SellReport = ({
         <Column
           field="delivery_day"
           sortable
+          sortFunction={(rows) => {
+            return toggleSortByDate(rows);
+          }}
           filter
           filterPlaceholder="Buscar fecha"
           style={{ width: "15%" }}

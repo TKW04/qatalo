@@ -38,28 +38,13 @@ export const formatTextDate = (dateString) => {
     month: "long",
     day: "numeric",
   };
-  return `${capitalizedWeekday}, ${date.toLocaleDateString(
-    "es-ES",
-    options
-  )}`;
+  return `${capitalizedWeekday}, ${date.toLocaleDateString("es-ES", options)}`;
 };
 export const formatTextDateShort = (dateString) => {
   const dates = dateString.split("/");
 
   const date = new Date(dates[2], dates[1] - 1, dates[0]);
-  const weekday = date.toLocaleString("es-ES", { weekday: "long" });
-
-  // Convert the weekday to uppercase
-  const capitalizedWeekday = weekday[0].toUpperCase() + weekday.slice(1);
-  const options = {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  };
-  return `${capitalizedWeekday}, ${date.toLocaleDateString(
-    "es-ES",
-    options
-  )}`;
+  return date.toLocaleDateString("es-ES");
 };
 export const currencies = [
   { code: "USD", name: "Dólar estadounidense", symbol: "$" },
