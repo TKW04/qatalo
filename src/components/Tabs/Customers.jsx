@@ -6,7 +6,7 @@ import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Search, BookImage, Check, Trash2 } from "lucide-react";
-import XLSX from "xlsx-js-style";
+// import XLSX from "xlsx-js-style";
 import { saveAs } from "file-saver";
 
 import { customerActions } from "../../store/customer-store/customer-slice";
@@ -645,7 +645,8 @@ const Customers = ({ setActiveTab }) => {
       </>
     );
   };
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+     const XLSX = await import("xlsx-js-style");
     //Lista de ventas
     const customersData = [];
     customers.forEach((customer) => {

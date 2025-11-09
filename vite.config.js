@@ -14,9 +14,11 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    include: ['buffer'], // 👈 fuerza a Vite a pre-empaquetar 'buffer'
     esbuildOptions: {
       define: {
         global: 'globalThis',
+        'process.env': {}, // 👈 evita errores de process.env en libs CJS
       },
       plugins: [
         NodeGlobalsPolyfillPlugin({
@@ -27,9 +29,12 @@ export default defineConfig({
     },
   },
   build: {
+    commonjsOptions: {
+      transformMixedEsModules: true, // 👈 permite CJS/ESM mixto (xlsx-js-style)
+    },
     rollupOptions: {
       plugins: [
-        rollupNodePolyFill(),
+        rollupNodePolyFill(), // 👈 polyfills para runtime de Rollup
       ],
     },
   },
