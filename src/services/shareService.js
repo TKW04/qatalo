@@ -19,6 +19,7 @@ export const shareContent = async (text, url, showSuccess,showWarning) => {
     await navigator.clipboard.writeText(url)
     showSuccess("Enlace copiado al portapapeles")
   } catch (error) {
+    console.log("Clipboard write failed, using fallback:", error)
     // Final fallback for older browsers
     const textArea = document.createElement("textarea")
     textArea.value = url
@@ -33,6 +34,7 @@ export const shareContent = async (text, url, showSuccess,showWarning) => {
       document.execCommand("copy")
       showSuccess("Enlace copiado al portapapeles")
     } catch (err) {
+      console.log("Fallback copy failed:", err)
       showWarning("No se pudo copiar el enlace")
     }
 

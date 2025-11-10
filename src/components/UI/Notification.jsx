@@ -99,7 +99,7 @@ const Notification = ({ status, title, message, onClose }) => {
         console.log("❓ Unknown status:", status) // Debug log
         break
     }
-  }, [status, title, message]) // Removí 'notifications' de las dependencias para evitar loops
+  }, [status, title, message, notifications, addNotification]) // Removí 'notifications' de las dependencias para evitar loops
 
   const getIcon = (type) => {
     switch (type) {

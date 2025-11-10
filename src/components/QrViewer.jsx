@@ -76,6 +76,7 @@ const QrViewer = () => {
         const data = await toDataURL(src);
         if (!cancelled) setLogoDataUrl(data);
       } catch (e) {
+        console.log("Error loading logo for QR code:", e);
         setLogoDataUrl(null);
       }
     })();
@@ -227,9 +228,7 @@ const QrViewer = () => {
 
   const size = 300;
   const defaultLogoSize = Math.round(size * 0.8); // ~80% del QR (lectura segura)
-  console.log(logoDataUrl);
   
-
   return (
     <>
       <Loading visible={isLoading} />
