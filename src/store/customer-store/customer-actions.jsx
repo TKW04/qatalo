@@ -346,3 +346,46 @@ export const ApproveTransaction = (
     }
   };
 };
+export const UpdateTransaction = (
+  customer_id,
+  transaction,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const UpdateTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/update`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            transaction_id: transaction.transaction_id,
+            delivery_day: transaction.delivery_day,
+            price: transaction.price,
+            quantity: transaction.quantity,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+    try {
+      const response = await UpdateTransactionInfo();
+      if (response.status === 200) {
+        showSuccess("Transacción actualizada", "Transacción actualizada con éxito");
+      } else {
+        showWarning(
+          "No se pudo actualizar la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};

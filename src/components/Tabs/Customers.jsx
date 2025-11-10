@@ -16,6 +16,7 @@ import {
   CancelTransactionAdmin,
   GetCustomers,
   UpdateCustomer,
+  UpdateTransaction,
 } from "../../store/customer-store/customer-actions";
 import { useNotification } from "../UI/NotificationProvider";
 import Loading from "../UI/Loading";
@@ -37,6 +38,8 @@ import { InputSwitch } from "primereact/inputswitch";
 import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
 import { IoMdRefresh } from "react-icons/io";
 import SellReport from "../SellReport";
+import { Calendar } from "primereact/calendar";
+import { InputNumber } from "primereact/inputnumber";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -50,19 +53,24 @@ const Customers = ({ setActiveTab }) => {
   const [dialogContent, setDialogContent] = useState(null);
 
   const [productInfo, setProductInfo] = useState({});
+  const [transactionInfo, setTransactionInfo] = useState({
+    delivery_day: "",
+    price: 0,
+    quantity: 1,
+  });
 
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [showDialogCancel, setShowDialogCancel] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
-  // const customer_id = customer.customer_id;
 
   const [imageSize, setImageSize] = useState({ width: 100, height: 200 });
   const isMobile = window.innerWidth <= 760;
   const [expandedRows, setExpandedRows] = useState(null);
 
   const [editingCustomer, setEditingCustomer] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -125,10 +133,39 @@ const Customers = ({ setActiveTab }) => {
       }, 4500);
     }
   };
+  const handleUpdateTransaction = (e) => {
+    e.preventDefault();
+    const transaction = {
+      transaction_id: transactionInfo.transaction_id,
+      delivery_day: transactionInfo.delivery_day,
+      price: transactionInfo.price,
+      quantity: transactionInfo.quantity,
+    };
+
+    dispatch(
+      UpdateTransaction(
+        customer.customer_id,
+        transaction,
+        showError,
+        showWarning,
+        showSuccess
+      )
+    );
+    setIsLoading(true);
+    setTimeout(() => {
+      setActiveTab("customers");
+      dispatch(GetCustomers(showError));
+      dispatch(customerActions.startCustomer());
+      setEditingCustomer(false);
+      setEditingTransaction(false);
+      setIsLoading(false);
+    }, 4500);
+  };
 
   const handleEditCustomer = (customer) => {
     dispatch(customerActions.setCustomer({ customer: customer }));
     setEditingCustomer(true);
+    setEditingTransaction(false);
   };
 
   const handleViewCustomer = (customerInfo) => {
@@ -577,6 +614,15 @@ const Customers = ({ setActiveTab }) => {
                 body={(rowData) => {
                   return (
                     <div className="flex justify-content-center">
+                      <EditButton
+                        onClick={() => {
+                          setEditingTransaction(true);
+                          dispatch(
+                            customerActions.setCustomer({ customer: data })
+                          );
+                          setProductInfo(rowData);
+                        }}
+                      />
                       <InfoButton
                         onClick={() => {
                           setProductInfo(rowData);
@@ -628,14 +674,27 @@ const Customers = ({ setActiveTab }) => {
                 header="Acciones"
                 body={(rowData) => {
                   return (
-                    <div className="flex justify-content-center">
-                      <InfoButton
-                        onClick={() => {
-                          setProductInfo(rowData);
-                          setShowProductDialog(true);
-                        }}
-                      />
-                    </div>
+                    <>
+                      <div className="flex justify-content-center">
+                        <EditButton
+                          onClick={() => {
+                            setEditingTransaction(true);
+                            dispatch(
+                              customerActions.setCustomer({ customer: data })
+                            );
+                            setProductInfo(rowData);
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-content-center mt-2">
+                        <InfoButton
+                          onClick={() => {
+                            setProductInfo(rowData);
+                            setShowProductDialog(true);
+                          }}
+                        />
+                      </div>
+                    </>
                   );
                 }}
               ></Column>
@@ -646,7 +705,7 @@ const Customers = ({ setActiveTab }) => {
     );
   };
   const exportToExcel = async () => {
-     const XLSX = await import("xlsx-js-style");
+    const XLSX = await import("xlsx-js-style");
     //Lista de ventas
     const customersData = [];
     customers.forEach((customer) => {
@@ -734,6 +793,14 @@ const Customers = ({ setActiveTab }) => {
     const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([buffer], { type: "application/octet-stream" });
     saveAs(blob, "Ventas.xlsx");
+  };
+  const setDefaultDate = (dateString) => {
+    if (dateString) {
+      const date = dateString.split("/");
+      return new Date(date[2], date[1] - 1, date[0]);
+    }
+
+    return null;
   };
 
   return (
@@ -848,6 +915,109 @@ const Customers = ({ setActiveTab }) => {
                     Cancelar
                   </Button>
                 )}
+              </div>
+            </form>
+          </div>
+        )}
+        {editingTransaction && (
+          <div className="admin-card">
+            <h2>{"Editar Transaccion"}</h2>
+            <form onSubmit={handleUpdateTransaction}>
+              <div className="form-group">
+                <label className="form-label">
+                  ID de Transacción:{" "}
+                  <span style={{ color: "white" }}>
+                    {productInfo.transaction_id}
+                  </span>
+                </label>
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  Producto:{" "}
+                  <span style={{ color: "white" }}>
+                    {productInfo.product_name}
+                  </span>
+                </label>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Fecha de entrega:</label>
+                <Calendar
+                  style={{ width: "100%", height: "60px" }}
+                  inputStyle={{
+                    height: "40px",
+                    fontSize: "18px",
+                    textAlign: "center",
+                  }}
+                  value={setDefaultDate(
+                    transactionInfo.delivery_day !== ""
+                      ? transactionInfo.delivery_day
+                      : productInfo.delivery_day !== "" ||
+                        productInfo.delivery_day != null
+                      ? productInfo.delivery_day
+                      : ""
+                  )}
+                  dateFormat="mm/dd/yy"
+                  onChange={(e) => {
+                    const transaction = { ...transactionInfo };
+                    transaction.transaction_id = productInfo.transaction_id;
+                    transaction.delivery_day = formatDate(e.value);
+                    setTransactionInfo(transaction);
+                  }}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">
+                    Precio *{" "}
+                    {getCurrencySymbol(productInfo.payment_method.currency)}{" "}
+                  </label>
+                  <InputNumber
+                    value={productInfo.price}
+                    onChange={(e) => {
+                      const transaction = { ...transactionInfo };
+                      transaction.transaction_id = productInfo.transaction_id;
+                      transaction.price = e.value;
+                      setTransactionInfo(transaction);
+                    }}
+                    min={1}
+                    minFractionDigits={2}
+                    maxFractionDigits={2}
+                    placeholder="1850.00"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Cantidad</label>
+                  <InputNumber
+                    value={productInfo.quantity}
+                    onChange={(e) => {
+                      const transaction = { ...transactionInfo };
+                      transaction.transaction_id = productInfo.transaction_id;
+                      transaction.quantity = e.value;
+                      setTransactionInfo(transaction);
+                    }}
+                    min={1}
+                    minFractionDigits={0}
+                    maxFractionDigits={0}
+                    placeholder="1850.00"
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <Button type="submit" className="btn btn-primary">
+                  Actualizar Transacción
+                </Button>
+                <Button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => {
+                    dispatch(customerActions.startCustomer(false));
+                    setEditingCustomer(false);
+                    setEditingTransaction(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
               </div>
             </form>
           </div>
