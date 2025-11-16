@@ -2,11 +2,10 @@ import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { useEffect, useState } from "react";
-import { formatTextDateShort } from "../helpers/utils";
+import { formatDate, formatTextDateShort } from "../helpers/utils";
 import { ColumnGroup } from "primereact/columngroup";
 import { Row } from "primereact/row";
-// import * as XLSX from "xlsx-js-style";
-// import { saveAs } from "file-saver";
+import { Button } from "primereact/button";
 
 const SellReport = ({
   customers,
@@ -22,6 +21,8 @@ const SellReport = ({
     status: { value: null, matchMode: FilterMatchMode.CONTAINS },
     delivery_day: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
+  const [showTotalsByProductFlag, setShowTotalsByProductFlag] = useState(false);
+  const isMobile = window.innerWidth <= 480;
 
   useEffect(() => {
     const createObjects = () => {
@@ -38,6 +39,7 @@ const SellReport = ({
             delivery_day: transaction.delivery_day
               ? formatTextDateShort(transaction.delivery_day)
               : "",
+            created_at: transaction.create_date ? transaction.create_date : "",
             status:
               transaction.status === "Aprobada"
                 ? "Pago Completado"
@@ -118,21 +120,29 @@ const SellReport = ({
   };
   const totalByProduct = () => {
     let totals = [];
-    customersData.forEach((item) => {
+    //sort customersData by created_at date ascending
+    const transactions = [...customersData].sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateA - dateB;
+    });
+
+    transactions.forEach((item) => {
       const productExist = totals.find(
         (prod) => prod.product_name === item.product_name
       );
+
       if (!productExist) {
-        console.log("Adding new product:", item.quantity);
         totals.push({
           product_name: item.product_name,
           total: item.total,
           quantity: parseInt(item.quantity),
+          lastSell: item.created_at,
         });
       } else {
-        console.log("Updating product:", item.quantity);
         productExist.total += item.total;
         productExist.quantity += parseInt(item.quantity);
+        productExist.lastSell = item.created_at;
       }
     });
 
@@ -140,35 +150,106 @@ const SellReport = ({
   };
   const showTotalsByProduct = () => {
     const totals = totalByProduct();
-    console.log(totals);
     return (
-      <div style={{ marginBottom: "20px" }}>
-        <h3>Totales por Producto:</h3>
-        {totals.map((product) => (
-          <div key={product.product_name} style={{ fontWeight: "bold" }}>
-            {product.product_name}:{" "}
-            <span>
-              {" "}
-              Cantidad:{" "}
-              <span style={{ fontWeight: "normal" }}>
-                {product.quantity}
-              </span>,{" "}
-            </span>
-            Total:{" "}
-            <span style={{ fontWeight: "normal" }}>
-              {getCurrencySymbol(customersData[0]?.currency || "")}{" "}
-              {formatted(product.total)}
-            </span>
+      <div
+        style={{
+          marginBottom: "20px",
+          border: "1px solid var(--color-navy)",
+          borderRadius: "8px",
+          padding: "30px",
+          backgroundColor: "var(--color-navy)",
+          color: "white",
+        }}
+      >
+        <div className="grid">
+          <div
+            className="col-12"
+            style={{
+              textAlign: "center",
+              color: "var(--color-yellow)",
+              fontSize: "22px",
+              fontWeight: "bold",
+            }}
+          >
+            <h2>Totales por Producto:</h2>
           </div>
-        ))}
+          <DataTable
+            value={totals}
+            tableStyle={{ width: isMobile ? "100%" : "70rem" }}
+            paginator
+            stripedRows
+            filters={filters}
+            filterDisplay="row"
+            rows={5}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            style={{border:"1px solid var(--color-yellow)", borderRadius:"8px", padding:"10px"}}
+          >
+            <Column
+              header="Producto"
+              className="align-items-center"
+              filter
+              style={{
+                padding: "10px",
+                width: "25%",
+              }}
+              field="product_name"
+            />
+            <Column
+              header="Cantidad Vendida"
+              style={{
+                padding: "10px",
+                width: "25%",
+                paddingLeft: "50px",
+                paddingRight: "auto",
+                textAlign: "left",
+              }}
+              field="quantity"
+            />
+            <Column
+              header="Total Vendido"
+              style={{ padding: "10px", width: "25%" }}
+              body={(rowData) => {
+                return (
+                  <span>
+                    {getCurrencySymbol(customersData[0]?.currency || "")}{" "}
+                    {formatted(rowData.total)}
+                  </span>
+                );
+              }}
+            />
+            <Column
+              header="Ultima Venta"
+              style={{ padding: "10px", width: "25%" }}
+              field="lastSell"
+              body={(rowData) => {
+                return <span>{formatDate(rowData.lastSell)}</span>;
+              }}
+            />
+          </DataTable>
+        </div>
       </div>
     );
-    // return <span style={{ whiteSpace: "pre-line" }}>{message}</span>;
   };
 
   return (
     <div>
-      {showTotalsByProduct()}
+      <Button
+        onClick={() => setShowTotalsByProductFlag(!showTotalsByProductFlag)}
+        style={{
+          padding: "10px",
+          margin: "10px",
+          borderColor: "var(--color-navy)",
+          backgroundColor: "var(--color-sea)",
+          color: "white",
+          fontWeight: "bold",
+        }}
+      >
+        {showTotalsByProductFlag
+          ? "Ocultar Totales por Producto"
+          : "Mostrar Totales por Producto"}
+      </Button>
+      {showTotalsByProductFlag && showTotalsByProduct()}
+
       <DataTable
         value={customersData}
         tableStyle={{ minWidth: "50rem" }}
@@ -179,10 +260,9 @@ const SellReport = ({
         paginator
         rows={25}
         rowsPerPageOptions={[25, 50, 75, 100]}
-        
       >
         <Column
-          header={<span style={{ margin: "10px"}}>Cliente </span>}
+          header={<span style={{ margin: "10px" }}>Cliente </span>}
           style={{ padding: "10px", width: "280px" }}
           sortable
           filter
