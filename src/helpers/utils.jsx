@@ -14,6 +14,8 @@ export const getStatusStyle = (status) => {
       return { color: "var(--chart-5)" };
     case "Pendiente de validación":
       return { color: "var(--color-sea)" };
+    case "Entregada":
+      return { color: "var(--chart-3)" };
     case "Cancelada":
       return { color: "red" };
     default:

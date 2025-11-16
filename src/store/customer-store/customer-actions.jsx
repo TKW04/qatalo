@@ -342,10 +342,53 @@ export const ApproveTransaction = (
       }
     } catch (error) {
       console.log(error);
-      showError("Error!", "No se pudieron obtener los clientes");
+      showError("Error!", "No se pudo actualizar la orden");
     }
   };
 };
+
+export const DeliveredTransaction = (
+  customer_id,
+  transaction_id,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const DeliveredTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/delivered`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            transaction_id: transaction_id,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+    try {
+      const response = await DeliveredTransactionInfo();
+      if (response.status === 200) {
+        showSuccess("Orden entregada", "Orden entregada con éxito");
+      } else {
+        showWarning(
+          "No se pudo actualizar la orden",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudo actualizar la orden");
+    }
+  };
+};
+
+
 export const UpdateTransaction = (
   customer_id,
   transaction,
@@ -376,7 +419,10 @@ export const UpdateTransaction = (
     try {
       const response = await UpdateTransactionInfo();
       if (response.status === 200) {
-        showSuccess("Transacción actualizada", "Transacción actualizada con éxito");
+        showSuccess(
+          "Transacción actualizada",
+          "Transacción actualizada con éxito"
+        );
       } else {
         showWarning(
           "No se pudo actualizar la transacción",
@@ -389,3 +435,4 @@ export const UpdateTransaction = (
     }
   };
 };
+

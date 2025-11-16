@@ -27,7 +27,7 @@ const toDataURL = async (url) => {
 
 const QrViewer = () => {
   const auth = getTokenInfo();
-  const business = useSelector((state) => state.business.business) || {};
+  const business = useSelector((state) => state.business.business);
   const dispatch = useDispatch();
   const params = useParams();
   const { showError } = useNotification();
@@ -45,7 +45,7 @@ const QrViewer = () => {
         setIsLoading(false);
       }, 4500);
     }
-  }, [auth, business, business?.business_id, dispatch, showError]);
+  }, [auth, business, business.business_id, dispatch, params.slug, showError]);
 
   useEffect(() => {
     if (
@@ -55,7 +55,7 @@ const QrViewer = () => {
     ) {
       setLogoDataUrl(business.logo_url);
     }
-  }, [auth, business, business?.business_id, dispatch, showError]);
+  }, [auth, business, business.business_id, dispatch, logoDataUrl, showError]);
 
   const catalogUrl = useMemo(() => {
     const slug = business?.slug || "";

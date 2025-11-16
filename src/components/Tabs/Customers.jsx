@@ -5,8 +5,19 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Search, BookImage, Check, Trash2 } from "lucide-react";
-// import XLSX from "xlsx-js-style";
+import { CiReceipt, CiSearch } from "react-icons/ci";
+import { MdCancel } from "react-icons/md";
+import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
+import { IoMdCheckmarkCircleOutline, IoMdRefresh } from "react-icons/io";
+import { TbTruckDelivery } from "react-icons/tb";
+
+import { Card } from "primereact/card";
+import { Image } from "primereact/image";
+import { InputTextarea } from "primereact/inputtextarea";
+import { InputSwitch } from "primereact/inputswitch";
+import { Calendar } from "primereact/calendar";
+import { InputNumber } from "primereact/inputnumber";
+
 import { saveAs } from "file-saver";
 
 import { customerActions } from "../../store/customer-store/customer-slice";
@@ -14,6 +25,7 @@ import { customerActions } from "../../store/customer-store/customer-slice";
 import {
   ApproveTransaction,
   CancelTransactionAdmin,
+  DeliveredTransaction,
   GetCustomers,
   UpdateCustomer,
   UpdateTransaction,
@@ -30,16 +42,11 @@ import {
   getStatusStyle,
 } from "../../helpers/utils";
 import "../../styles/catalog.css";
-import { Card } from "primereact/card";
-import { Image } from "primereact/image";
+
 import { EditButton, InfoButton } from "../Buttons";
-import { InputTextarea } from "primereact/inputtextarea";
-import { InputSwitch } from "primereact/inputswitch";
-import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
-import { IoMdRefresh } from "react-icons/io";
+
 import SellReport from "../SellReport";
-import { Calendar } from "primereact/calendar";
-import { InputNumber } from "primereact/inputnumber";
+import { FilterMatchMode } from "primereact/api";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -76,6 +83,12 @@ const Customers = ({ setActiveTab }) => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [transaction, setTransaction] = useState(null);
   const [showSellReport, setShowSellReport] = useState(false);
+
+  const [filters] = useState({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    full_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    email: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  });
 
   useEffect(() => {
     if (customers.length === 0 && once) {
@@ -307,7 +320,7 @@ const Customers = ({ setActiveTab }) => {
               alt="Image"
               width={imageSize.width}
               height={imageSize.height}
-              indicatorIcon={<Search />}
+              indicatorIcon={<CiSearch />}
               src={transaction !== null ? transaction.receipt_url : ""}
               zoomSrc={transaction !== null ? transaction.receipt_url : ""}
               style={{
@@ -407,29 +420,34 @@ const Customers = ({ setActiveTab }) => {
                 productInfo.status !== "Aprobada" && (
                   <>
                     <div className="grid flex justify-content-center">
-                      <div className="col-4 ">
+                      <div className={`${isMobile ? "col-12" : "col-6"}`}>
                         <Button
-                          icon={<BookImage />}
+                          icon={<CiReceipt />}
                           raised
-                          disabled={!productInfo.receipt_url}
-                          label="Recibo"
+                          label="Recibo de pago"
                           onClick={() => {
+                            if (!productInfo.receipt_url) {
+                              showWarning(
+                                "El cliente no ha subido un recibo aún."
+                              );
+                              return;
+                            }
                             setTransaction(productInfo);
                             setShowImageDialog(true);
                             setImageSize({ width: "400px", height: "400px" });
                           }}
-                          style={{ padding: "10px" }}
+                          style={{ padding: "10px", borderColor: "white" }}
                         />
                       </div>
-                      <div className="col-4">
+                      <div className={`${isMobile ? "col-12" : "col-6"}`}>
                         <Button
-                          icon={<Check />}
+                          icon={<IoMdCheckmarkCircleOutline />}
                           raised
-                          label="Validar"
+                          label="Validar pago"
                           style={{
                             padding: "10px",
                             backgroundColor: "green",
-                            borderColor: "green",
+                            borderColor: "white",
                           }}
                           onClick={() => {
                             dispatch(
@@ -460,16 +478,17 @@ const Customers = ({ setActiveTab }) => {
                           }}
                         />
                       </div>
-                      <div className="col-4">
+                      <div className={`${isMobile ? "col-12" : "col-6"}`}>
                         <Button
-                          icon={<Trash2 />}
+                          icon={<MdCancel />}
                           raised
-                          label="Cancelar"
+                          label="Cancelar orden"
                           style={{
                             padding: "10px",
                             backgroundColor: "red",
-                            borderColor: "red",
+                            borderColor: "white",
                             color: "white",
+                            width: "100%",
                           }}
                           onClick={() => {
                             setShowDialogCancel(true);
@@ -479,6 +498,49 @@ const Customers = ({ setActiveTab }) => {
                     </div>
                   </>
                 )}
+              {productInfo.status === "Aprobada" && (
+                <div className={`${isMobile ? "col-12" : "col-6"}`}>
+                  <Button
+                    icon={<TbTruckDelivery size={36} />}
+                    raised
+                    label="Orden Entregada"
+                    style={{
+                      padding: "10px",
+                      backgroundColor: "var(--chart-2)",
+                      borderColor: "white",
+                      color: "white",
+                      width: "100%",
+                    }}
+                    onClick={() => {
+                      dispatch(
+                        DeliveredTransaction(
+                          data.customer_id,
+                          productInfo.transaction_id,
+                          showError,
+                          showWarning,
+                          showSuccess
+                        )
+                      );
+                      setIsLoading(true);
+                      setLoadingMessage("Cargando clientes...");
+
+                      setTimeout(() => {
+                        setIsLoading(false);
+                        setShowProductDialog(false);
+                        dispatch(GetCustomers(showError));
+                        dispatch(customerActions.startCustomer());
+                        once = false;
+                        dispatch(
+                          customerActions.modifyPropertyValue({
+                            id: "business_id",
+                            value: business.business_id,
+                          })
+                        );
+                      }, 4500);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </DialogModal>
@@ -490,6 +552,8 @@ const Customers = ({ setActiveTab }) => {
               dataKey="transaction_id"
               showGridlines
               stripedRows
+              filters={filters}
+              filterDisplay="row"
               style={{
                 borderBottom: " 2px solid var(--color-navy)",
                 paddingBottom: "1rem",
@@ -1113,29 +1177,33 @@ const Customers = ({ setActiveTab }) => {
                     onRowToggle={(e) => setExpandedRows(e.data)}
                     rowExpansionTemplate={rowExpansionTemplate}
                     dataKey="customer_id"
+                    filters={filters}
+                    filterDisplay="row"
+                    stripedRows
+                    paginator
+                    rows={25}
+                    rowsPerPageOptions={[25, 50, 75, 100]}
                   >
                     <Column
                       style={{
                         minWidth: "14rem",
                         padding: "1rem",
                       }}
+                      field="full_name"
                       header="Nombre Completo"
-                      body={(rowData) => {
-                        return (
-                          <span>
-                            {rowData.given_name} {rowData.family_name}
-                          </span>
-                        );
-                      }}
+                      filter
+                      sortable
                     ></Column>
 
                     <Column
                       field="email"
+                      header="Email"
+                      filter
+                      sortable
                       style={{
                         minWidth: "14rem",
                         padding: "1rem",
                       }}
-                      header="Email"
                     ></Column>
                     <Column
                       style={{

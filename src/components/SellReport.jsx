@@ -29,7 +29,7 @@ const SellReport = ({
       customers.forEach((customer) => {
         customer.transactions.forEach((transaction) => {
           data.push({
-            full_name: `${customer.given_name} ${customer.family_name}`,
+            full_name: customer.full_name,
             product_name: transaction.product_name,
             quantity: transaction.quantity,
             price: transaction.price,
@@ -45,6 +45,8 @@ const SellReport = ({
                 ? "Pendiente de pago"
                 : transaction.status === "Pendiente de validación"
                 ? "Pendiente de validación"
+                : transaction.status === "Entregada"
+                ? "Orden Entregada"
                 : "Cancelada",
           });
         });
@@ -68,7 +70,10 @@ const SellReport = ({
     let total = 0;
     let currency = "";
     for (let customer of customersData) {
-      if (customer.status === "Pago Completado") {
+      if (
+        customer.status === "Pago Completado" ||
+        customer.status === "Orden Entregada"
+      ) {
         total += customer.total;
         currency = customer.currency;
       }
@@ -76,56 +81,6 @@ const SellReport = ({
 
     return getCurrencySymbol(currency) + " " + formatted(total);
   };
-
-//   const exportToExcel = () => {
-//     // 1️⃣ Crear la hoja
-//     const header = ["Nombre completo", "Producto", "Cantidad", "Precio", "Total", "Fecha de entrega", "Estado"];
-//     const wsData = [header, ...customersData.map(item => [item.full_name, item.product_name, item.quantity, item.price, item.total, item.delivery_day, item.status])];
-//     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-//     // 2️⃣ Aplicar estilos de cabecera
-//     const headerStyle = {
-//       font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
-//       alignment: { horizontal: "center", vertical: "center" },
-//       fill: { fgColor: { rgb: "213448" } }, // azul oscuro (#213448)
-//       border: {
-//         top: { style: "thin", color: { rgb: "FFFFFF" } },
-//         bottom: { style: "thin", color: { rgb: "FFFFFF" } },
-//       },
-//     };
-
-//     header.forEach((_, i) => {
-//       const cell = ws[XLSX.utils.encode_cell({ r: 0, c: i })];
-//       if (cell) cell.s = headerStyle;
-//       const col = String.fromCharCode(65 + i);
-//       ws["!cols"] = ws["!cols"] || [];
-//       ws["!cols"].push({ wch: 20 });
-//     });
-
-//     // 3️⃣ Aplicar bordes a las filas de datos
-//     const dataStyle = {
-//       alignment: { vertical: "center" },
-//       border: {
-//         top: { style: "thin", color: { rgb: "999999" } },
-//         bottom: { style: "thin", color: { rgb: "999999" } },
-//       },
-//     };
-
-//     customersData.forEach((row, rIdx) => {
-//       header.forEach((_, cIdx) => {
-//         const cell = ws[XLSX.utils.encode_cell({ r: rIdx + 1, c: cIdx })];
-//         if (cell) cell.s = dataStyle;
-//       });
-//     });
-
-//     // 4️⃣ Crear libro y exportar
-//     const wb = XLSX.utils.book_new();
-//     XLSX.utils.book_append_sheet(wb, ws, "Ventas");
-
-//     const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-//     const blob = new Blob([buffer], { type: "application/octet-stream" });
-//     saveAs(blob, "Ventas.xlsx");
-//   };
 
   const footerGroup = (
     <ColumnGroup>
@@ -160,10 +115,60 @@ const SellReport = ({
     isAscending = !isAscending;
 
     return sorted;
-  }
+  };
+  const totalByProduct = () => {
+    let totals = [];
+    customersData.forEach((item) => {
+      const productExist = totals.find(
+        (prod) => prod.product_name === item.product_name
+      );
+      if (!productExist) {
+        console.log("Adding new product:", item.quantity);
+        totals.push({
+          product_name: item.product_name,
+          total: item.total,
+          quantity: parseInt(item.quantity),
+        });
+      } else {
+        console.log("Updating product:", item.quantity);
+        productExist.total += item.total;
+        productExist.quantity += parseInt(item.quantity);
+      }
+    });
+
+    return totals;
+  };
+  const showTotalsByProduct = () => {
+    const totals = totalByProduct();
+    console.log(totals);
+    return (
+      <div style={{ marginBottom: "20px" }}>
+        <h3>Totales por Producto:</h3>
+        {totals.map((product) => (
+          <div key={product.product_name} style={{ fontWeight: "bold" }}>
+            {product.product_name}:{" "}
+            <span>
+              {" "}
+              Cantidad:{" "}
+              <span style={{ fontWeight: "normal" }}>
+                {product.quantity}
+              </span>,{" "}
+            </span>
+            Total:{" "}
+            <span style={{ fontWeight: "normal" }}>
+              {getCurrencySymbol(customersData[0]?.currency || "")}{" "}
+              {formatted(product.total)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+    // return <span style={{ whiteSpace: "pre-line" }}>{message}</span>;
+  };
 
   return (
     <div>
+      {showTotalsByProduct()}
       <DataTable
         value={customersData}
         tableStyle={{ minWidth: "50rem" }}
@@ -171,14 +176,18 @@ const SellReport = ({
         filters={filters}
         filterDisplay="row"
         footerColumnGroup={footerGroup}
+        paginator
+        rows={25}
+        rowsPerPageOptions={[25, 50, 75, 100]}
+        
       >
         <Column
-          header={<span style={{ margin: "10px" }}>Cliente </span>}
+          header={<span style={{ margin: "10px"}}>Cliente </span>}
           style={{ padding: "10px", width: "280px" }}
           sortable
-          field="full_name"
           filter
           filterPlaceholder="Buscar por nombre"
+          field="full_name"
         />
         <Column
           header={<span style={{ margin: "10px" }}>Producto </span>}

@@ -115,7 +115,15 @@ const PaymentValidation = () => {
                 paddingLeft: "5px",
               }}
               onClick={() => {
-                window.location.href = `${rowData.payment_method.payment_link}`;
+                if (
+                  rowData.payment_method.payment_link !== undefined &&
+                  rowData.payment_method.payment_link !== null &&
+                  rowData.payment_method.payment_link !== ""
+                ) {
+                  window.location.href = `${rowData.payment_method.payment_link}`;
+                } else {
+                  handleInfo(rowData);
+                }
               }}
             />
             <Button
@@ -148,23 +156,19 @@ const PaymentValidation = () => {
       <DialogModal
         title={"Información del producto"}
         style={{
-          backgroundColor: "var(--color-navy)",
           width: isMobile ? "420px" : "40vw",
         }}
         visible={showDialog}
         onHide={() => setShowDialog(false)}
       >
-        <div
-          style={{ textAlign: "left", overflowX: "hidden", maxWidth: "800px" }}
-        >
+        <div style={{ textAlign: "left", overflowX: "hidden" }}>
           <div
             className=" p-3 "
             style={{
               textAlign: "left",
               backgroundColor: "var(--color-navy)",
               borderRadius: "8px",
-              marginTop: "00px",
-              width: isMobile ? "400px" : "100%",
+              marginTop: "0px",
             }}
           >
             <div className="grid">
@@ -243,16 +247,31 @@ const PaymentValidation = () => {
                     <div
                       className="grid"
                       style={{
-                        gap: "1rem",
-                        border: "1px solid #ffffff",
-                        padding: "1rem",
+                        border: "3px solid var(--color-yellow)",
                         marginTop: "10px",
-
+                        backgroundColor: "#1C597A",
                         borderRadius: "8px",
                       }}
                     >
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
+                      <div className={"col-12"}>
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            color: "#ffffff",
+                            fontSize: "1.3rem",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          Instrucciones de transferencia:
+                        </span>{" "}
+                      </div>
+                      <div className={`${isMobile ? "col-12" : "col-4"}`}>
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            color: "#ffffff",
+                          }}
+                        >
                           Banco:
                         </span>{" "}
                         <span
@@ -266,7 +285,7 @@ const PaymentValidation = () => {
                             : ""}
                         </span>
                       </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <div className={`${isMobile ? "col-12" : "col-4"}`}>
                         <span style={{ fontWeight: "bold", color: "#ffffff" }}>
                           Número de cuenta:
                         </span>{" "}
@@ -281,7 +300,7 @@ const PaymentValidation = () => {
                             : ""}
                         </span>
                       </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <div className={`${isMobile ? "col-12" : "col-4"}`}>
                         <span style={{ fontWeight: "bold", color: "#ffffff" }}>
                           Tipo de cuenta:
                         </span>{" "}
@@ -302,7 +321,7 @@ const PaymentValidation = () => {
                             : ""}
                         </span>
                       </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <div className={`${isMobile ? "col-12" : "col-4"}`}>
                         <span style={{ fontWeight: "bold", color: "#ffffff" }}>
                           Moneda:
                         </span>{" "}
@@ -317,52 +336,64 @@ const PaymentValidation = () => {
                             : ""}
                         </span>
                       </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                          Cuenta Estandar:
-                        </span>{" "}
-                        <span
-                          style={{
-                            fontSize: "1.2rem",
-                            color: "var(--color-yellow)",
-                          }}
-                        >
-                          {transaction !== null
-                            ? transaction.payment_method.standard_account
-                            : ""}
-                        </span>
-                      </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
-                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                          Swift:
-                        </span>{" "}
-                        <span
-                          style={{
-                            fontSize: "1.2rem",
-                            color: "var(--color-yellow)",
-                          }}
-                        >
-                          {transaction !== null
-                            ? transaction.payment_method.swift
-                            : ""}
-                        </span>
-                      </div>
-                      <div className={isMobile ? "col-12" : "col"}>
-                        <span style={{ fontWeight: "bold", color: "#ffffff" }}>
-                          Código de ruta:
-                        </span>{" "}
-                        <span
-                          style={{
-                            fontSize: "1.2rem",
-                            color: "var(--color-yellow)",
-                          }}
-                        >
-                          {transaction !== null
-                            ? transaction.payment_method.routing_number
-                            : ""}
-                        </span>
-                      </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      {transaction.payment_method.standard_account && (
+                        <div className={`${isMobile ? "col-12" : "col-8"}`}>
+                          <span
+                            style={{ fontWeight: "bold", color: "#ffffff" }}
+                          >
+                            Cuenta Estandar:
+                          </span>{" "}
+                          <span
+                            style={{
+                              fontSize: "1.2rem",
+                              color: "var(--color-yellow)",
+                            }}
+                          >
+                            {transaction !== null
+                              ? transaction.payment_method.standard_account
+                              : ""}
+                          </span>
+                        </div>
+                      )}
+                      {transaction.payment_method.swift && (
+                        <div className={`${isMobile ? "col-12" : "col-4"}`}>
+                          <span
+                            style={{ fontWeight: "bold", color: "#ffffff" }}
+                          >
+                            Swift:
+                          </span>{" "}
+                          <span
+                            style={{
+                              fontSize: "1.2rem",
+                              color: "var(--color-yellow)",
+                            }}
+                          >
+                            {transaction !== null
+                              ? transaction.payment_method.swift
+                              : ""}
+                          </span>
+                        </div>
+                      )}
+                      {transaction.payment_method.routing_number && (
+                        <div className={isMobile ? "col-12" : "col-8"}>
+                          <span
+                            style={{ fontWeight: "bold", color: "#ffffff" }}
+                          >
+                            Código de ruta:
+                          </span>{" "}
+                          <span
+                            style={{
+                              fontSize: "1.2rem",
+                              color: "var(--color-yellow)",
+                            }}
+                          >
+                            {transaction !== null
+                              ? transaction.payment_method.routing_number
+                              : ""}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`${isMobile ? "col-12" : "col-6"}`}>
                         <span style={{ fontWeight: "bold", color: "#ffffff" }}>
                           Titular de la cuenta:
                         </span>{" "}
@@ -377,7 +408,7 @@ const PaymentValidation = () => {
                             : ""}
                         </span>
                       </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <div className={`${isMobile ? "col-12" : "col-6"}`}>
                         <span style={{ fontWeight: "bold", color: "#ffffff" }}>
                           Documento del titular:
                         </span>{" "}
@@ -392,7 +423,7 @@ const PaymentValidation = () => {
                             : ""}
                         </span>
                       </div>
-                      <div className={`${isMobile ? "col-12" : "col-5"}`}>
+                      <div className={`${isMobile ? "col-12" : "col-6"}`}>
                         <span style={{ fontWeight: "bold", color: "#ffffff" }}>
                           Email del titular:
                         </span>{" "}
