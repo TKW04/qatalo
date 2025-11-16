@@ -24,6 +24,7 @@ const SellReport = ({
   const [showTotalsByProductFlag, setShowTotalsByProductFlag] = useState(false);
   const isMobile = window.innerWidth <= 480;
 
+  
   useEffect(() => {
     const createObjects = () => {
       const data = [];
