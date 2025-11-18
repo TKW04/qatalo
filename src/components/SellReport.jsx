@@ -24,7 +24,6 @@ const SellReport = ({
   const [showTotalsByProductFlag, setShowTotalsByProductFlag] = useState(false);
   const isMobile = window.innerWidth <= 480;
 
-  
   useEffect(() => {
     const createObjects = () => {
       const data = [];
@@ -183,7 +182,11 @@ const SellReport = ({
             filterDisplay="row"
             rows={5}
             rowsPerPageOptions={[5, 10, 25, 50]}
-            style={{border:"1px solid var(--color-yellow)", borderRadius:"8px", padding:"10px"}}
+            style={{
+              border: "1px solid var(--color-yellow)",
+              borderRadius: "8px",
+              padding: "10px",
+            }}
           >
             <Column
               header="Producto"
@@ -196,19 +199,28 @@ const SellReport = ({
               field="product_name"
             />
             <Column
-              header="Cantidad Vendida"
+              header="Vendido"
               style={{
                 padding: "10px",
-                width: "25%",
+                width: "5%",
                 paddingLeft: "50px",
                 paddingRight: "auto",
                 textAlign: "left",
               }}
               field="quantity"
+              body={(rowData) => {
+                return (
+                  <div className="grid">
+                    <div className="col-4"></div>
+                    <div className="col-4">{rowData.quantity}</div>
+                    <div className="col-4"></div>
+                  </div>
+                );
+              }}
             />
             <Column
               header="Total Vendido"
-              style={{ padding: "10px", width: "25%" }}
+              style={{ padding: "10px", width: "10%" }}
               body={(rowData) => {
                 return (
                   <span>
