@@ -1,10 +1,12 @@
-import { Info, PencilIcon, Trash2 } from "lucide-react";
+import { FaInfoCircle } from "react-icons/fa";
+import { LuPencil } from "react-icons/lu";
+import { FaTrashCan } from "react-icons/fa6";
 import { Button } from "primereact/button";
 
 export const EditButton = ({ onClick }) => {
   return (
     <Button
-      icon={<PencilIcon />}
+      icon={<LuPencil style={{ marginLeft: "5px" }} />}
       raised
       label={"Editar"}
       style={{
@@ -23,7 +25,7 @@ export const EditButton = ({ onClick }) => {
 export const DeleteButton = ({ onClick }) => {
   return (
     <Button
-      icon={<Trash2 />}
+      icon={<FaTrashCan />}
       raised
       label={"Eliminar"}
       style={{
@@ -39,11 +41,10 @@ export const DeleteButton = ({ onClick }) => {
     />
   );
 };
-
 export const InfoButton = ({ onClick }) => {
   return (
     <Button
-      icon={<Info />}
+      icon={<FaInfoCircle style={{ marginLeft: "5px" }} />}
       raised
       label="Info"
       style={{

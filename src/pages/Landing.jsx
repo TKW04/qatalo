@@ -1,31 +1,26 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 
-import {
-  Building2,
-  FolderOpen,
-  Package,
-  QrCode,
-  MessageCircle,
-  Users,
-} from "lucide-react";
+import { LuBuilding2, LuFolderOpen, LuPackage } from "react-icons/lu";
+import { IoQrCodeOutline } from "react-icons/io5";
+import { FaWhatsapp, FaUsers } from "react-icons/fa";
 
 import "./Landing.css";
 
 import { GetPlans } from "../store/payment-store/plan-actions";
 import { useNotification } from "../components/UI/NotificationProvider";
 import PlanCard from "../components/PlanCard";
-
 import { Link } from "react-router-dom";
 import Navbar from "./Navbar";
+
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "primereact/resources/primereact.min.css";
+import Footer from "../components/Footer";
 
 const Landing = () => {
   const plans = useSelector((state) => state.plan.plans);
   const dispatch = useDispatch();
   const { showError } = useNotification();
-
 
   useEffect(() => {
     if (plans.length === 0) {
@@ -39,13 +34,10 @@ const Landing = () => {
         style={{
           width: "100%",
           height: "100px",
-          // paddingTop: "20px",
           background:
             "linear-gradient(135deg, var(--color-navy) 0%, var(--color-blue) 100%)",
           color: "white",
           zIndex: 1001,
-          // marginBottom: "0px",
-          // marginTop: "0px",
           left: "0",
           top: "0",
           gap: "20px",
@@ -58,7 +50,7 @@ const Landing = () => {
       </div>
 
       <div>
-        <section className="hero" id="inicio" style={{marginTop:"10px"}}>
+        <section className="hero" id="inicio" style={{ marginTop: "10px" }}>
           <div className="hero-content" style={{ paddingTop: "0px" }}>
             <h1>Tu Catálogo Digital con QR</h1>
             <p>
@@ -82,7 +74,10 @@ const Landing = () => {
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-icon">
-                  <Building2 size={40} style={{ color: "var(--color-navy)" }} />
+                  <LuBuilding2
+                    size={40}
+                    style={{ color: "var(--color-navy)" }}
+                  />
                 </div>
                 <h3>Crea tu Empresa</h3>
                 <p>
@@ -93,7 +88,7 @@ const Landing = () => {
 
               <div className="feature-card">
                 <div className="feature-icon">
-                  <FolderOpen
+                  <LuFolderOpen
                     size={40}
                     style={{ color: "var(--color-navy)" }}
                   />
@@ -107,7 +102,7 @@ const Landing = () => {
 
               <div className="feature-card">
                 <div className="feature-icon">
-                  <Package size={40} style={{ color: "var(--color-navy)" }} />
+                  <LuPackage size={40} style={{ color: "var(--color-navy)" }} />
                 </div>
                 <h3>Gestiona Productos</h3>
                 <p>
@@ -118,7 +113,7 @@ const Landing = () => {
 
               <div className="feature-card ">
                 <div className="feature-icon">
-                  <Users size={40} style={{ color: "var(--color-navy)" }} />
+                  <FaUsers size={40} style={{ color: "var(--color-navy)" }} />
                 </div>
                 <h3>Clientes</h3>
                 <p>
@@ -129,7 +124,10 @@ const Landing = () => {
 
               <div className="feature-card ">
                 <div className="feature-icon">
-                  <QrCode size={40} style={{ color: "var(--color-navy)" }} />
+                  <IoQrCodeOutline
+                    size={40}
+                    style={{ color: "var(--color-navy)" }}
+                  />
                 </div>
                 <h3>Códigos QR</h3>
                 <p>
@@ -140,7 +138,7 @@ const Landing = () => {
 
               <div className="feature-card ">
                 <div className="feature-icon">
-                  <MessageCircle
+                  <FaWhatsapp
                     size={40}
                     style={{ color: "var(--color-navy)" }}
                   />
@@ -219,35 +217,7 @@ const Landing = () => {
           </div>
         </section>
 
-        <footer>
-          <div className="container">
-            <p>
-              <Link
-                target="_blank"
-                to="/terms-and-conditions"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Términos de Servicio
-              </Link>{" | "}
-              <Link
-                target="_blank"
-                to="/privacy-policy"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Política de Privacidad
-              </Link>
-              {" | "}
-              <Link
-                target="_blank"
-                to="/refund-policy"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Política de Reembolso
-              </Link>
-            </p>
-            <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );

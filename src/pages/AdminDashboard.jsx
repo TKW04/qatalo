@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
-import { Menu } from "lucide-react";
+import { IoMenu } from "react-icons/io5";
 
 import AdminSidebar from "../components/AdminSidebar";
 import Business from "../components/Tabs/Business";
@@ -18,7 +19,7 @@ import Subscription from "../components/Tabs/Subscription";
 import Password from "../components/Tabs/Password";
 
 import "../styles/admin.css";
-import { Link } from "react-router-dom";
+import Footer from "../components/Footer";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
@@ -48,7 +49,7 @@ const AdminDashboard = () => {
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label="Toggle sidebar"
         >
-          <Menu
+          <IoMenu
             color="white"
             size={20}
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -85,35 +86,7 @@ const AdminDashboard = () => {
           )}
         </main>
       </div>
-      <footer>
-          <div className="container_admin">
-            <p>
-              <Link
-                target="_blank"
-                to="/terms-and-conditions"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Términos de Servicio
-              </Link>{" | "}
-              <Link
-                target="_blank"
-                to="/privacy-policy"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Política de Privacidad
-              </Link>
-              {" | "}
-              <Link
-                target="_blank"
-                to="/refund-policy"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Política de Reembolso
-              </Link>
-            </p>
-            <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
-          </div>
-        </footer>
+      <Footer />
     </>
   );
 };

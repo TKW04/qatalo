@@ -14,6 +14,8 @@ export const GetPlans = (showError) => {
 
     try {
       const response = await RegisterUserInfo();
+     
+      
       if (response.status === 200) {
         const data = await response.json();
         dispatch(

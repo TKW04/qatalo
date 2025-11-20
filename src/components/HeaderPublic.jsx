@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Share } from "lucide-react";
+import { MdIosShare } from "react-icons/md";
 import { Button } from "primereact/button";
 
 import { shareContent } from "../services/shareService";
@@ -53,7 +53,7 @@ const HeaderPublic = ({ setIsLoading }) => {
             className="btn btn-share"
             aria-label="Compartir catálogo"
             label="Compartir"
-            icon={<Share />}
+            icon={<MdIosShare size={18} />}
           />
         </div>
       </div>

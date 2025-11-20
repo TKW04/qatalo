@@ -1,36 +1,41 @@
-import { Link } from "react-router-dom";
-import {
-  Cog,
-  Folder,
-  Package,
-  QrCode,
-  DollarSign,
-  Users,
-  CirclePower,
-  CalendarSync,
-  KeyRound,
-} from "lucide-react";
+import { IoIosCog } from "react-icons/io";
+import { FaFolderOpen, FaDollarSign, FaUsers } from "react-icons/fa";
+import { FiPackage } from "react-icons/fi";
+import { IoQrCode } from "react-icons/io5";
+import { LuCalendarSync, LuKeyRound, LuCirclePower } from "react-icons/lu";
+
 import { Image } from "primereact/image";
 import { logout } from "../services/authenticate";
 import { useSelector } from "react-redux";
 import { Button } from "primereact/button";
 import { getTokenInfo } from "../helpers/token";
-import {  useEffect } from "react";
+import { useEffect } from "react";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const auth = getTokenInfo();
   const menuItems = [
-    { id: "business", label: "Configuración", icon: <Cog /> },
-    { id: "categories", label: "Categorías", icon: <Folder /> },
-    { id: "products", label: "Productos", icon: <Package /> },
-    { id: "paymentMethods", label: "Métodos de Pago", icon: <DollarSign /> },
-    { id: "customers", label: "Clientes", icon: <Users /> },
-    { id: "qr", label: "Código QR", icon: <QrCode /> },
-    { id: "subscription", label: "Suscripción", icon: <CalendarSync /> },
-    { id: "changepassword", label: "Cambiar Contraseña", icon: <KeyRound /> },
+    { id: "business", label: "Configuración", icon: <IoIosCog size={16} /> },
+    { id: "categories", label: "Categorías", icon: <FaFolderOpen size={16} /> },
+    { id: "products", label: "Productos", icon: <FiPackage size={16} /> },
+    {
+      id: "paymentMethods",
+      label: "Métodos de Pago",
+      icon: <FaDollarSign size={16} />,
+    },
+    { id: "customers", label: "Clientes", icon: <FaUsers size={16} /> },
+    { id: "qr", label: "Código QR", icon: <IoQrCode size={16} /> },
+    {
+      id: "subscription",
+      label: "Suscripción",
+      icon: <LuCalendarSync size={16} />,
+    },
+    {
+      id: "changepassword",
+      label: "Cambiar Contraseña",
+      icon: <LuKeyRound size={16} />,
+    },
   ];
   const business = useSelector((state) => state.business.business);
-  const enviroment =import.meta.env.VITE_APP_PADDLE_ENV;
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
@@ -48,7 +53,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
         onTabChange("subscription");
       }
     }
-  }, [auth]);
+  }, [activeTab, auth, onTabChange]);
 
   const setEnabled = (itemId) => {
     if (
@@ -108,7 +113,6 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
       );
     }
   };
-  
 
   return (
     <aside
@@ -128,9 +132,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
           className="admin-nav"
           style={{ width: "100%", marginLeft: "0px", textAlign: "left" }}
         >
-          {menuItems.map((item) => (
-            itemTemplate(item)
-          ))}
+          {menuItems.map((item) => itemTemplate(item))}
 
           <li>
             <Button
@@ -138,7 +140,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
               style={{ color: "white", textDecoration: "none" }}
             >
               <span style={{ margin: "5px" }}>
-                <CirclePower />
+                <LuCirclePower size={16} />
               </span>{" "}
               Cerrar sesión
             </Button>

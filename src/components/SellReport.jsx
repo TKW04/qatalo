@@ -175,7 +175,7 @@ const SellReport = ({
           </div>
           <DataTable
             value={totals}
-            tableStyle={{ width: isMobile ? "100%" : "70rem" }}
+            tableStyle={{ width: isMobile ? "100%" : "80vw" }}
             paginator
             stripedRows
             filters={filters}
