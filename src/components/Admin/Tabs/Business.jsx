@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
+import { Image } from "primereact/image";
 
-import { businessActions } from "../../store/business-store/business-slice";
-import { useNotification } from "../UI/NotificationProvider";
+import { businessActions } from "../../../store/business-store/business-slice";
+import { useNotification } from "../../UI/NotificationProvider";
 import {
   CreateBusiness,
   GetBusiness,
   UpdateBusiness,
-} from "../../store/business-store/business-actions";
-import { getTokenInfo } from "../../helpers/token";
-import Loading from "../UI/Loading";
-import { Image } from "primereact/image";
+} from "../../../store/business-store/business-actions";
+import { getTokenInfo } from "../../../helpers/token";
+import Loading from "../../UI/Loading";
+import adminStyles from "../Admin.module.css";
+import businessStyles from "./Business.module.css";
+import { TbWorld } from "react-icons/tb";
 
 let once = true;
 const Business = () => {
@@ -31,6 +33,7 @@ const Business = () => {
     if (business !== null && business.business_id === "" && once) {
       setIsLoading(true);
       dispatch(GetBusiness(auth.sub, showError));
+      setLoadingMessage("Cargando información del negocio...");
       once = false;
       setTimeout(() => {
         setIsLoading(false);
@@ -85,12 +88,12 @@ const Business = () => {
     <>
       <Loading message={loadingMessage} visible={isLoading} />
       <div>
-        <div className="admin-header">
+        <div className={adminStyles.adminHeader}>
           <h1>Configuración del Negocio</h1>
           <p>Configura la información básica de tu negocio</p>
         </div>
 
-        <div className="admin-card" >
+        <div className={adminStyles.adminCard}>
           <h2>Información General</h2>
           <form onSubmit={handleBusinessSubmit}>
             <div className="grid">
@@ -170,7 +173,7 @@ const Business = () => {
                 )}
               </div>
 
-              <div className="col-12form-group ml-2">
+              <div className="col-12 form-group ml-2">
                 <label className="form-label">Logo</label>
                 <div className="flex flex-column">
                   {business.logo_url && (
@@ -184,18 +187,9 @@ const Business = () => {
                 </div>
                 <div className="flex flex-column">
                   <input
-                    className={`input ${businessErrors.slug ? "error" : ""}`}
-                    style={{
-                      // width: "180px",
-                      marginTop: "10px",
-                      marginLeft: "0px",
-                      fontSize: "1rem",
-                      color: "#6b7280",
-                      padding: "10px",
-                      border: "2px solid #e1e5e9",
-                      borderRadius: "8px",
-                      backgroundColor: "#f9fafb",
-                    }}
+                    className={`input ${businessStyles.inputImage} ${
+                      businessErrors.slug ? "error" : ""
+                    }`}
                     accept="image/*"
                     type="file"
                     label="Seleccionar Imagen"
@@ -243,14 +237,15 @@ const Business = () => {
                 className="btn btn-primary"
                 disabled={isLoading}
               />
-              <Link
-                to={`/catalog/${business.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Button
+                type="button"
                 className="btn btn-outline"
-              >
-                Ver Catálogo Público
-              </Link>
+                icon={<TbWorld size={20} />}
+                label="Ver Catálogo Público"
+                onClick={() => {
+                  window.open(`/catalog/${business.slug}`, "_blank");
+                }}
+              />
             </div>
           </form>
         </div>

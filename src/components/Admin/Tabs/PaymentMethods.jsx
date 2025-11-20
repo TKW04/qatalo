@@ -1,31 +1,41 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { useNotification } from "../UI/NotificationProvider";
 import { InputText } from "primereact/inputtext";
+import { Button } from "primereact/button";
+import { Dropdown } from "primereact/dropdown";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { Card } from "primereact/card";
+
+import { IoMdRefresh } from "react-icons/io";
 
 import {
   GetPaymentMethods,
   CreatePaymentMethod,
   DeletePaymentMethod,
   UpdatePaymentMethod,
-} from "../../store/paymentMethod-store/paymentMethod-actions";
-import { paymentMethodActions } from "../../store/paymentMethod-store/paymentMethod-slice";
-import Loading from "../UI/Loading";
-import DialogModal from "../DialogModal";
-import { Button } from "primereact/button";
-import { Dropdown } from "primereact/dropdown";
-import { getTokenInfo } from "../../helpers/token";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { Card } from "primereact/card";
-import { DeleteButton, EditButton, InfoButton } from "../Buttons";
-import { currencies } from "../../helpers/utils";
-import { IoMdRefresh } from "react-icons/io";
+} from "../../../store/paymentMethod-store/paymentMethod-actions";
+import { paymentMethodActions } from "../../../store/paymentMethod-store/paymentMethod-slice";
+import Loading from "../../UI/Loading";
+import DialogModal from "../../DialogModal";
+import { useNotification } from "../../UI/NotificationProvider";
+
+import { getTokenInfo } from "../../../helpers/token";
+
+import {
+  DeleteButton,
+  EditButton,
+  InfoButton,
+  RefreshButton,
+  YesNoButton,
+} from "../../Buttons";
+import { currencies } from "../../../helpers/utils";
+
+import adminStyles from "../Admin.module.css";
 
 let once = true;
 const PaymentMethods = ({ setActiveTab }) => {
-  const isMobile = window.innerWidth <= 760;
   const auth = getTokenInfo();
   const business = useSelector((state) => state.business.business);
   const paymentMethod = useSelector(
@@ -34,6 +44,7 @@ const PaymentMethods = ({ setActiveTab }) => {
   const paymentMethods = useSelector(
     (state) => state.paymentMethod.paymentMethods
   );
+  const isMobile = window.innerWidth <= 480;
 
   const [editingPaymentMethod, setEditingPaymentMethod] = useState(false);
 
@@ -146,7 +157,6 @@ const PaymentMethods = ({ setActiveTab }) => {
 
     return errors;
   };
-
   const handlePaymentMethodSubmit = (e) => {
     e.preventDefault();
 
@@ -187,7 +197,6 @@ const PaymentMethods = ({ setActiveTab }) => {
       }, 4500);
     }
   };
-
   const handleEditPaymentMethod = (paymentMethod) => {
     setSelectedPaymentType({
       code: paymentMethod.payment_type,
@@ -208,31 +217,14 @@ const PaymentMethods = ({ setActiveTab }) => {
     );
     setEditingPaymentMethod(true);
   };
-
   const handleDeletePaymentMethod = (paymentMethod) => {
     const children = (
-      <div
-        style={{
-          textAlign: "left",
-          padding: "5px",
-          overflowX: "hidden",
-          maxWidth: "800px",
-        }}
-      >
-        <div style={{ color: "white", fontSize: "20px", textAlign: "center" }}>
-          ¿Estás seguro de que deseas eliminar este método de pago?
-        </div>
+      <div className={adminStyles.adminModalContent}>
+        <h2>¿Estás seguro de que deseas eliminar este método de pago?</h2>
         <div className="flex justify-content-end mt-3">
-          <Button
-            className="btn btn-outline"
-            label="No"
-            onClick={() => setShowDialog(false)}
-            style={{ width: "100px", margin: "2px" }}
-          />
-          <Button
-            className="btn btn-primary"
-            label="Si"
-            style={{ width: "100px", margin: "2px" }}
+          <YesNoButton label={"No"} onClick={() => setShowDialog(false)} />
+          <YesNoButton
+            label={"Sí"}
             onClick={() => {
               setIsLoading(true);
               setLoadingMessage("Eliminando método de pago...");
@@ -262,17 +254,9 @@ const PaymentMethods = ({ setActiveTab }) => {
     setDialogContent({ title: "Eliminar Método de Pago", children });
     setShowDialog(true);
   };
-
   const handleViewPaymentMethod = (paymentMethodInfo) => {
     const children = (
-      <div
-        style={{
-          textAlign: "left",
-          padding: "5px",
-          overflowX: "hidden",
-          maxWidth: "800px",
-        }}
-      >
+      <div className={adminStyles.adminModalContent}>
         <div className="grid p-4">
           <div className={isMobile ? "col-12" : "col-6"}>
             <label className="form-label">
@@ -398,7 +382,6 @@ const PaymentMethods = ({ setActiveTab }) => {
     setDialogContent({ title: "Detalles del Método de Pago", children });
     setShowDialog(true);
   };
-
   const getPaymentMethodName = (paymentType) => {
     const paymentMethod = paymentTypes.find((pm) => pm.code === paymentType);
     return paymentMethod ? paymentMethod.name : "";
@@ -417,7 +400,68 @@ const PaymentMethods = ({ setActiveTab }) => {
     );
     return accountType ? accountType.name : "";
   };
+  const columnsNonMobile = [
+    {
+      header: "Método de Pago",
+      field: "payment_method_name",
+    },
+    {
+      header: "Tipo de Método de Pago",
+      body: (rowData) => {
+        return getPaymentMethodName(rowData.payment_type);
+      },
+    },
+    {
+      header: "Acciones",
+      body: (rowData) => {
+        return (
+          <div className="table-actions">
+            <EditButton onClick={() => handleEditPaymentMethod(rowData)} />
+            <DeleteButton onClick={() => handleDeletePaymentMethod(rowData)} />
+            <InfoButton onClick={() => handleViewPaymentMethod(rowData)} />
+          </div>
+        );
+      },
+    },
+  ];
 
+  const colunmMobile = [
+    {
+      field: "payment_method_name",
+      header: "Método de Pago",
+      body: (rowData) => {
+        return (
+          <>
+            <Card>
+              <div className="p-3">
+                <span
+                  style={{
+                    fontWeight: "800",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {rowData.payment_method_name}
+                </span>
+              </div>
+              <div className="table-actions">
+                <div className="table-actions p-2">
+                  <EditButton
+                    onClick={() => handleEditPaymentMethod(rowData)}
+                  />
+                  <DeleteButton
+                    onClick={() => handleDeletePaymentMethod(rowData)}
+                  />
+                  <InfoButton
+                    onClick={() => handleViewPaymentMethod(rowData)}
+                  />
+                </div>
+              </div>
+            </Card>
+          </>
+        );
+      },
+    },
+  ];
   return (
     <>
       <DialogModal
@@ -429,12 +473,12 @@ const PaymentMethods = ({ setActiveTab }) => {
       </DialogModal>
       <Loading message={loadingMessage} visible={isLoading} />
       <div>
-        <div className="admin-header">
+        <div className={adminStyles.adminHeader}>
           <h1>Gestión de Métodos de Pago</h1>
           <p>Crea métodos de pago para tu negocio</p>
         </div>
 
-        <div className="admin-card">
+        <div className={adminStyles.adminCard}>
           <h2>
             {editingPaymentMethod
               ? "Editar Método de Pago"
@@ -828,15 +872,7 @@ const PaymentMethods = ({ setActiveTab }) => {
         <div>
           <h2>
             Métodos de Pago Existentes{" "}
-            <Button
-              outlined
-              type="button"
-              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
-              value={""}
-              style={{
-                border: "none",
-                margin: "5px",
-              }}
+            <RefreshButton
               onClick={() => {
                 setIsLoading(true);
                 setLoadingMessage("Cargando métodos de pago...");
@@ -848,113 +884,39 @@ const PaymentMethods = ({ setActiveTab }) => {
             />
           </h2>
           <>
-            {!isMobile && (
-              <div>
-                <DataTable
-                  value={paymentMethods}
-                  dataKey="payment_method_id"
-                  showGridlines
-                  stripedRows
-                >
+            <DataTable
+              value={paymentMethods}
+              dataKey="payment_method_id"
+              showGridlines
+              stripedRows
+            >
+              {!isMobile &&
+                columnsNonMobile.map((col) => (
                   <Column
-                    header="Método de Pago"
-                    field="payment_method_name"
-                    style={{
-                      minWidth: "14rem",
-                      padding: "1rem",
-                    }}
-                  ></Column>
-                  <Column
-                    header="Tipo de Método de Pago"
-                    style={{
-                      minWidth: "14rem",
-                      padding: "1rem",
-                    }}
-                    body={(rowData) => {
-                      return getPaymentMethodName(rowData.payment_type);
-                    }}
-                  ></Column>
-
-                  <Column
-                    header="Acciones"
+                    key={col.header}
+                    field={col.field}
+                    header={col.header}
+                    body={col.body}
                     style={{
                       minWidth: "15rem",
                       padding: "1rem",
                     }}
-                    body={(rowData) => {
-                      return (
-                        <div className="table-actions">
-                          <EditButton
-                            onClick={() => handleEditPaymentMethod(rowData)}
-                          />
-                          <DeleteButton
-                            onClick={() => handleDeletePaymentMethod(rowData)}
-                          />
-                          <InfoButton
-                            onClick={() => handleViewPaymentMethod(rowData)}
-                          />
-                        </div>
-                      );
-                    }}
                   ></Column>
-                </DataTable>
-              </div>
-            )}
-            {isMobile && (
-              <div>
-                <DataTable
-                  value={paymentMethods}
-                  dataKey="payment_method_id"
-                  showGridlines
-                  stripedRows
-                >
+                ))}
+              {isMobile &&
+                colunmMobile.map((col) => (
                   <Column
+                    key={col.field || col.header}
+                    field={col.field}
+                    header={col.header}
+                    body={col.body}
                     style={{
-                      minWidth: "14rem",
+                      minWidth: "15rem",
                       padding: "1rem",
                     }}
-                    header="Método de pago"
-                    body={(rowData) => {
-                      return (
-                        <>
-                          <Card>
-                            <div className="p-3">
-                              <span
-                                style={{
-                                  fontWeight: "800",
-                                  fontSize: "1.1rem",
-                                }}
-                              >
-                                {rowData.payment_method_name}
-                              </span>
-                            </div>
-                            <div className="table-actions">
-                              <div className="table-actions p-2">
-                                <EditButton
-                                  onClick={() =>
-                                    handleEditPaymentMethod(rowData)
-                                  }
-                                />
-                                <DeleteButton
-                                  onClick={() =>
-                                    handleDeletePaymentMethod(rowData)
-                                  }
-                                />
-                                <InfoButton
-                                  onClick={() =>
-                                    handleViewPaymentMethod(rowData)
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </Card>
-                        </>
-                      );
-                    }}
                   ></Column>
-                </DataTable>
-              </div>
-            )}
+                ))}
+            </DataTable>
           </>
         </div>
       </div>

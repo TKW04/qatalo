@@ -1,12 +1,15 @@
 import { useState } from "react";
-import Loading from "../UI/Loading";
-import { getTokenInfo } from "../../helpers/token";
+import { useDispatch } from "react-redux";
+
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
-import { useNotification } from "../UI/NotificationProvider";
-import { logout } from "../../services/authenticate";
-import { useDispatch } from "react-redux";
-import { Forgot_Password } from "../../store/user-store/user-actions";
+
+import Loading from "../../UI/Loading";
+import { getTokenInfo } from "../../../helpers/token";
+import { useNotification } from "../../UI/NotificationProvider";
+import { logout } from "../../../services/authenticate";
+import { Forgot_Password } from "../../../store/user-store/user-actions";
+import adminStyles from "../Admin.module.css";
 
 const Password = () => {
   const auth = getTokenInfo();
@@ -28,10 +31,10 @@ const Password = () => {
   return (
     <div>
       <Loading message={loadingMessage} visible={isLoading} />
-      <div className="admin-header">
+      <div className={adminStyles.adminHeader}>
         <h1>Solicitar Cambio de Contraseña</h1>
       </div>
-      <div className="card">
+      <div className={adminStyles.adminCard}>
         <Card style={{ width: "100%", padding: "20px" }}>
           <>
             <div className="grid">

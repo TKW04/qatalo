@@ -5,22 +5,23 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { CiReceipt, CiSearch } from "react-icons/ci";
-import { MdCancel } from "react-icons/md";
-import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
-import { IoMdCheckmarkCircleOutline, IoMdRefresh } from "react-icons/io";
-import { TbTruckDelivery } from "react-icons/tb";
-
 import { Card } from "primereact/card";
 import { Image } from "primereact/image";
 import { InputTextarea } from "primereact/inputtextarea";
 import { InputSwitch } from "primereact/inputswitch";
 import { Calendar } from "primereact/calendar";
 import { InputNumber } from "primereact/inputnumber";
+import { FilterMatchMode } from "primereact/api";
+
+import { CiReceipt, CiSearch } from "react-icons/ci";
+import { MdCancel } from "react-icons/md";
+import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
+import { IoMdCheckmarkCircleOutline, IoMdRefresh } from "react-icons/io";
+import { TbTruckDelivery } from "react-icons/tb";
 
 import { saveAs } from "file-saver";
 
-import { customerActions } from "../../store/customer-store/customer-slice";
+import { customerActions } from "../../../store/customer-store/customer-slice";
 
 import {
   ApproveTransaction,
@@ -29,10 +30,10 @@ import {
   GetCustomers,
   UpdateCustomer,
   UpdateTransaction,
-} from "../../store/customer-store/customer-actions";
-import { useNotification } from "../UI/NotificationProvider";
-import Loading from "../UI/Loading";
-import DialogModal from "../DialogModal";
+} from "../../../store/customer-store/customer-actions";
+import { useNotification } from "../../UI/NotificationProvider";
+import Loading from "../../UI/Loading";
+import DialogModal from "../../DialogModal";
 import {
   currencies,
   formatDate,
@@ -40,13 +41,13 @@ import {
   formatTextDate,
   formatTextDateShort,
   getStatusStyle,
-} from "../../helpers/utils";
-import "../../styles/catalog.css";
+} from "../../../helpers/utils";
+import "../../../styles/catalog.css";
 
-import { EditButton, InfoButton } from "../Buttons";
+import { EditButton, InfoButton, RefreshButton } from "../../Buttons";
 
-import SellReport from "../SellReport";
-import { FilterMatchMode } from "primereact/api";
+import SellReport from "../../SellReport";
+import adminStyles from "../Admin.module.css";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -73,7 +74,7 @@ const Customers = ({ setActiveTab }) => {
   const [cancellationReason, setCancellationReason] = useState("");
 
   const [imageSize, setImageSize] = useState({ width: 100, height: 200 });
-  const isMobile = window.innerWidth <= 760;
+  const isMobile = window.innerWidth <= 480;
   const [expandedRows, setExpandedRows] = useState(null);
 
   const [editingCustomer, setEditingCustomer] = useState(false);
@@ -224,14 +225,7 @@ const Customers = ({ setActiveTab }) => {
           visible={showDialogCancel}
           onHide={() => setShowDialogCancel(false)}
         >
-          <div
-            style={{
-              textAlign: "left",
-              padding: "30px",
-              overflowX: "hidden",
-              maxWidth: "800px",
-            }}
-          >
+          <div className={adminStyles.adminModalContent}>
             <div
               className="flex flex-column gap-2 p-3"
               style={{
@@ -336,14 +330,7 @@ const Customers = ({ setActiveTab }) => {
           visible={showProductDialog}
           onHide={() => setShowProductDialog(false)}
         >
-          <div
-            style={{
-              textAlign: "left",
-              padding: "30px",
-              overflowX: "hidden",
-              maxWidth: "800px",
-            }}
-          >
+          <div className={adminStyles.adminModalContent}>
             <label className="form-label">
               Producto:{" "}
               <span style={{ fontWeight: "bold" }}>
@@ -715,8 +702,46 @@ const Customers = ({ setActiveTab }) => {
                 }}
                 header="Producto"
                 field="product_name"
+                body={(rowData) => {
+                  return (
+                    <>
+                      <Card>
+                        <div className="grid p-3">
+                          <div className="col-12">
+                            <span
+                              style={{
+                                fontWeight: "800",
+                                fontSize: "1.14rem",
+                              }}
+                            >
+                              {rowData.product_name}
+                            </span>
+                          </div>
+                          <div className="col-12 p-1">
+                            Estado:{" "}
+                            <span style={getStatusStyle(rowData.status)}>
+                              {rowData.status
+                                ? "Orden Entregada"
+                                : rowData.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="table-actions">
+                          <div className="table-actions p-2">
+                            <EditButton
+                              onClick={() => handleEditCustomer(rowData)}
+                            />
+                            <InfoButton
+                              onClick={() => handleViewCustomer(rowData)}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    </>
+                  );
+                }}
               ></Column>
-              <Column
+              {/* <Column
                 style={{
                   minWidth: "8rem",
                   padding: "1rem",
@@ -761,13 +786,14 @@ const Customers = ({ setActiveTab }) => {
                     </>
                   );
                 }}
-              ></Column>
+              ></Column> */}
             </DataTable>
           </div>
         )}
       </>
     );
   };
+
   const exportToExcel = async () => {
     const XLSX = await import("xlsx-js-style");
     //Lista de ventas
@@ -863,19 +889,87 @@ const Customers = ({ setActiveTab }) => {
       const date = dateString.split("/");
       return new Date(date[2], date[1] - 1, date[0]);
     }
-
     return null;
   };
+
+  const columnsNonMobile = [
+    { field: "full_name", header: "Cliente" },
+    { field: "email", header: "Email" },
+    {
+      field: "phone",
+      header: "Teléfono",
+      body: (rowData) => {
+        const message = `Hola, ${rowData.full_name}
+                        }, te escribo de "${business.name}".`;
+        const whatsappUrl = `https://wa.me/${
+          rowData.phone
+        }?text=${encodeURIComponent(message)}`;
+
+        return (
+          <a href={whatsappUrl}>
+            {rowData.phone} <FaWhatsapp color="#25D366" />
+          </a>
+        );
+      },
+    },
+    {
+      header: "Total de Transacciones",
+      body: (rowData) => {
+        return (
+          <div
+            className="table-actions"
+            style={{
+              alignContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <EditButton onClick={() => handleEditCustomer(rowData)} />
+            <InfoButton onClick={() => handleViewCustomer(rowData)} />
+          </div>
+        );
+      },
+    },
+  ];
+  const columnsMobile = [
+    {
+      header: "Cliente",
+      body: (rowData) => {
+        return (
+          <>
+            <Card>
+              <div className="p-3">
+                <span
+                  style={{
+                    fontWeight: "800",
+                    fontSize: "1.14rem",
+                  }}
+                >
+                  {rowData.given_name} {rowData.family_name}
+                </span>
+                <span style={{ display: "block" }}>{rowData.email}</span>
+              </div>
+              <div className="table-actions">
+                <div className="table-actions p-2">
+                  <EditButton onClick={() => handleEditCustomer(rowData)} />
+                  <InfoButton onClick={() => handleViewCustomer(rowData)} />
+                </div>
+              </div>
+            </Card>
+          </>
+        );
+      },
+    },
+  ];
 
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
       <div>
-        <div className="admin-header">
+        <div className={adminStyles.adminHeader}>
           <h1>Gestión de Clientes</h1>
         </div>
         {editingCustomer && (
-          <div className="admin-card">
+          <div className={adminStyles.adminCard}>
             <h2>{"Editar Cliente"}</h2>
             <form onSubmit={handleCustomerSubmit}>
               <div className="form-group">
@@ -984,7 +1078,7 @@ const Customers = ({ setActiveTab }) => {
           </div>
         )}
         {editingTransaction && (
-          <div className="admin-card">
+          <div className={adminStyles.adminCard}>
             <h2>{"Editar Transaccion"}</h2>
             <form onSubmit={handleUpdateTransaction}>
               <div className="form-group">
@@ -1090,15 +1184,7 @@ const Customers = ({ setActiveTab }) => {
         <div>
           <h2>
             Clientes Existentes{" "}
-            <Button
-              outlined
-              type="button"
-              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
-              value={""}
-              style={{
-                border: "none",
-                margin: "5px",
-              }}
+            <RefreshButton
               onClick={() => {
                 setIsLoading(true);
                 setLoadingMessage("Cargando clientes...");
@@ -1158,159 +1244,59 @@ const Customers = ({ setActiveTab }) => {
           {!showSellReport && (
             <>
               <DialogModal
-                title={dialogContent?.title || "Eliminar Producto"}
+                title={dialogContent?.title}
                 width={"20vw"}
                 visible={showDialog}
                 onHide={() => setShowDialog(false)}
                 footer={dialogContent?.footer || null}
               >
-                <p>
-                  {dialogContent?.children ||
-                    "¿Estás seguro de que deseas eliminar este producto?"}
-                </p>
+                <p>{dialogContent?.children}</p>
               </DialogModal>
-              {!isMobile && (
-                <div>
-                  <DataTable
-                    value={customers}
-                    expandedRows={expandedRows}
-                    onRowToggle={(e) => setExpandedRows(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="customer_id"
-                    filters={filters}
-                    filterDisplay="row"
-                    stripedRows
-                    paginator
-                    rows={25}
-                    rowsPerPageOptions={[25, 50, 75, 100]}
-                  >
-                    <Column
-                      style={{
-                        minWidth: "14rem",
-                        padding: "1rem",
-                      }}
-                      field="full_name"
-                      header="Nombre Completo"
-                      filter
-                      sortable
-                    ></Column>
 
-                    <Column
-                      field="email"
-                      header="Email"
-                      filter
-                      sortable
-                      style={{
-                        minWidth: "14rem",
-                        padding: "1rem",
-                      }}
-                    ></Column>
-                    <Column
-                      style={{
-                        minWidth: "14rem",
-                        padding: "1rem",
-                      }}
-                      header="Teléfono"
-                      body={(rowData) => {
-                        const message = `Hola, ${customer.given_name} ${
-                          customer.family_name || ""
-                        }, te escribo de "${business.name}".`;
-                        const whatsappUrl = `https://wa.me/${
-                          rowData.phone
-                        }?text=${encodeURIComponent(message)}`;
+              <div>
+                <DataTable
+                  value={customers}
+                  expandedRows={expandedRows}
+                  onRowToggle={(e) => setExpandedRows(e.data)}
+                  rowExpansionTemplate={rowExpansionTemplate}
+                  dataKey="customer_id"
+                  filters={filters}
+                  filterDisplay="row"
+                  stripedRows
+                  paginator
+                  rows={25}
+                  rowsPerPageOptions={[25, 50, 75, 100]}
+                >
+                  {!isMobile &&
+                    columnsNonMobile.map((col) => (
+                      <Column
+                        key={col.field}
+                        field={col.field}
+                        header={col.header}
+                        style={{
+                          minWidth: "10rem",
+                          padding: "1rem",
+                        }}
+                        body={col.body}
+                      ></Column>
+                    ))}
 
-                        return (
-                          <a href={whatsappUrl}>
-                            {rowData.phone} <FaWhatsapp color="#25D366" />
-                          </a>
-                        );
-                      }}
-                    ></Column>
-                    <Column
-                      header="Acciones"
-                      style={{
-                        minWidth: "14rem",
-                        padding: "1rem",
-                      }}
-                      body={(rowData) => {
-                        return (
-                          <div
-                            className="table-actions"
-                            style={{
-                              alignContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <EditButton
-                              onClick={() => handleEditCustomer(rowData)}
-                            />
-                            <InfoButton
-                              onClick={() => handleViewCustomer(rowData)}
-                            />
-                          </div>
-                        );
-                      }}
-                    ></Column>
-                    <Column expander style={{ width: "3em" }} />
-                  </DataTable>
-                </div>
-              )}
-              {isMobile && (
-                <div>
-                  <DataTable
-                    value={customers}
-                    expandedRows={expandedRows}
-                    onRowToggle={(e) => setExpandedRows(e.data)}
-                    rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="customer_id"
-                  >
-                    <Column
-                      style={{
-                        minWidth: "14rem",
-                        padding: "1rem",
-                      }}
-                      header={
-                        <span style={{ fontWeight: "bold", fontSize: "1.2em" }}>
-                          Cliente
-                        </span>
-                      }
-                      body={(rowData) => {
-                        return (
-                          <>
-                            <Card>
-                              <div className="p-3">
-                                <span
-                                  style={{
-                                    fontWeight: "800",
-                                    fontSize: "1.14rem",
-                                  }}
-                                >
-                                  {rowData.given_name} {rowData.family_name}
-                                </span>
-                                <span style={{ display: "block" }}>
-                                  {rowData.email}
-                                </span>
-                              </div>
-                              <div className="table-actions">
-                                <div className="table-actions p-2">
-                                  <EditButton
-                                    onClick={() => handleEditCustomer(rowData)}
-                                  />
-                                  <InfoButton
-                                    onClick={() => handleViewCustomer(rowData)}
-                                  />
-                                </div>
-                              </div>
-                            </Card>
-                          </>
-                        );
-                      }}
-                    ></Column>
-
-                    <Column expander style={{ width: "1em" }} />
-                  </DataTable>
-                </div>
-              )}
+                  {isMobile &&
+                    columnsMobile.map((col) => (
+                      <Column
+                        key={col.field}
+                        field={col.field}
+                        header={col.header}
+                        style={{
+                          minWidth: "10rem",
+                          padding: "1rem",
+                        }}
+                        body={col.body}
+                      ></Column>
+                    ))}
+                  <Column expander style={{ width: "3em" }} />
+                </DataTable>
+              </div>
             </>
           )}
           {showSellReport && (

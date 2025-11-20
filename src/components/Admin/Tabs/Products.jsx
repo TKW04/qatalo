@@ -10,34 +10,43 @@ import { InputNumber } from "primereact/inputnumber";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { InputSwitch } from "primereact/inputswitch";
+import { InputTextarea } from "primereact/inputtextarea";
+import { Calendar } from "primereact/calendar";
+import { IoMdRefresh } from "react-icons/io";
 
-import { BookImage, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
+import { FaFileImage } from "react-icons/fa";
 
-import { productActions } from "../../store/product-store/product-slice";
-import { GetCategories } from "../../store/categories-store/category-actions";
-import { useNotification } from "../UI/NotificationProvider";
+import { productActions } from "../../../store/product-store/product-slice";
+import { GetCategories } from "../../../store/categories-store/category-actions";
+import { useNotification } from "../../UI/NotificationProvider";
 import {
   CreateProduct,
   DeleteImage,
   DeleteProduct,
   GetProducts,
   UpdateProduct,
-} from "../../store/product-store/product-actions";
-import Loading from "../UI/Loading";
+} from "../../../store/product-store/product-actions";
+import Loading from "../../UI/Loading";
 
 import { Image } from "primereact/image";
-import DialogModal from "../DialogModal";
-import "../../styles/catalog.css";
-import { DeleteButton, EditButton, InfoButton } from "../Buttons";
+import DialogModal from "../../DialogModal";
+import "../../../styles/catalog.css";
+import {
+  DeleteButton,
+  EditButton,
+  InfoButton,
+  RefreshButton,
+  YesNoButton,
+} from "../../Buttons";
 import {
   currencies,
   formatDate,
   formatted,
   getAges,
-} from "../../helpers/utils";
-import { InputTextarea } from "primereact/inputtextarea";
-import { Calendar } from "primereact/calendar";
-import { IoMdRefresh } from "react-icons/io";
+} from "../../../helpers/utils";
+import adminStyles from "../Admin.module.css";
+import productStyles from "./Products.module.css";
 
 let once = true;
 const Products = ({ setActiveTab }) => {
@@ -91,6 +100,8 @@ const Products = ({ setActiveTab }) => {
     },
     [categories]
   );
+
+  const isMobile = window.innerWidth <= 480;
 
   useEffect(() => {
     if (categories.length === 0 && once) {
@@ -242,9 +253,9 @@ const Products = ({ setActiveTab }) => {
   };
 
   const chooseOptions = {
-    icon: <BookImage />,
+    icon: <FaFileImage size={20} />,
     iconOnly: true,
-    className: "btn_image",
+    className: productStyles.btnImage,
   };
 
   const validateProduct = (data) => {
@@ -367,28 +378,12 @@ const Products = ({ setActiveTab }) => {
 
   const handleDeleteProduct = (rowData) => {
     const children = (
-      <div
-        style={{
-          textAlign: "left",
-          padding: "30px",
-          overflowX: "hidden",
-          maxWidth: "800px",
-        }}
-      >
-        <div style={{ color: "white", fontSize: "20px", textAlign: "center" }}>
-          ¿Estás seguro de que deseas eliminar este producto?
-        </div>
+      <div className={adminStyles.adminModalContent}>
+        <h2>¿Estás seguro de que deseas eliminar este producto?</h2>
         <div className="flex justify-content-end mt-3">
-          <Button
-            className="btn btn-outline"
-            label="No"
-            onClick={() => setShowDialog(false)}
-            style={{ width: "100px", margin: "2px" }}
-          />
-          <Button
-            className="btn btn-primary"
-            label="Si"
-            style={{ width: "100px", margin: "2px" }}
+          <YesNoButton label="No" onClick={() => setShowDialog(false)} />
+          <YesNoButton
+            label="Sí"
             onClick={() => {
               setIsLoading(true);
               setLoadingMessage("Eliminando producto...");
@@ -427,14 +422,7 @@ const Products = ({ setActiveTab }) => {
     let available = productInfo.is_available === "available" ? true : false;
 
     const children = (
-      <div
-        style={{
-          textAlign: "left",
-          padding: "30px",
-          overflowX: "hidden",
-          maxWidth: "800px",
-        }}
-      >
+      <div className={adminStyles.adminModalContent}>
         <div className="grid flex gap-2">
           <div className="col-12">
             <label className="form-label">
@@ -594,7 +582,7 @@ const Products = ({ setActiveTab }) => {
     setShowDialog(true);
   };
 
-  const isMobile = window.innerWidth <= 760;
+  
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -648,38 +636,17 @@ const Products = ({ setActiveTab }) => {
                   <DeleteButton
                     onClick={() => {
                       const children = (
-                        <div
-                          style={{
-                            textAlign: "left",
-                            padding: "5px",
-                            overflowX: "hidden",
-                            maxWidth: "800px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              color: "white",
-                              fontSize: "20px",
-                              textAlign: "center",
-                            }}
-                          >
+                        <div className={adminStyles.adminModalContent}>
+                          <h2>
                             ¿Estás seguro de que deseas eliminar esta imagen?
-                          </div>
-                          <div className="flex justify-content-end">
-                            <Button
-                              className="btn btn-outline"
+                          </h2>
+                          <div className="flex justify-content-end mt-3">
+                            <YesNoButton
                               label="No"
                               onClick={() => setShowDialog(false)}
-                              style={{ width: "100px", margin: "2px" }}
                             />
-                            <Button
-                              className="btn btn-primary"
-                              label="Si"
-                              style={{
-                                width: "100px",
-                                margin: "2px",
-                                border: "none",
-                              }}
+                            <YesNoButton
+                              label="Sí"
                               onClick={() => {
                                 setIsLoading(true);
                                 setLoadingMessage("Eliminando imagen...");
@@ -731,17 +698,106 @@ const Products = ({ setActiveTab }) => {
 
     return null;
   };
+  const columnsNonMobile = [
+    { field: "name", header: "Nombre" },
+    {
+      field: "category_id",
+      header: "Categoría",
+      body: (rowData) => getCategoryName(rowData.category_id),
+    },
+    {
+      field: "price",
+      header: "Precio",
+      body: (rowData) => (
+        <>
+          {rowData.currency}
+          {formatted(rowData.price)}
+        </>
+      ),
+    },
+    {
+      field: "is_available",
+      header: "Estado",
+      body: (rowData) => (
+        <span
+          className={`product-status  product-status_${
+            rowData.is_available === "available" ? "available" : "unavailable"
+          }`}
+        >
+          {rowData.is_available === "available" ? "Disponible" : "Agotado"}
+        </span>
+      ),
+    },
+    {
+      header: "Acciones",
+      body: (rowData) => {
+        return (
+          <div className="table-actions">
+            <EditButton onClick={() => handleEditProduct(rowData)} />
+            <DeleteButton onClick={() => handleDeleteProduct(rowData)} />
+            <InfoButton onClick={() => handleViewProduct(rowData)} />
+          </div>
+        );
+      },
+    },
+  ];
+  const columnsMobile = [
+    {
+      field: "name",
+      header: "Nombre",
+      body: (rowData) => {
+        return (
+          <>
+            <Card
+              style={{
+                border: " none",
+                background: "transparent",
+                boxShadow: "none",
+                padding: "0",
+              }}
+            >
+              <div style={{ padding: "1rem" }}>
+                <span
+                  style={{
+                    fontWeight: "800",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {rowData.name}
+                </span>
+              </div>
+              <div>
+                <div className="grid">
+                  <div className="col m-auto">
+                    <EditButton onClick={() => handleEditProduct(rowData)} />
+                  </div>
+                  <div className="col m-auto">
+                    <DeleteButton
+                      onClick={() => handleDeleteProduct(rowData)}
+                    />
+                  </div>
+                  <div className="col m-auto">
+                    <InfoButton onClick={() => handleViewProduct(rowData)} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </>
+        );
+      },
+    },
+  ];
 
   return (
     <>
       <Loading message={loadingMessage} visible={isLoading} />
       <div>
-        <div className="admin-header">
+        <div className={adminStyles.adminHeader}>
           <h1>Gestión de Productos</h1>
           <p>Administra tu catálogo de productos</p>
         </div>
 
-        <div className="admin-card">
+        <div className={adminStyles.adminCard}>
           <h2>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</h2>
           <form onSubmit={onSubmit}>
             <div className="form-group">
@@ -1147,15 +1203,7 @@ const Products = ({ setActiveTab }) => {
         <div>
           <h2>
             Productos Existentes{" "}
-            <Button
-              outlined
-              type="button"
-              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
-              value={""}
-              style={{
-                border: "none",
-                margin: "5px",
-              }}
+            <RefreshButton
               onClick={() => {
                 setIsLoading(true);
                 setLoadingMessage("Cargando productos...");
@@ -1168,148 +1216,45 @@ const Products = ({ setActiveTab }) => {
           </h2>
           <>
             <DialogModal
-              title={dialogContent?.title || "Confirmación"}
+              title={dialogContent?.title}
               visible={showDialog}
               onHide={() => setShowDialog(false)}
             >
-              <p>
-                {dialogContent?.children ||
-                  "¿Estás seguro de que deseas eliminar este producto?"}
-              </p>
+              <p>{dialogContent?.children}</p>
             </DialogModal>
-            {!isMobile && (
-              <div>
-                <DataTable
-                  value={products}
-                  expandedRows={expandedRows}
-                  onRowToggle={(e) => setExpandedRows(e.data)}
-                  rowExpansionTemplate={rowExpansionTemplate}
-                  dataKey="product_id"
-                  showGridlines
-                  stripedRows
-                >
-                  <Column
-                    field="name"
-                    header="Nombre"
-                    style={{ minWidth: "15rem", padding: "1rem" }}
-                  ></Column>
-                  <Column
-                    header="Precio"
-                    style={{ minWidth: "10rem", padding: "1rem" }}
-                    body={(rowData) => {
-                      return (
-                        <>
-                          {rowData.currency}
-                          {formatted(rowData.price)}
-                        </>
-                      );
-                    }}
-                  ></Column>
-                  <Column
-                    header="Estado"
-                    style={{ minWidth: "5rem", padding: "1rem" }}
-                    body={(rowData) => {
-                      let available =
-                        rowData.is_available === "available" ? true : false;
-                      return (
-                        <span
-                          className={`product-status  product-status_${
-                            available ? "available" : "unavailable"
-                          }`}
-                        >
-                          {available ? "Disponible" : "Agotado"}
-                        </span>
-                      );
-                    }}
-                  ></Column>
-
-                  <Column
-                    header="Acciones"
-                    style={{ minWidth: "15rem", padding: "1rem" }}
-                    body={(rowData) => {
-                      return (
-                        <div className="table-actions">
-                          <EditButton
-                            onClick={() => handleEditProduct(rowData)}
-                          />
-                          <DeleteButton
-                            onClick={() => handleDeleteProduct(rowData)}
-                          />
-                          <InfoButton
-                            onClick={() => handleViewProduct(rowData)}
-                          />
-                        </div>
-                      );
-                    }}
-                  ></Column>
-                  <Column expander style={{ width: "3em" }} />
-                </DataTable>
-              </div>
-            )}
-            {isMobile && (
-              <div>
-                <DataTable
-                  value={products}
-                  expandedRows={expandedRows}
-                  onRowToggle={(e) => setExpandedRows(e.data)}
-                  rowExpansionTemplate={rowExpansionTemplate}
-                  dataKey="product_id"
-                  showGridlines
-                  stripedRows
-                >
-                  <Column
-                    header="Nombre"
-                    style={{ minWidth: "10rem", padding: "1rem" }}
-                    body={(rowData) => {
-                      return (
-                        <>
-                          <Card
-                            style={{
-                              border: " none",
-                              background: "transparent",
-                              boxShadow: "none",
-                              padding: "0",
-                            }}
-                          >
-                            <div style={{ padding: "1rem" }}>
-                              <span
-                                style={{
-                                  fontWeight: "800",
-                                  fontSize: "1.1rem",
-                                }}
-                              >
-                                {rowData.name}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="grid">
-                                <div className="col m-auto">
-                                  <EditButton
-                                    onClick={() => handleEditProduct(rowData)}
-                                  />
-                                </div>
-                                <div className="col m-auto">
-                                  <DeleteButton
-                                    onClick={() => handleDeleteProduct(rowData)}
-                                  />
-                                </div>
-                                <div className="col m-auto">
-                                  <InfoButton
-                                    onClick={() => handleViewProduct(rowData)}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        </>
-                      );
-                    }}
-                  ></Column>
-
-                  <Column expander style={{ width: "3em" }} />
-                </DataTable>
-              </div>
-            )}
+            <div>
+              <DataTable
+                value={products}
+                expandedRows={expandedRows}
+                onRowToggle={(e) => setExpandedRows(e.data)}
+                rowExpansionTemplate={rowExpansionTemplate}
+                dataKey="product_id"
+                showGridlines
+                stripedRows
+              >
+                {!isMobile &&
+                  columnsNonMobile.map((col) => (
+                    <Column
+                      key={col.field}
+                      field={col.field}
+                      header={col.header}
+                      body={col.body}
+                      style={{ minWidth: "10rem", padding: "1rem" }}
+                    />
+                  ))}
+                {isMobile &&
+                  columnsMobile.map((col) => (
+                    <Column
+                      key={col.field}
+                      field={col.field}
+                      header={col.header}
+                      body={col.body}
+                      style={{ minWidth: "10rem", padding: "1rem" }}
+                    />
+                  ))}
+                <Column expander style={{ width: "3em" }} />
+              </DataTable>
+            </div>
           </>
         </div>
       </div>

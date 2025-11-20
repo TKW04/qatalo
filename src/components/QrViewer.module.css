@@ -1,0 +1,44 @@
+/* Contenedor */
+.qrContainer {
+  background: linear-gradient(135deg, #113f67 0%, #34699a 100%) !important;
+  border: #34699a 1px solid !important;
+  border-radius: 10px !important;
+  padding: 2rem !important;
+  box-shadow: var(--shadow ) !important;
+  margin: 0rem !important;
+}
+/* Contenedor de los botones */
+.qrActions {
+  margin-top: 1rem !important;
+  gap: 10px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+/* Botón de descarga */
+.qrDownloadButton {
+  display: flex !important;
+  align-items: center !important;
+  margin: 5px !important;
+  padding: 0.75rem 1.5rem !important;
+  border-color: #ffffff !important;
+  background-color: #113f67 !important;
+  width: 100% !important;
+}
+.qrDownloadButton:hover {
+  background-color: #0e2e4b !important;
+}
+/* Botón de impresión */
+.qrPrintButton {
+  display: flex !important;
+  align-items: center !important;
+  margin: 5px !important;
+  padding: 0.75rem 1.5rem !important;
+  border-color: #ffffff !important;
+  background-color: var(--color-sea) !important;
+  width: 100% !important;
+}
+.qrPrintButton:hover {
+  background-color: #2a7a9a !important;
+}
+
+

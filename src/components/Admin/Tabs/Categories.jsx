@@ -5,21 +5,28 @@ import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Trash2, X } from "lucide-react";
-import { IoMdRefresh } from "react-icons/io";
-import { categoryActions } from "../../store/categories-store/category-slice";
+import { FaTrashCan } from "react-icons/fa6";
+import { GiCancel } from "react-icons/gi";
+
+import { categoryActions } from "../../../store/categories-store/category-slice";
 
 import {
   CreateCategory,
   DeleteCategory,
   GetCategories,
   UpdateCategory,
-} from "../../store/categories-store/category-actions";
-import { useNotification } from "../UI/NotificationProvider";
-import Loading from "../UI/Loading";
-import DialogModal from "../DialogModal";
-import "../../styles/catalog.css";
-import { DeleteButton, EditButton } from "../Buttons";
+} from "../../../store/categories-store/category-actions";
+import { useNotification } from "../../UI/NotificationProvider";
+import Loading from "../../UI/Loading";
+import DialogModal from "../../DialogModal";
+import "../../../styles/catalog.css";
+import {
+  DeleteButton,
+  EditButton,
+  RefreshButton,
+  YesNoButton,
+} from "../../Buttons";
+import adminStyles from "../Admin.module.css";
 
 let once = true;
 const Categories = ({ setActiveTab }) => {
@@ -92,43 +99,6 @@ const Categories = ({ setActiveTab }) => {
     setShowDeleteDialog(showDialog);
     dispatch(categoryActions.setCategory({ category: category }));
   };
-  const footerContent = (
-    <div>
-      <Button
-        className="btn btn-secondary"
-        label="No"
-        icon={<X />}
-        onClick={() => setShowDeleteDialog(false)}
-        style={{ width: "100px", margin: "2px" }}
-      />
-      <Button
-        className="btn btn-danger"
-        label="Si"
-        icon={<Trash2 />}
-        onClick={() => {
-          setIsLoading(true);
-          setLoadingMessage("Eliminando categoría...");
-          dispatch(
-            DeleteCategory(
-              category.category_id,
-              showError,
-              showWarning,
-              showSuccess
-            )
-          );
-
-          setTimeout(() => {
-            setActiveTab("categories");
-            dispatch(GetCategories(showError));
-            dispatch(categoryActions.startCategory());
-            setIsLoading(false);
-            setShowDeleteDialog(false);
-          }, 4500);
-        }}
-        style={{ width: "100px", margin: "2px" }}
-      />
-    </div>
-  );
 
   return (
     <>
@@ -136,18 +106,52 @@ const Categories = ({ setActiveTab }) => {
         title="Eliminar Categoría"
         visible={showDeleteDialog}
         onHide={() => setShowDeleteDialog(false)}
-        footer={footerContent}
       >
-        <p style={{color:"#ffffff"}}>¿Estás seguro de que deseas eliminar esta categoría?</p>
+        <div className="grid">
+          <div className="col-12">
+            <p style={{ color: "#ffffff" }}>
+              ¿Estás seguro de que deseas eliminar esta categoría?
+            </p>
+          </div>
+          <div className="col-12 flex justify-content-end">
+            <YesNoButton
+              label="No"
+              onClick={() => setShowDeleteDialog(false)}
+            />
+            <YesNoButton
+              label={"Sí"}
+              onClick={() => {
+                setIsLoading(true);
+                setLoadingMessage("Eliminando categoría...");
+                dispatch(
+                  DeleteCategory(
+                    category.category_id,
+                    showError,
+                    showWarning,
+                    showSuccess
+                  )
+                );
+
+                setTimeout(() => {
+                  setActiveTab("categories");
+                  dispatch(GetCategories(showError));
+                  dispatch(categoryActions.startCategory());
+                  setIsLoading(false);
+                  setShowDeleteDialog(false);
+                }, 4500);
+              }}
+            />
+          </div>
+        </div>
       </DialogModal>
       <Loading message={loadingMessage} visible={isLoading} />
       <div>
-        <div className="admin-header">
+        <div className={adminStyles.adminHeader}>
           <h1>Gestión de Categorías</h1>
           <p>Organiza tus productos en categorías</p>
         </div>
 
-        <div className="admin-card">
+        <div className={adminStyles.adminCard}>
           <h2>{editingCategory ? "Editar Categoría" : "Nueva Categoría"}</h2>
           <form onSubmit={handleCategorySubmit}>
             <div className="grid">
@@ -193,15 +197,7 @@ const Categories = ({ setActiveTab }) => {
         <div>
           <h2>
             Categorías Existentes{" "}
-            <Button
-              outlined
-              type="button"
-              icon={<IoMdRefresh size={24} color="var(--color-navy)" />}
-              value={""}
-              style={{
-                border: "none",
-                margin: "5px",
-              }}
+            <RefreshButton
               onClick={() => {
                 setIsLoading(true);
                 setLoadingMessage("Cargando categorías...");
@@ -212,6 +208,7 @@ const Categories = ({ setActiveTab }) => {
               }}
             />
           </h2>
+
           <div>
             <DataTable
               value={categories}

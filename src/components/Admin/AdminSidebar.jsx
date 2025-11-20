@@ -1,41 +1,64 @@
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+
 import { IoIosCog } from "react-icons/io";
-import { FaFolderOpen, FaDollarSign, FaUsers } from "react-icons/fa";
 import { FiPackage } from "react-icons/fi";
 import { IoQrCode } from "react-icons/io5";
 import { LuCalendarSync, LuKeyRound, LuCirclePower } from "react-icons/lu";
+import { FaFolderOpen, FaDollarSign, FaUsers } from "react-icons/fa";
 
 import { Image } from "primereact/image";
-import { logout } from "../services/authenticate";
-import { useSelector } from "react-redux";
 import { Button } from "primereact/button";
-import { getTokenInfo } from "../helpers/token";
-import { useEffect } from "react";
+
+import { logout } from "../../services/authenticate";
+import { getTokenInfo } from "../../helpers/token";
+import styles from "./AdminSidebar.module.css";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const auth = getTokenInfo();
+  const business = useSelector((state) => state.business.business);
   const menuItems = [
-    { id: "business", label: "Configuración", icon: <IoIosCog size={16} /> },
-    { id: "categories", label: "Categorías", icon: <FaFolderOpen size={16} /> },
-    { id: "products", label: "Productos", icon: <FiPackage size={16} /> },
+    {
+      id: "business",
+      label: "Configuración",
+      icon: <IoIosCog size={20} className={styles.menuIcon} />,
+    },
+    {
+      id: "categories",
+      label: "Categorías",
+      icon: <FaFolderOpen size={20} className={styles.menuIcon} />,
+    },
+    {
+      id: "products",
+      label: "Productos",
+      icon: <FiPackage size={20} className={styles.menuIcon} />,
+    },
     {
       id: "paymentMethods",
       label: "Métodos de Pago",
-      icon: <FaDollarSign size={16} />,
+      icon: <FaDollarSign size={20} className={styles.menuIcon} />,
     },
-    { id: "customers", label: "Clientes", icon: <FaUsers size={16} /> },
-    { id: "qr", label: "Código QR", icon: <IoQrCode size={16} /> },
+    {
+      id: "customers",
+      label: "Clientes",
+      icon: <FaUsers size={20} className={styles.menuIcon} />,
+    },
+    {
+      id: "qr",
+      label: "Código QR",
+      icon: <IoQrCode size={20} className={styles.menuIcon} />,
+    },
     {
       id: "subscription",
       label: "Suscripción",
-      icon: <LuCalendarSync size={16} />,
+      icon: <LuCalendarSync size={20} className={styles.menuIcon} />,
     },
     {
       id: "changepassword",
       label: "Cambiar Contraseña",
-      icon: <LuKeyRound size={16} />,
+      icon: <LuKeyRound size={20} className={styles.menuIcon} />,
     },
   ];
-  const business = useSelector((state) => state.business.business);
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
@@ -86,7 +109,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
               textDecoration: "none",
               width: "250px",
             }}
-            className={activeTab === item.id ? "active " : ""}
+            className={activeTab === item.id ? styles.active : ""}
             disabled={!setEnabled(item.id)}
           >
             <span style={{ margin: "5px" }}>{item.icon}</span> {item.label}
@@ -98,12 +121,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
         <li key={item.id}>
           <Button
             onClick={() => handleItemClick(item.id)}
-            style={{
-              color: "white",
-              textDecoration: "none",
-              width: "250px",
-            }}
-            className={activeTab === item.id ? "active " : ""}
+            className={activeTab === item.id ? styles.active : ""}
             disabled={!setEnabled(item.id)}
           >
             <span style={{ margin: "5px" }}>{item.icon}</span>
@@ -116,8 +134,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
 
   return (
     <aside
-      className={`admin-sidebar ${isOpen ? "open" : ""}`}
-      style={{ width: "250px" }}
+      className={`${styles.adminSidebar} ${isOpen ? styles.open : ""}`}
     >
       <h2 style={{ marginRight: isOpen ? "20px" : "" }}>
         <Image
@@ -129,18 +146,15 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
       </h2>
       <nav style={{ padding: "0px" }}>
         <ul
-          className="admin-nav"
+          className={styles.adminNav}
           style={{ width: "100%", marginLeft: "0px", textAlign: "left" }}
         >
           {menuItems.map((item) => itemTemplate(item))}
 
           <li>
-            <Button
-              onClick={() => logout()}
-              style={{ color: "white", textDecoration: "none" }}
-            >
+            <Button onClick={() => logout()}>
               <span style={{ margin: "5px" }}>
-                <LuCirclePower size={16} />
+                <LuCirclePower size={20} style={{ marginTop: "4px" }} />
               </span>{" "}
               Cerrar sesión
             </Button>

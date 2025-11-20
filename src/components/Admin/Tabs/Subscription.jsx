@@ -1,14 +1,18 @@
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
-import { getTokenInfo } from "../../helpers/token";
-import { GetSubscription } from "../../store/payment-store/plan-actions";
-import { useNotification } from "../UI/NotificationProvider";
-import "../../styles/catalog.css";
-import { Card } from "primereact/card";
-import { formatDate, formatted } from "../../helpers/utils";
 import { Link } from "react-router-dom";
-import Loading from "../UI/Loading";
+import { useDispatch, useSelector } from "react-redux";
+
+import { Card } from "primereact/card";
+
+import { getTokenInfo } from "../../../helpers/token";
+import { GetSubscription } from "../../../store/payment-store/plan-actions";
+import { useNotification } from "../../UI/NotificationProvider";
+
+import { formatDate, formatted } from "../../../helpers/utils";
+
+import Loading from "../../UI/Loading";
+
+import adminStyles from "../Admin.module.css";
 
 let once = true;
 const Subscription = () => {
@@ -82,10 +86,10 @@ const Subscription = () => {
   return (
     <div>
       <Loading message={loadingMessage} visible={isLoading} />
-      <div className="admin-header">
+      <div className={adminStyles.adminHeader}>
         <h1>Gestión de Suscripción</h1>
       </div>
-      <div className="card">
+      <div className={adminStyles.adminCard}>
         <Card style={{ width: "100%", padding: "20px" }}>
           <>
             {subscription.subscription_id === undefined ||

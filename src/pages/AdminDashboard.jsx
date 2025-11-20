@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 
 import { IoMenu } from "react-icons/io5";
 
-import AdminSidebar from "../components/AdminSidebar";
-import Business from "../components/Tabs/Business";
-import Categories from "../components/Tabs/Categories";
-import Products from "../components/Tabs/Products";
-import PaymentMethods from "../components/Tabs/PaymentMethods";
-import QrTab from "../components/Tabs/QrTab";
+import AdminSidebar from "../components/Admin/AdminSidebar";
+import Business from "../components/Admin/Tabs/Business";
+import Categories from "../components/Admin/Tabs/Categories";
+import Products from "../components/Admin/Tabs/Products";
+import PaymentMethods from "../components/Admin/Tabs/PaymentMethods";
+import Customers from "../components/Admin/Tabs/Customers";
+import QrTab from "../components/Admin/Tabs/QrTab";
+import Subscription from "../components/Admin/Tabs/Subscription";
+import Password from "../components/Admin/Tabs/Password";
 
 import { isNotValidToken, removeToken, setToken } from "../helpers/token";
 import { getCurrentSession } from "../services/authenticate";
 
-import Customers from "../components/Tabs/Customers";
 
-import Subscription from "../components/Tabs/Subscription";
-import Password from "../components/Tabs/Password";
+
+
 
 import "../styles/admin.css";
 import Footer from "../components/Footer";
