@@ -1,19 +1,20 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import Landing from "./pages/Landing";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminQR from "./pages/AdminQR";
 import Register from "./pages/User/Register";
 import Login from "./pages/User/Login";
 import ForgotPassword from "./pages/User/ForgotPassword";
 import Payment from "./pages/Payment";
 import CatalogPublic from "./pages/CatalogPublic";
-import { NotificationProvider } from "./components/UI/NotificationProvider";
 import PaymentValidation from "./pages/PaymentValidation";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import NotFoundPage from "./pages/NotFoundPage";
 import ResetPassword from "./pages/User/ResetPassword";
 import PrivacyNotice from "./pages/PrivacyNotice";
 import RefundPolicy from "./pages/RefundPolicy";
+
+import { NotificationProvider } from "./components/UI/NotificationProvider";
 
 
 function App() {

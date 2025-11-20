@@ -15,12 +15,8 @@ import Password from "../components/Admin/Tabs/Password";
 import { isNotValidToken, removeToken, setToken } from "../helpers/token";
 import { getCurrentSession } from "../services/authenticate";
 
-
-
-
-
-import "../styles/admin.css";
 import Footer from "../components/Footer";
+import "../styles/admin.css";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("business");
