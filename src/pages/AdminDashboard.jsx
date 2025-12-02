@@ -42,7 +42,7 @@ const AdminDashboard = () => {
     <>
       <div className="admin-layout">
         <button
-          className="mobile-sidebar-toggle"
+          className="sidebar-toggle"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label="Toggle sidebar"
         >
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
           onClose={() => setSidebarOpen(false)}
         />
 
-        <main className="admin-main">
+        <main className={sidebarOpen ? "admin-main open" : "admin-main close"}>
           {activeTab === "business" && <Business />}
 
           {activeTab === "categories" && (

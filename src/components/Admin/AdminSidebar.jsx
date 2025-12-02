@@ -62,7 +62,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 480) {
       onClose();
     }
   };
@@ -131,6 +131,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
       );
     }
   };
+  
 
   return (
     <aside
