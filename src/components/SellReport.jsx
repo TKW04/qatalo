@@ -421,7 +421,7 @@ const SellReport = ({
           header={<span style={{ margin: "10px" }}>Total </span>}
           sortable
           field="total"
-          style={{ width: "15%", textAlign: "center" }}
+          style={{ width: "15%"}}
           body={(rowData) => {
             return (
               <span>
