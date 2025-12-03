@@ -98,6 +98,47 @@ export const CreateCustomer = (customer, showWarning, showSuccess) => {
     }
   };
 };
+export const CreateCustomerWithoutTransaction = (
+  customer,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const RegisterUserInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/noTransaction`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            business_id: customer.business_id,
+            phone: customer.phone,
+            email: customer.email,
+            given_name: customer.given_name,
+            family_name: customer.family_name,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+
+    try {
+      const response = await RegisterUserInfo();
+      if (response.status === 200) {
+        showSuccess("Transacción", "Su transacción se ha procesado con éxito");
+      } else {
+        showWarning(
+          "No se pudo crear la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+};
 export const UpdateCustomer = (
   customer,
   showError,
@@ -388,7 +429,6 @@ export const DeliveredTransaction = (
   };
 };
 
-
 export const UpdateTransaction = (
   customer_id,
   transaction,
@@ -408,6 +448,9 @@ export const UpdateTransaction = (
             delivery_day: transaction.delivery_day,
             price: transaction.price,
             quantity: transaction.quantity,
+            product_id: transaction.product_id,
+            product_name: transaction.product_name,
+            payment_method: transaction.payment_method,
           }),
           headers: {
             "Content-Type": "application/json",
@@ -435,4 +478,90 @@ export const UpdateTransaction = (
     }
   };
 };
+export const AddTransaction = (
+  customer_id,
+  transaction,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const AddTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/add`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            delivery_day: transaction.delivery_day,
+            price: transaction.price,
+            quantity: transaction.quantity,
+            product_id: transaction.product_id,
+            product_name: transaction.product_name,
+            payment_method: transaction.payment_method,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+    try {
+      const response = await AddTransactionInfo();
 
+      if (response.status === 200) {
+        showSuccess("Transacción creada", "Transacción creada con éxito");
+      } else {
+        showWarning(
+          "No se pudo crear la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};
+export const DeleteTransaction = (
+  customer_id,
+  transaction_id,
+  showError,
+  showWarning,
+  showSuccess
+) => {
+  return async () => {
+    const DeleteTransactionInfo = async () => {
+      return await fetch(
+        `${import.meta.env.VITE_APP_API_URL}customers/transactions/delete`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({
+            customer_id: customer_id,
+            transaction_id: transaction_id,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: getToken(),
+          },
+        }
+      );
+    };
+    try {
+      const response = await DeleteTransactionInfo();
+
+      if (response.status === 200) {
+        showSuccess("Transacción creada", "Transacción creada con éxito");
+      } else {
+        showWarning(
+          "No se pudo crear la transacción",
+          "Valide los datos ingresados"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los clientes");
+    }
+  };
+};

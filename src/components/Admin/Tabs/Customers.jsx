@@ -12,20 +12,25 @@ import { InputSwitch } from "primereact/inputswitch";
 import { Calendar } from "primereact/calendar";
 import { InputNumber } from "primereact/inputnumber";
 import { FilterMatchMode } from "primereact/api";
+import { Dropdown } from "primereact/dropdown";
 
 import { CiReceipt, CiSearch } from "react-icons/ci";
 import { MdCancel } from "react-icons/md";
 import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
-import { IoMdCheckmarkCircleOutline, IoMdRefresh } from "react-icons/io";
-import { TbTruckDelivery } from "react-icons/tb";
+import { GoPlus } from "react-icons/go";
+import { FiMinus } from "react-icons/fi";
 
 import { saveAs } from "file-saver";
 
 import { customerActions } from "../../../store/customer-store/customer-slice";
 
 import {
+  AddTransaction,
   ApproveTransaction,
   CancelTransactionAdmin,
+  CreateCustomerWithoutTransaction,
+  DeleteCustomer,
+  DeleteTransaction,
   DeliveredTransaction,
   GetCustomers,
   UpdateCustomer,
@@ -44,10 +49,21 @@ import {
 } from "../../../helpers/utils";
 import "../../../styles/catalog.css";
 
-import { EditButton, InfoButton, RefreshButton } from "../../Buttons";
+import {
+  AddTransactionButton,
+  DeleteButton,
+  EditButton,
+  InfoButton,
+  RefreshButton,
+  SentOrderButton,
+  ValidatePaymentButton,
+  YesNoButton,
+} from "../../Buttons";
 
 import SellReport from "../../SellReport";
 import adminStyles from "../Admin.module.css";
+import { GetProductsDropDown } from "../../../store/product-store/product-actions";
+import { GetPaymentMethodsByBusinessId } from "../../../store/paymentMethod-store/paymentMethod-actions";
 
 let once = true;
 const Customers = ({ setActiveTab }) => {
@@ -57,6 +73,11 @@ const Customers = ({ setActiveTab }) => {
   const customers = useSelector((state) => state.customer.customers);
   const customer = useSelector((state) => state.customer.customer);
   const business = useSelector((state) => state.business.business);
+  const products = useSelector((state) => state.product.products);
+  const paymentMethods = useSelector(
+    (state) => state.paymentMethod.paymentMethods
+  );
+
   const [customerErrors, setCustomerErrors] = useState({});
   const [dialogContent, setDialogContent] = useState(null);
 
@@ -84,6 +105,17 @@ const Customers = ({ setActiveTab }) => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [transaction, setTransaction] = useState(null);
   const [showSellReport, setShowSellReport] = useState(false);
+  const [showCustomerForm, setShowCustomerForm] = useState(true);
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState({
+    code: "",
+    name: "",
+    price: 0,
+  });
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({
+    code: "",
+    name: "",
+  });
 
   const [filters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -110,6 +142,68 @@ const Customers = ({ setActiveTab }) => {
     }
   }, [business.business_id, customers, dispatch, showError]);
 
+  useEffect(() => {
+    if (products.length === 0) {
+      dispatch(GetProductsDropDown(business.business_id, showError));
+    }
+  }, [business.business_id, dispatch, products, showError]);
+
+  useEffect(() => {
+    if (paymentMethods.length === 0) {
+      dispatch(GetPaymentMethodsByBusinessId(business.business_id, showError));
+    }
+  }, [business.business_id, dispatch, paymentMethods, showError]);
+
+  useEffect(() => {
+    if (
+      productInfo &&
+      productInfo.product_id &&
+      selectedProduct.code === "" &&
+      editingTransaction === true
+    ) {
+      const foundProduct = products.find(
+        (product) => product.code === productInfo.product_id
+      );
+      setSelectedProduct({
+        code: foundProduct ? foundProduct.code : "",
+        name: foundProduct ? foundProduct.name : "",
+        price: foundProduct ? foundProduct.price : 0,
+      });
+    }
+  }, [
+    editingTransaction,
+    productInfo,
+    products,
+    selectedProduct.code,
+    transaction,
+  ]);
+
+  useEffect(() => {
+    if (
+      productInfo &&
+      productInfo.product_id &&
+      selectedPaymentMethod.code === "" &&
+      editingTransaction === true
+    ) {
+      const paymentMethodId = productInfo.payment_method
+        ? productInfo.payment_method.payment_method_id
+        : "";
+
+      const foundPaymentMethod = paymentMethods.find(
+        (paymentMethod) => paymentMethod.payment_method_id === paymentMethodId
+      );
+      setSelectedPaymentMethod({
+        code: foundPaymentMethod ? foundPaymentMethod.payment_method_id : "",
+        name: foundPaymentMethod ? foundPaymentMethod.payment_method_name : "",
+      });
+    }
+  }, [
+    editingTransaction,
+    paymentMethods,
+    productInfo,
+    selectedPaymentMethod.code,
+  ]);
+
   const validateCustomer = (data) => {
     const errors = {};
 
@@ -134,26 +228,66 @@ const Customers = ({ setActiveTab }) => {
       setIsLoading(false);
       return;
     }
-    if (customer.customer_id) {
+
+    if (
+      customer != undefined &&
+      customer.customer_id != undefined &&
+      customer.customer_id !== null &&
+      customer.customer_id !== ""
+    ) {
       setLoadingMessage("Actualizando cliente...");
-      dispatch(UpdateCustomer(customer, showError, showWarning, showSuccess));
       setIsLoading(true);
-      setTimeout(() => {
-        setActiveTab("customers");
-        dispatch(GetCustomers(showError));
-        dispatch(customerActions.startCustomer());
-        setEditingCustomer(false);
-        setIsLoading(false);
-      }, 4500);
+      const updatedCustomer = {
+        ...customer,
+        given_name: customer.given_name.trim(),
+        family_name: customer.family_name.trim(),
+        email: customer.email.trim(),
+      };
+      dispatch(
+        UpdateCustomer(updatedCustomer, showError, showWarning, showSuccess)
+      );
+    } else {
+      const newCustomer = {
+        given_name: customer.given_name.trim(),
+        family_name: customer.family_name.trim(),
+        email: customer.email.trim(),
+        phone: customer.phone,
+        business_id: business.business_id,
+      };
+      setLoadingMessage("Creando cliente...");
+      setIsLoading(true);
+
+      dispatch(
+        CreateCustomerWithoutTransaction(newCustomer, showWarning, showSuccess)
+      );
     }
+
+    setTimeout(() => {
+      setActiveTab("customers");
+      dispatch(GetCustomers(showError));
+      dispatch(customerActions.startCustomer());
+      setEditingCustomer(false);
+      setIsLoading(false);
+    }, 4500);
   };
   const handleUpdateTransaction = (e) => {
     e.preventDefault();
+
     const transaction = {
-      transaction_id: transactionInfo.transaction_id,
-      delivery_day: transactionInfo.delivery_day,
-      price: transactionInfo.price,
-      quantity: transactionInfo.quantity,
+      transaction_id: productInfo.transaction_id,
+      product_id: selectedProduct.code,
+      product_name: selectedProduct.name,
+      customer_id: customer.customer_id,
+      delivery_day: transactionInfo.delivery_day
+        ? transactionInfo.delivery_day
+        : productInfo.delivery_day,
+      price: transactionInfo.price ? transactionInfo.price : productInfo.price,
+      quantity: transactionInfo.quantity
+        ? transactionInfo.quantity
+        : productInfo.quantity,
+      payment_method: paymentMethods.find(
+        (pm) => pm.payment_method_id === selectedPaymentMethod.code
+      ),
     };
 
     dispatch(
@@ -172,6 +306,44 @@ const Customers = ({ setActiveTab }) => {
       dispatch(customerActions.startCustomer());
       setEditingCustomer(false);
       setEditingTransaction(false);
+      setShowTransactionForm(false);
+      setShowCustomerForm(true);
+      setIsLoading(false);
+    }, 4500);
+  };
+  const handleAddTransaction = (e) => {
+    e.preventDefault();
+
+    const transaction = {
+      product_id: selectedProduct.code,
+      product_name: selectedProduct.name,
+      customer_id: customer.customer_id,
+      delivery_day: transactionInfo.delivery_day,
+      price: transactionInfo.price,
+      quantity: transactionInfo.quantity,
+      payment_method: paymentMethods.find(
+        (pm) => pm.payment_method_id === selectedPaymentMethod.code
+      ),
+    };
+
+    dispatch(
+      AddTransaction(
+        customer.customer_id,
+        transaction,
+        showError,
+        showWarning,
+        showSuccess
+      )
+    );
+    setIsLoading(true);
+    setTimeout(() => {
+      setActiveTab("customers");
+      dispatch(GetCustomers(showError));
+      dispatch(customerActions.startCustomer());
+      setEditingCustomer(false);
+      setEditingTransaction(false);
+      setShowTransactionForm(false);
+      setShowCustomerForm(true);
       setIsLoading(false);
     }, 4500);
   };
@@ -214,6 +386,101 @@ const Customers = ({ setActiveTab }) => {
   const getCurrencySymbol = (currencyCode) => {
     const currency = currencies.find((c) => c.code === currencyCode);
     return currency ? currency.symbol : "";
+  };
+
+  const rowExpansionButtons = (data, rowData) => {
+    return (
+      <>
+        {rowData.status !== "Aprobada" && rowData.status !== "Entregada" && (
+          <EditButton
+            onClick={() => {
+              setEditingTransaction(true);
+              setShowTransactionForm(true);
+              setSelectedProduct({ code: "", name: "" });
+              setSelectedPaymentMethod({ code: "", name: "" });
+              setShowCustomerForm(false);
+              dispatch(customerActions.setCustomer({ customer: data }));
+              setProductInfo(rowData);
+            }}
+          />
+        )}
+
+        {rowData.status !== "Aprobada" &&
+          rowData.status !== "Pendiente de pago" && (
+            <InfoButton
+              onClick={() => {
+                setProductInfo(rowData);
+                setShowProductDialog(true);
+              }}
+            />
+          )}
+        {rowData.status === "Pendiente de pago" && (
+          <ValidatePaymentButton
+            onClick={() => {
+              setProductInfo(rowData);
+              setShowProductDialog(true);
+            }}
+          />
+        )}
+        {rowData.status === "Aprobada" && (
+          <SentOrderButton
+            onClick={() => {
+              setProductInfo(rowData);
+              setShowProductDialog(true);
+            }}
+          />
+        )}
+        {rowData.status === "Pendiente de pago" && (
+          <DeleteButton
+            onClick={() => {
+              const title = "Confirmar eliminación";
+              const children = (
+                <div className="admin-card">
+                  <p style={{ color: "#ffffff" }}>
+                    ¿Estás seguro de que deseas eliminar esta transacción?
+                  </p>
+                  <div className="flex justify-content-end mt-3">
+                    <YesNoButton
+                      label="No"
+                      onClick={() => setShowDialog(false)}
+                    />
+                    <YesNoButton
+                      label="Sí"
+                      onClick={() => {
+                        setLoadingMessage("Eliminando transacción...");
+                        setIsLoading(true);
+                        setShowDialog(false);
+                        dispatch(
+                          DeleteTransaction(
+                            data.customer_id,
+                            rowData.transaction_id,
+                            showError,
+                            showWarning,
+                            showSuccess
+                          )
+                        );
+                        setTimeout(() => {
+                          setActiveTab("customers");
+                          dispatch(GetCustomers(showError));
+                          dispatch(customerActions.startCustomer());
+                          setEditingCustomer(false);
+                          setEditingTransaction(false);
+                          setShowTransactionForm(false);
+                          setShowCustomerForm(true);
+                          setIsLoading(false);
+                        }, 4500);
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+              setDialogContent({ title, children });
+              setShowDialog(true);
+            }}
+          />
+        )}
+      </>
+    );
   };
 
   const rowExpansionTemplate = (data) => {
@@ -404,7 +671,8 @@ const Customers = ({ setActiveTab }) => {
             )}
             <div className="">
               {productInfo.status !== "Cancelada" &&
-                productInfo.status !== "Aprobada" && (
+                productInfo.status !== "Aprobada" &&
+                productInfo.status !== "Entregada" && (
                   <>
                     <div className="grid flex justify-content-center">
                       <div className={`${isMobile ? "col-12" : "col-6"}`}>
@@ -427,15 +695,7 @@ const Customers = ({ setActiveTab }) => {
                         />
                       </div>
                       <div className={`${isMobile ? "col-12" : "col-6"}`}>
-                        <Button
-                          icon={<IoMdCheckmarkCircleOutline />}
-                          raised
-                          label="Validar pago"
-                          style={{
-                            padding: "10px",
-                            backgroundColor: "green",
-                            borderColor: "white",
-                          }}
+                        <ValidatePaymentButton
                           onClick={() => {
                             dispatch(
                               ApproveTransaction(
@@ -487,17 +747,7 @@ const Customers = ({ setActiveTab }) => {
                 )}
               {productInfo.status === "Aprobada" && (
                 <div className={`${isMobile ? "col-12" : "col-6"}`}>
-                  <Button
-                    icon={<TbTruckDelivery size={36} />}
-                    raised
-                    label="Orden Entregada"
-                    style={{
-                      padding: "10px",
-                      backgroundColor: "var(--chart-2)",
-                      borderColor: "white",
-                      color: "white",
-                      width: "100%",
-                    }}
+                  <SentOrderButton
                     onClick={() => {
                       dispatch(
                         DeliveredTransaction(
@@ -646,7 +896,11 @@ const Customers = ({ setActiveTab }) => {
                 body={(rowData) => {
                   return (
                     <span style={getStatusStyle(rowData.status)}>
-                      {rowData.status}
+                      {rowData.status === "Entregada"
+                        ? "Orden Entregada"
+                        : rowData.status === "Aprobada"
+                        ? "Pago Completado"
+                        : rowData.status}
                     </span>
                   );
                 }}
@@ -665,21 +919,7 @@ const Customers = ({ setActiveTab }) => {
                 body={(rowData) => {
                   return (
                     <div className="flex justify-content-center">
-                      <EditButton
-                        onClick={() => {
-                          setEditingTransaction(true);
-                          dispatch(
-                            customerActions.setCustomer({ customer: data })
-                          );
-                          setProductInfo(rowData);
-                        }}
-                      />
-                      <InfoButton
-                        onClick={() => {
-                          setProductInfo(rowData);
-                          setShowProductDialog(true);
-                        }}
-                      />
+                      {rowExpansionButtons(data, rowData)}
                     </div>
                   );
                 }}
@@ -728,12 +968,7 @@ const Customers = ({ setActiveTab }) => {
                         </div>
                         <div className="table-actions">
                           <div className="table-actions p-2">
-                            <EditButton
-                              onClick={() => handleEditCustomer(rowData)}
-                            />
-                            <InfoButton
-                              onClick={() => handleViewCustomer(rowData)}
-                            />
+                            {rowExpansionButtons(data, rowData)}
                           </div>
                         </div>
                       </Card>
@@ -741,52 +976,6 @@ const Customers = ({ setActiveTab }) => {
                   );
                 }}
               ></Column>
-              {/* <Column
-                style={{
-                  minWidth: "8rem",
-                  padding: "1rem",
-                }}
-                header="Estado"
-                body={(rowData) => {
-                  return (
-                    <span style={getStatusStyle(rowData.status)}>
-                      {rowData.status}
-                    </span>
-                  );
-                }}
-              ></Column>
-              <Column
-                style={{
-                  minWidth: "3rem",
-                  padding: "1rem",
-                }}
-                header="Acciones"
-                body={(rowData) => {
-                  return (
-                    <>
-                      <div className="flex justify-content-center">
-                        <EditButton
-                          onClick={() => {
-                            setEditingTransaction(true);
-                            dispatch(
-                              customerActions.setCustomer({ customer: data })
-                            );
-                            setProductInfo(rowData);
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-content-center mt-2">
-                        <InfoButton
-                          onClick={() => {
-                            setProductInfo(rowData);
-                            setShowProductDialog(true);
-                          }}
-                        />
-                      </div>
-                    </>
-                  );
-                }}
-              ></Column> */}
             </DataTable>
           </div>
         )}
@@ -893,7 +1082,7 @@ const Customers = ({ setActiveTab }) => {
   };
 
   const columnsNonMobile = [
-    { field: "full_name", header: "Cliente" },
+    { field: "full_name", header: "Cliente", filter: true },
     { field: "email", header: "Email" },
     {
       field: "phone",
@@ -913,7 +1102,7 @@ const Customers = ({ setActiveTab }) => {
       },
     },
     {
-      header: "Total de Transacciones",
+      header: "",
       body: (rowData) => {
         return (
           <div
@@ -925,6 +1114,86 @@ const Customers = ({ setActiveTab }) => {
           >
             <EditButton onClick={() => handleEditCustomer(rowData)} />
             <InfoButton onClick={() => handleViewCustomer(rowData)} />
+            <DeleteButton
+              onClick={() => {
+                setShowDialog(true);
+                const title = "Confirmar eliminación";
+                const children = (
+                  <div className={adminStyles.adminModalContent}>
+                    <h2>¿Estás seguro de que deseas eliminar al cliente </h2>
+                    <strong style={{ color: "var(--color-yellow)" }}>
+                      {rowData.given_name} {rowData.family_name}
+                    </strong>
+                    ?
+                    <p
+                      style={{
+                        textAlign: "justify",
+                        border: "1px dashed var(--color-yellow)",
+                        padding: "10px",
+                      }}
+                    >
+                      Esta acción no se puede deshacer y se eliminarán todas las
+                      transacciones asociadas a este cliente.
+                    </p>
+                    <div className="flex justify-content-end mt-3">
+                      <YesNoButton
+                        label="No"
+                        onClick={() => setShowDialog(false)}
+                      />
+                      <YesNoButton
+                        label="Sí"
+                        onClick={() => {
+                          setIsLoading(true);
+                          setLoadingMessage("Eliminando cliente...");
+                          setShowDialog(false);
+                          dispatch(
+                            DeleteCustomer(
+                              rowData.customer_id,
+                              showError,
+                              showWarning,
+                              showSuccess
+                            )
+                          );
+                          setTimeout(() => {
+                            setActiveTab("customers");
+                            dispatch(GetCustomers(showError));
+                            dispatch(customerActions.startCustomer());
+
+                            setIsLoading(false);
+
+                            setEditingCustomer(false);
+                            setEditingTransaction(false);
+                          }, 4500);
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+                setDialogContent({ title, children });
+              }}
+            />
+            <AddTransactionButton
+              onClick={() => {
+                dispatch(customerActions.setCustomer({ customer: rowData }));
+                setShowTransactionForm(true);
+                setShowCustomerForm(false);
+                setSelectedProduct({ code: "", name: "" });
+                setSelectedPaymentMethod({ code: "", name: "" });
+                setProductInfo({
+                  product_id: "",
+                  product_name: "",
+                  quantity: "",
+                  price: "",
+                  payment_method: { currency: "" },
+                });
+                setTransactionInfo({
+                  transaction_id: "",
+                  payment_method: {
+                    currency: "",
+                  },
+                });
+              }}
+            />
           </div>
         );
       },
@@ -933,6 +1202,8 @@ const Customers = ({ setActiveTab }) => {
   const columnsMobile = [
     {
       header: "Cliente",
+      filter: true,
+      field: "full_name",
       body: (rowData) => {
         return (
           <>
@@ -949,9 +1220,100 @@ const Customers = ({ setActiveTab }) => {
                 <span style={{ display: "block" }}>{rowData.email}</span>
               </div>
               <div className="table-actions">
-                <div className="table-actions p-2">
-                  <EditButton onClick={() => handleEditCustomer(rowData)} />
-                  <InfoButton onClick={() => handleViewCustomer(rowData)} />
+                <div className="grid ">
+                  <div className="col-4 m-2">
+                    <EditButton onClick={() => handleEditCustomer(rowData)} />
+                  </div>
+                  <div className="col-4 m-2">
+                    <InfoButton onClick={() => handleViewCustomer(rowData)} />
+                  </div>
+                  <div className="col-4 m-2">
+                    <DeleteButton
+                      onClick={() => {
+                        setShowDialog(true);
+                        const title = "Confirmar eliminación";
+                        const children = (
+                          <div className={adminStyles.adminModalContent}>
+                            <h2>
+                              ¿Estás seguro de que deseas eliminar al cliente{" "}
+                            </h2>
+                            <strong style={{ color: "var(--color-yellow)" }}>
+                              {rowData.given_name} {rowData.family_name}
+                            </strong>
+                            ?
+                            <p
+                              style={{
+                                textAlign: "justify",
+                                border: "1px dashed var(--color-yellow)",
+                                padding: "10px",
+                              }}
+                            >
+                              Esta acción no se puede deshacer y se eliminarán
+                              todas las transacciones asociadas a este cliente.
+                            </p>
+                            <div className="flex justify-content-end mt-3">
+                              <YesNoButton
+                                label="No"
+                                onClick={() => setShowDialog(false)}
+                              />
+                              <YesNoButton
+                                label="Sí"
+                                onClick={() => {
+                                  setIsLoading(true);
+                                  setLoadingMessage("Eliminando cliente...");
+                                  dispatch(
+                                    DeleteCustomer(
+                                      rowData.customer_id,
+                                      showError,
+                                      showWarning,
+                                      showSuccess
+                                    )
+                                  );
+                                  setTimeout(() => {
+                                    setActiveTab("customers");
+                                    dispatch(GetCustomers(showError));
+                                    dispatch(customerActions.startCustomer());
+
+                                    setIsLoading(false);
+                                    setShowDialog(false);
+                                    setEditingCustomer(false);
+                                    setEditingTransaction(false);
+                                  }, 4500);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                        setDialogContent({ title, children });
+                      }}
+                    />
+                  </div>
+                  <div className="col-4 m-2">
+                    <AddTransactionButton
+                      onClick={() => {
+                        dispatch(
+                          customerActions.setCustomer({ customer: rowData })
+                        );
+                        setShowTransactionForm(true);
+                        setShowCustomerForm(false);
+                        setSelectedProduct({ code: "", name: "" });
+                        setSelectedPaymentMethod({ code: "", name: "" });
+                        setProductInfo({
+                          product_id: "",
+                          product_name: "",
+                          quantity: "",
+                          price: "",
+                          payment_method: { currency: "" },
+                        });
+                        setTransactionInfo({
+                          transaction_id: "",
+                          payment_method: {
+                            currency: "",
+                          },
+                        });
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </Card>
@@ -968,120 +1330,131 @@ const Customers = ({ setActiveTab }) => {
         <div className={adminStyles.adminHeader}>
           <h1>Gestión de Clientes</h1>
         </div>
-        {editingCustomer && (
-          <div className={adminStyles.adminCard}>
-            <h2>{"Editar Cliente"}</h2>
-            <form onSubmit={handleCustomerSubmit}>
-              <div className="form-group">
-                <label className="form-label">Nombre *</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.given_name || ""}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "given_name",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="Juan"
-                  required
-                />
-                {customerErrors.given_name && (
-                  <div className="error-message">
-                    {customerErrors.given_name}
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label className="form-label">Apellido *</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.family_name || ""}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "family_name",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="perez"
-                  required
-                />
-                {customerErrors.family_name && (
-                  <div className="error-message">
-                    {customerErrors.family_name}
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email *</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.email || ""}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "email",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="juan.perez@ejemplo.com"
-                  required
-                />
-                {customerErrors.email && (
-                  <div className="error-message">{customerErrors.email}</div>
-                )}
-              </div>
-              <div className="form-group">
-                <label className="form-label">Teléfono </label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.phone || ""}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "phone",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="18095551212"
-                />
-              </div>
-
-              <div className="form-actions">
-                <Button type="submit" className="btn btn-primary">
-                  Actualizar Cliente
-                </Button>
-                {editingCustomer && (
-                  <Button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={() => {
-                      dispatch(customerActions.startCustomer(false));
-                      setEditingCustomer(false);
+        {showCustomerForm && (
+          <div>
+            <div className={adminStyles.adminCard}>
+              <h2>{"Editar Cliente"}</h2>
+              <form onSubmit={handleCustomerSubmit}>
+                <div className="form-group">
+                  <label className="form-label">Nombre *</label>
+                  <InputText
+                    type="text"
+                    className="input"
+                    value={customer.given_name || ""}
+                    onChange={(e) => {
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "given_name",
+                          value: e.target.value.trim(),
+                        })
+                      );
                     }}
-                  >
-                    Cancelar
+                    placeholder="Juan"
+                    required
+                  />
+                  {customerErrors.given_name && (
+                    <div className="error-message">
+                      {customerErrors.given_name}
+                    </div>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Apellido *</label>
+                  <InputText
+                    type="text"
+                    className="input"
+                    value={customer.family_name || ""}
+                    onChange={(e) => {
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "family_name",
+                          value: e.target.value.trim(),
+                        })
+                      );
+                    }}
+                    placeholder="perez"
+                    required
+                  />
+                  {customerErrors.family_name && (
+                    <div className="error-message">
+                      {customerErrors.family_name}
+                    </div>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email *</label>
+                  <InputText
+                    type="text"
+                    className="input"
+                    value={customer.email || ""}
+                    onChange={(e) => {
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "email",
+                          value: e.target.value.trim(),
+                        })
+                      );
+                    }}
+                    placeholder="juan.perez@ejemplo.com"
+                    required
+                  />
+                  {customerErrors.email && (
+                    <div className="error-message">{customerErrors.email}</div>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Teléfono </label>
+                  <InputText
+                    type="text"
+                    className="input"
+                    value={customer.phone || ""}
+                    onChange={(e) => {
+                      dispatch(
+                        customerActions.modifyPropertyValue({
+                          id: "phone",
+                          value: e.target.value.trim(),
+                        })
+                      );
+                    }}
+                    placeholder="18095551212"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <Button type="submit" className="btn btn-primary">
+                    {editingCustomer ? "Actualizar" : "Crear"} Cliente
                   </Button>
-                )}
-              </div>
-            </form>
+                  {editingCustomer && (
+                    <Button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => {
+                        dispatch(customerActions.startCustomer(false));
+                        setEditingCustomer(false);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         )}
-        {editingTransaction && (
+        {showTransactionForm && (
           <div className={adminStyles.adminCard}>
-            <h2>{"Editar Transaccion"}</h2>
-            <form onSubmit={handleUpdateTransaction}>
-              <div className="form-group">
+            <h2>
+              {editingTransaction ? "Editar Transaccion" : "Nueva Transaccion"}
+            </h2>
+            <form
+              onSubmit={
+                editingTransaction
+                  ? handleUpdateTransaction
+                  : handleAddTransaction
+              }
+              className="grid"
+            >
+              <div className="col-12">
                 <label className="form-label">
                   ID de Transacción:{" "}
                   <span style={{ color: "white" }}>
@@ -1089,22 +1462,86 @@ const Customers = ({ setActiveTab }) => {
                   </span>
                 </label>
               </div>
-              <div className="form-group">
+              <div className={isMobile ? "col-12" : "col-6"}>
                 <label className="form-label">
                   Producto:{" "}
-                  <span style={{ color: "white" }}>
-                    {productInfo.product_name}
-                  </span>
+                  <Dropdown
+                    value={selectedProduct}
+                    style={{ color: "black" }}
+                    className="input"
+                    onChange={(e) => {
+                      setSelectedProduct(e.value);
+                      let transaction = { ...transactionInfo };
+                      transaction.transaction_id = productInfo.transaction_id;
+                      setTransactionInfo(transaction);
+
+                      if (e.value.price !== transactionInfo.price) {
+                        const children = (
+                          <div style={{ color: "#ffffff" }}>
+                            El precio del producto ha cambiado a{" "}
+                            <span style={{ color: "var(--color-yellow)" }}>
+                              {getCurrencySymbol(
+                                productInfo.payment_method.currency
+                              )}{" "}
+                              {formatted(e.value.price)}
+                            </span>
+                            . ¿Deseas actualizar el precio de la transacción?
+                            <div className="flex justify-content-end mt-3">
+                              <YesNoButton
+                                label="No"
+                                onClick={() => setShowDialog(false)}
+                              />
+                              <YesNoButton
+                                label="Sí"
+                                onClick={() => {
+                                  transaction.price = e.value.price;
+                                  setTransactionInfo(transaction);
+                                  setShowDialog(false);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                        const title = "Actualizar precio del producto";
+                        setDialogContent({ title, children });
+                        setShowDialog(true);
+                      }
+                    }}
+                    options={products}
+                    optionLabel="name"
+                    placeholder="Selecciona un producto"
+                  />
                 </label>
               </div>
-              <div className="form-group">
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Método de pago:{" "}
+                  <Dropdown
+                    value={selectedPaymentMethod}
+                    className="input"
+                    style={{ width: "100%" }}
+                    onChange={(e) => {
+                      setSelectedPaymentMethod(e.value);
+                    }}
+                    options={paymentMethods.map((method) => ({
+                      name: method.payment_method_name,
+                      code: method.payment_method_id,
+                    }))}
+                    optionLabel="name"
+                    placeholder="Método de pago"
+                  />
+                </label>
+              </div>
+
+              <div className={isMobile ? "col-12" : "col-6"}>
                 <label className="form-label">Fecha de entrega:</label>
                 <Calendar
                   style={{ width: "100%", height: "60px" }}
                   inputStyle={{
-                    height: "40px",
+                    height: "50px",
                     fontSize: "18px",
                     textAlign: "center",
+                    // marginTop: "-10px",
                   }}
                   value={setDefaultDate(
                     transactionInfo.delivery_day !== ""
@@ -1123,48 +1560,52 @@ const Customers = ({ setActiveTab }) => {
                   }}
                 />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">
-                    Precio *{" "}
-                    {getCurrencySymbol(productInfo.payment_method.currency)}{" "}
-                  </label>
-                  <InputNumber
-                    value={productInfo.price}
-                    onChange={(e) => {
-                      const transaction = { ...transactionInfo };
-                      transaction.transaction_id = productInfo.transaction_id;
-                      transaction.price = e.value;
-                      setTransactionInfo(transaction);
-                    }}
-                    min={1}
-                    minFractionDigits={2}
-                    maxFractionDigits={2}
-                    placeholder="1850.00"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Cantidad</label>
-                  <InputNumber
-                    value={productInfo.quantity}
-                    onChange={(e) => {
-                      const transaction = { ...transactionInfo };
-                      transaction.transaction_id = productInfo.transaction_id;
-                      transaction.quantity = e.value;
-                      setTransactionInfo(transaction);
-                    }}
-                    min={1}
-                    minFractionDigits={0}
-                    maxFractionDigits={0}
-                    placeholder="1850.00"
-                  />
-                </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">
+                  Precio *{" "}
+                  {getCurrencySymbol(productInfo.payment_method.currency)}{" "}
+                </label>
+                <InputNumber
+                  value={
+                    transactionInfo.price
+                      ? transactionInfo.price
+                      : productInfo.price
+                  }
+                  onChange={(e) => {
+                    const transaction = { ...transactionInfo };
+                    transaction.transaction_id = productInfo.transaction_id;
+                    transaction.price = e.value;
+                    setTransactionInfo(transaction);
+                  }}
+                  min={1}
+                  minFractionDigits={2}
+                  maxFractionDigits={2}
+                  placeholder="1850.00"
+                />
               </div>
-
-              <div className="form-actions">
+              <div className={isMobile ? "col-12" : "col-6"}>
+                <label className="form-label">Cantidad</label>
+                <InputNumber
+                  value={productInfo.quantity}
+                  onChange={(e) => {
+                    const transaction = { ...transactionInfo };
+                    transaction.transaction_id = productInfo.transaction_id;
+                    transaction.quantity = e.value;
+                    setTransactionInfo(transaction);
+                  }}
+                  min={1}
+                  minFractionDigits={0}
+                  maxFractionDigits={0}
+                  placeholder="1850.00"
+                />
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}></div>
+              <div className={isMobile ? "col-12" : "col-6"}>
                 <Button type="submit" className="btn btn-primary">
-                  Actualizar Transacción
+                  {editingTransaction ? "Actualizar" : "Crear"} Transacción
                 </Button>
+              </div>
+              <div className={isMobile ? "col-12" : "col-6"}>
                 <Button
                   type="button"
                   className="btn btn-outline"
@@ -1172,6 +1613,21 @@ const Customers = ({ setActiveTab }) => {
                     dispatch(customerActions.startCustomer(false));
                     setEditingCustomer(false);
                     setEditingTransaction(false);
+                    setShowCustomerForm(true);
+                    setShowTransactionForm(false);
+                    setProductInfo({
+                      product_id: "",
+                      product_name: "",
+                      quantity: "",
+                      price: "",
+                      payment_method: { currency: "" },
+                    });
+                    setTransactionInfo({
+                      transaction_id: "",
+                      payment_method: {
+                        currency: "",
+                      },
+                    });
                   }}
                 >
                   Cancelar
@@ -1206,6 +1662,7 @@ const Customers = ({ setActiveTab }) => {
                 }}
                 onClick={() => {
                   setShowSellReport(true);
+                  setShowCustomerForm(false);
                 }}
               />
             )}
@@ -1214,7 +1671,7 @@ const Customers = ({ setActiveTab }) => {
                 <Button
                   outlined
                   type="button"
-                  label="Ver Clientes"
+                  label="Clientes"
                   style={{
                     margin: "5px",
                     padding: "10px",
@@ -1222,6 +1679,7 @@ const Customers = ({ setActiveTab }) => {
                   }}
                   onClick={() => {
                     setShowSellReport(false);
+                    setShowCustomerForm(true);
                   }}
                 />
                 <Button
@@ -1245,10 +1703,9 @@ const Customers = ({ setActiveTab }) => {
             <>
               <DialogModal
                 title={dialogContent?.title}
-                width={"20vw"}
+                width={"40vw"}
                 visible={showDialog}
                 onHide={() => setShowDialog(false)}
-                footer={dialogContent?.footer || null}
               >
                 <p>{dialogContent?.children}</p>
               </DialogModal>
@@ -1266,6 +1723,9 @@ const Customers = ({ setActiveTab }) => {
                   paginator
                   rows={25}
                   rowsPerPageOptions={[25, 50, 75, 100]}
+                  expandedRowIcon={<FiMinus />}
+                  collapsedRowIcon={<GoPlus />}
+                  style={{ minWidth: "6rem" }}
                 >
                   {!isMobile &&
                     columnsNonMobile.map((col) => (
@@ -1273,6 +1733,7 @@ const Customers = ({ setActiveTab }) => {
                         key={col.field}
                         field={col.field}
                         header={col.header}
+                        filter={col.filter || false}
                         style={{
                           minWidth: "10rem",
                           padding: "1rem",
@@ -1287,6 +1748,7 @@ const Customers = ({ setActiveTab }) => {
                         key={col.field}
                         field={col.field}
                         header={col.header}
+                        filter={col.filter || false}
                         style={{
                           minWidth: "10rem",
                           padding: "1rem",

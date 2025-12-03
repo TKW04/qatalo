@@ -25,7 +25,10 @@ export const CreateProduct = (
       productForm.append("terms", product.terms);
       productForm.append("min_age_allow", product.min_age_allow);
       productForm.append("min_age", product.min_age);
-      productForm.append("required_delivery_day", product.required_delivery_day);
+      productForm.append(
+        "required_delivery_day",
+        product.required_delivery_day
+      );
       productForm.append("delivery_start_day", product.delivery_start_day);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
@@ -141,7 +144,10 @@ export const UpdateProduct = (
       productForm.append("min_age_allow", product.min_age_allow);
       productForm.append("min_age", product.min_age);
       productForm.append("imagesUrl", product.imagesUrl);
-      productForm.append("required_delivery_day", product.required_delivery_day);
+      productForm.append(
+        "required_delivery_day",
+        product.required_delivery_day
+      );
       productForm.append("delivery_start_day", product.delivery_start_day);
       if (product.image1) productForm.append("image1", product.image1);
       if (product.image2) productForm.append("image2", product.image2);
@@ -240,6 +246,35 @@ export const DeleteImage = (
           "No se pudo eliminar la imagen",
           "Valide los datos ingresados"
         );
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Error!", "No se pudieron obtener los productos");
+    }
+  };
+};
+
+export const GetProductsDropDown = (business_id, showError) => {
+  return async (dispatch) => {
+    const FetchProductInfo = async () => {
+      return await fetch(`${import.meta.env.VITE_APP_API_URL}products/dropdown/${business_id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getToken(),
+        },
+      });
+    };
+
+    try {
+      const response = await FetchProductInfo();
+      if (response.status === 200) {
+        let data = await response.json();
+        
+        if (data === null) {
+          data = [];
+        }
+        dispatch(productActions.setProducts({ products: data }));
       }
     } catch (error) {
       console.log(error);

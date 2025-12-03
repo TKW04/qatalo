@@ -5,7 +5,12 @@ import { IoMdRefresh } from "react-icons/io";
 import { Button } from "primereact/button";
 import { GiCancel } from "react-icons/gi";
 import { IoMdCheckmark } from "react-icons/io";
+import { IoMdCheckmarkCircleOutline } from "react-icons/io";
+import { TbTruckDelivery } from "react-icons/tb";
+import { GoPlus } from "react-icons/go";
+
 import buttonStyles from "./Buttons.module.css";
+
 
 export const EditButton = ({ onClick }) => {
   return (
@@ -74,6 +79,42 @@ export const YesNoButton = ({ label, onClick }) => {
           ? `${buttonStyles.yesNoButton} ${buttonStyles.yes}`
           : `${buttonStyles.yesNoButton} ${buttonStyles.no}`
       }
+    />
+  );
+};
+
+export const ValidatePaymentButton = ({ onClick }) => {
+  return (
+    <Button
+    className={buttonStyles.validatePaymentButton}
+      icon={<IoMdCheckmarkCircleOutline />}
+      raised
+      label="Validar pago"
+     
+      onClick={onClick}
+    />
+  );
+};
+
+export const SentOrderButton = ({ onClick }) => {
+  return (
+    <Button
+      className={buttonStyles.sentOrderButton}
+      icon={<TbTruckDelivery />}
+      raised
+      label="Entregada"
+      onClick={onClick}
+    />
+  );
+}
+export const AddTransactionButton = ({ onClick }) => {
+  return (
+    <Button
+      className={buttonStyles.addTransactionButton}
+      icon={<GoPlus />}
+      raised
+      label="Transacción"
+      onClick={onClick}
     />
   );
 };

@@ -80,11 +80,78 @@
     margin: 5px;
     padding: 2px;
 }
+
 .yesNoButton.yes {
     background-color: var(--chart-3);
     /* border-color: var(--chart-3); */
 }
+
 .yesNoButton.no {
     background-color: #e74c3c;
     /* border-color: #e74c3c; */
+}
+
+/* validate payment button */
+.validatePaymentButton {
+    background-color: green;
+    border-color: white;
+    color: white;
+    padding: 5px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    margin: 2px;
+    height: 40px;
+    width: 140px;
+}
+
+.validatePaymentButton:hover {
+    background-color: white;
+    border-color: green;
+    color: green;
+}
+
+/* Sent Order Button */
+.sentOrderButton {
+    background-color: var(--chart-2);
+    border-color: white;
+    color: white;
+    padding: 5px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    margin: 2px;
+    height: 40px;
+    width: 140px;
+}
+
+.sentOrderButton:hover {
+    background-color: white;
+    border-color: var(--chart-2);
+    color: var(--chart-2);
+}
+
+/* Add Transaction Button  */
+.addTransactionButton {
+    border-color: white;
+    color: white;
+    padding: 5px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    margin: 2px;
+    height: 40px;
+    width: 140px;
+}
+
+.addTransactionButton:hover {
+    background-color: white;
+    border-color: var(--color-green);
+    color: var(--color-green);
 }
