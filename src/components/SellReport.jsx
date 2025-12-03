@@ -1,7 +1,7 @@
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatDate, formatTextDateShort } from "../helpers/utils";
 import { ColumnGroup } from "primereact/columngroup";
 import { Row } from "primereact/row";
@@ -14,6 +14,12 @@ const SellReport = ({
   getStatusStyle,
 }) => {
   const [customersData, setCustomersData] = useState([]);
+  const [showTotalsByProductFlag, setShowTotalsByProductFlag] = useState(false);
+  const [years, setYears] = useState([]);
+  const [months, setMonths] = useState([]);
+  const [selectedYear, setSelectedYear] = useState([]);
+  const [showMonthsFilter, setShowMonthsFilter] = useState(false);
+
   const [filters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     full_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -21,42 +27,62 @@ const SellReport = ({
     status: { value: null, matchMode: FilterMatchMode.CONTAINS },
     delivery_day: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
-  const [showTotalsByProductFlag, setShowTotalsByProductFlag] = useState(false);
-  const isMobile = window.innerWidth <= 480;
 
-  useEffect(() => {
-    const createObjects = () => {
-      const data = [];
-      customers.forEach((customer) => {
-        customer.transactions.forEach((transaction) => {
-          data.push({
-            full_name: customer.full_name,
-            product_name: transaction.product_name,
-            quantity: transaction.quantity,
-            price: transaction.price,
-            total: transaction.price * transaction.quantity,
-            currency: transaction.payment_method.currency,
-            delivery_day: transaction.delivery_day
-              ? formatTextDateShort(transaction.delivery_day)
-              : "",
-            created_at: transaction.create_date ? transaction.create_date : "",
-            status:
-              transaction.status === "Aprobada"
-                ? "Pago Completado"
-                : transaction.status === "Pendiente de pago"
-                ? "Pendiente de pago"
-                : transaction.status === "Pendiente de validación"
-                ? "Pendiente de validación"
-                : transaction.status === "Entregada"
-                ? "Orden Entregada"
-                : "Cancelada",
-          });
+  const isMobile = window.innerWidth <= 480;
+  const getCustomerData = useCallback(() => {
+    const data = [];
+    customers.forEach((customer) => {
+      customer.transactions.forEach((transaction) => {
+        data.push({
+          full_name: customer.full_name,
+          product_name: transaction.product_name,
+          quantity: transaction.quantity,
+          price: transaction.price,
+          total: transaction.price * transaction.quantity,
+          currency: transaction.payment_method.currency,
+          delivery_day: transaction.delivery_day
+            ? formatTextDateShort(transaction.delivery_day)
+            : "",
+          created_at: transaction.create_date ? transaction.create_date : "",
+          status:
+            transaction.status === "Aprobada"
+              ? "Pago Completado"
+              : transaction.status === "Pendiente de pago"
+              ? "Pendiente de pago"
+              : transaction.status === "Pendiente de validación"
+              ? "Pendiente de validación"
+              : transaction.status === "Entregada"
+              ? "Orden Entregada"
+              : "Cancelada",
         });
       });
-      setCustomersData(data);
-    };
-    if (customersData.length === 0) createObjects();
-  }, [customers, customersData]);
+    });
+    setCustomersData(data);
+  }, [customers]);
+
+  useEffect(() => {
+    if (customersData.length > 0) return;
+    if (customersData.length === 0) getCustomerData();
+  }, [customersData.length, getCustomerData]);
+
+  useEffect(() => {
+    if (customersData.length > 0) {
+      customersData.forEach((customer) => {
+        const year = customer.delivery_day.split("/")[2];
+        const listYears = [...years];
+        if (!listYears.includes(year)) {
+          listYears.push(year);
+          setYears(listYears);
+        }
+        const month = customer.delivery_day.split("/")[1];
+        const listMonths = [...months];
+        if (!listMonths.includes(month)) {
+          listMonths.push(month);
+          setMonths(listMonths);
+        }
+      });
+    }
+  }, [customersData, months, years]);
 
   const getTotal = () => {
     let total = 0;
@@ -243,6 +269,41 @@ const SellReport = ({
       </div>
     );
   };
+  const showMonths = (month) => {
+    return (
+      <div className="col">
+        <Button
+          onClick={() => {
+            const filtered = customersData.filter((customer) => {
+              return (
+                customer.delivery_day.split("/")[1] === month &&
+                customer.delivery_day.split("/")[2] === selectedYear
+              );
+            });
+            setCustomersData(filtered);
+          }}
+          style={{
+            padding: "10px",
+            margin: "10px",
+            borderColor: "var(--color-sea)",
+            backgroundColor: "#ffffff",
+            color: "var(--color-sea)",
+            fontWeight: "bold",
+          }}
+        >
+          {getMonthName(month)}
+        </Button>
+      </div>
+    );
+  };
+  const getMonthName = (monthNumber) => {
+    const date = new Date();
+    date.setMonth(monthNumber - 1);
+
+    const weekday = date.toLocaleString("es-ES", { month: "long" });
+    const capitalizedWeekday = weekday[0].toUpperCase() + weekday.slice(1);
+    return capitalizedWeekday;
+  };
 
   return (
     <div>
@@ -261,6 +322,50 @@ const SellReport = ({
           ? "Ocultar Totales por Producto"
           : "Mostrar Totales por Producto"}
       </Button>
+      {years.map((year) => {
+        return (
+          <Button
+            onClick={() => {
+              setShowMonthsFilter(!showMonthsFilter);
+              setSelectedYear(year);
+            }}
+            style={{
+              padding: "10px",
+              margin: "10px",
+              borderColor: "var(--color-sea)",
+              backgroundColor: "var(--color-navy)",
+              color: "white",
+              fontWeight: "bold",
+            }}
+          >
+            {year}
+          </Button>
+        );
+      })}
+      {showMonthsFilter && (
+        <div className="grid">
+          <div className="col">
+            <Button
+              onClick={() => {
+                getCustomerData();
+              }}
+              style={{
+                padding: "10px",
+                margin: "10px",
+                borderColor: "var(--color-sea)",
+                backgroundColor: "var(--color-navy)",
+                color: "white",
+                fontWeight: "bold",
+              }}
+            >
+              Todos los meses
+            </Button>
+          </div>
+          {months.sort().map((month) => {
+            return showMonths(month);
+          })}
+        </div>
+      )}
       {showTotalsByProductFlag && showTotalsByProduct()}
 
       <DataTable

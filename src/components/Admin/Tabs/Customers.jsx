@@ -14,7 +14,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { FilterMatchMode } from "primereact/api";
 import { Dropdown } from "primereact/dropdown";
 
-import { CiReceipt, CiSearch } from "react-icons/ci";
+import { CiReceipt, CiSearch, CiUser } from "react-icons/ci";
 import { MdCancel } from "react-icons/md";
 import { FaRegFileExcel, FaWhatsapp } from "react-icons/fa";
 import { GoPlus } from "react-icons/go";
@@ -105,7 +105,7 @@ const Customers = ({ setActiveTab }) => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [transaction, setTransaction] = useState(null);
   const [showSellReport, setShowSellReport] = useState(false);
-  const [showCustomerForm, setShowCustomerForm] = useState(true);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState({
     code: "",
@@ -307,7 +307,7 @@ const Customers = ({ setActiveTab }) => {
       setEditingCustomer(false);
       setEditingTransaction(false);
       setShowTransactionForm(false);
-      setShowCustomerForm(true);
+      setShowCustomerForm(false);
       setIsLoading(false);
     }, 4500);
   };
@@ -343,7 +343,7 @@ const Customers = ({ setActiveTab }) => {
       setEditingCustomer(false);
       setEditingTransaction(false);
       setShowTransactionForm(false);
-      setShowCustomerForm(true);
+      setShowCustomerForm(false);
       setIsLoading(false);
     }, 4500);
   };
@@ -352,6 +352,7 @@ const Customers = ({ setActiveTab }) => {
     dispatch(customerActions.setCustomer({ customer: customer }));
     setEditingCustomer(true);
     setEditingTransaction(false);
+    setShowCustomerForm(true);
   };
 
   const handleViewCustomer = (customerInfo) => {
@@ -466,7 +467,7 @@ const Customers = ({ setActiveTab }) => {
                           setEditingCustomer(false);
                           setEditingTransaction(false);
                           setShowTransactionForm(false);
-                          setShowCustomerForm(true);
+                          setShowCustomerForm(false);
                           setIsLoading(false);
                         }, 4500);
                       }}
@@ -1330,10 +1331,23 @@ const Customers = ({ setActiveTab }) => {
         <div className={adminStyles.adminHeader}>
           <h1>Gestión de Clientes</h1>
         </div>
+        <Button
+          label="Formulario Cliente"
+          icon={<CiUser />}
+          style={{
+            padding: "4px",
+            margin: "4px",
+            color: "#ffffff",
+            backgroundColor: "var(--color-navy)",
+          }}
+          onClick={()=>{
+            setShowCustomerForm(!showCustomerForm)
+          }}
+        />
         {showCustomerForm && (
           <div>
             <div className={adminStyles.adminCard}>
-              <h2>{"Editar Cliente"}</h2>
+              <h2>{editingCustomer ? "Editar Cliente" : "Crear Cliente"}</h2>
               <form onSubmit={handleCustomerSubmit}>
                 <div className="form-group">
                   <label className="form-label">Nombre *</label>
@@ -1431,6 +1445,7 @@ const Customers = ({ setActiveTab }) => {
                       onClick={() => {
                         dispatch(customerActions.startCustomer(false));
                         setEditingCustomer(false);
+                        setShowCustomerForm(false);
                       }}
                     >
                       Cancelar
@@ -1613,7 +1628,7 @@ const Customers = ({ setActiveTab }) => {
                     dispatch(customerActions.startCustomer(false));
                     setEditingCustomer(false);
                     setEditingTransaction(false);
-                    setShowCustomerForm(true);
+                    setShowCustomerForm(false);
                     setShowTransactionForm(false);
                     setProductInfo({
                       product_id: "",
