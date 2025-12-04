@@ -961,9 +961,13 @@ const Customers = ({ setActiveTab }) => {
                           <div className="col-12 p-1">
                             Estado:{" "}
                             <span style={getStatusStyle(rowData.status)}>
-                              {rowData.status
-                                ? "Orden Entregada"
-                                : rowData.status}
+                              <span style={getStatusStyle(rowData.status)}>
+                                {rowData.status === "Entregada"
+                                  ? "Orden Entregada"
+                                  : rowData.status === "Aprobada"
+                                  ? "Pago Completado"
+                                  : rowData.status}
+                              </span>
                             </span>
                           </div>
                         </div>
@@ -1340,8 +1344,8 @@ const Customers = ({ setActiveTab }) => {
             color: "#ffffff",
             backgroundColor: "var(--color-navy)",
           }}
-          onClick={()=>{
-            setShowCustomerForm(!showCustomerForm)
+          onClick={() => {
+            setShowCustomerForm(!showCustomerForm);
           }}
         />
         {showCustomerForm && (
