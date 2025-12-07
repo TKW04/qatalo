@@ -25,8 +25,17 @@ const SellReport = ({
     full_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
     product_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
     status: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    delivery_day: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    date: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
+
+  const transactionDate = (date, isDeliveryDate) => {
+    if(isDeliveryDate){
+      return formatTextDateShort(date.split(" ")[0]);
+    }
+    const dateParts = date.split(" ")[0].split("-");
+    return formatTextDateShort(dateParts[2] + "/" + dateParts[1] + "/" + dateParts[0]);
+
+  };
 
   const isMobile = window.innerWidth <= 480;
   const getCustomerData = useCallback(() => {
@@ -40,9 +49,9 @@ const SellReport = ({
           price: transaction.price,
           total: transaction.price * transaction.quantity,
           currency: transaction.payment_method.currency,
-          delivery_day: transaction.delivery_day
-            ? formatTextDateShort(transaction.delivery_day)
-            : "",
+          date: transaction.delivery_day
+            ? transactionDate(transaction.delivery_day, true)
+            : transactionDate(transaction.create_date, false),
           created_at: transaction.create_date ? transaction.create_date : "",
           status:
             transaction.status === "Aprobada"
@@ -68,13 +77,13 @@ const SellReport = ({
   useEffect(() => {
     if (customersData.length > 0) {
       customersData.forEach((customer) => {
-        const year = customer.delivery_day.split("/")[2];
+        const year = customer.date.split("/")[2];
         const listYears = [...years];
         if (!listYears.includes(year)) {
           listYears.push(year);
           setYears(listYears);
         }
-        const month = customer.delivery_day.split("/")[1];
+        const month = customer.date.split("/")[1];
         const listMonths = [...months];
         if (!listMonths.includes(month)) {
           listMonths.push(month);
@@ -132,8 +141,8 @@ const SellReport = ({
 
   const toggleSortByDate = (rows) => {
     const sorted = [...rows.data].sort((a, b) => {
-      const [dayA, monthA, yearA] = a.delivery_day.split("/").map(Number);
-      const [dayB, monthB, yearB] = b.delivery_day.split("/").map(Number);
+      const [dayA, monthA, yearA] = a.date.split("/").map(Number);
+      const [dayB, monthB, yearB] = b.date.split("/").map(Number);
       const dateA = new Date(yearA, monthA - 1, dayA);
       const dateB = new Date(yearB, monthB - 1, dayB);
       return isAscending ? dateA - dateB : dateB - dateA;
@@ -276,8 +285,8 @@ const SellReport = ({
           onClick={() => {
             const filtered = customersData.filter((customer) => {
               return (
-                customer.delivery_day.split("/")[1] === month &&
-                customer.delivery_day.split("/")[2] === selectedYear
+                customer.date.split("/")[1] === month &&
+                customer.date.split("/")[2] === selectedYear
               );
             });
             setCustomersData(filtered);
@@ -431,7 +440,7 @@ const SellReport = ({
           }}
         />
         <Column
-          field="delivery_day"
+          field="date"
           sortable
           sortFunction={(rows) => {
             return toggleSortByDate(rows);

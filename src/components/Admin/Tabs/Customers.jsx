@@ -1011,6 +1011,8 @@ const Customers = ({ setActiveTab }) => {
               ? "Pendiente de pago"
               : transaction.status === "Pendiente de validación"
               ? "Pendiente de validación"
+              :transaction.status === "Entregada" 
+              ? "Orden Entregada"
               : "Cancelada",
         });
       });
