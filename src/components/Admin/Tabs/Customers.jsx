@@ -1365,7 +1365,7 @@ const Customers = ({ setActiveTab }) => {
                       dispatch(
                         customerActions.modifyPropertyValue({
                           id: "given_name",
-                          value: e.target.value.trim(),
+                          value: e.target.value,
                         })
                       );
                     }}
@@ -1388,7 +1388,7 @@ const Customers = ({ setActiveTab }) => {
                       dispatch(
                         customerActions.modifyPropertyValue({
                           id: "family_name",
-                          value: e.target.value.trim(),
+                          value: e.target.value,
                         })
                       );
                     }}
@@ -1411,7 +1411,7 @@ const Customers = ({ setActiveTab }) => {
                       dispatch(
                         customerActions.modifyPropertyValue({
                           id: "email",
-                          value: e.target.value.trim(),
+                          value: e.target.value,
                         })
                       );
                     }}
@@ -1432,7 +1432,7 @@ const Customers = ({ setActiveTab }) => {
                       dispatch(
                         customerActions.modifyPropertyValue({
                           id: "phone",
-                          value: e.target.value.trim(),
+                          value: e.target.value,
                         })
                       );
                     }}
