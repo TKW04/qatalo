@@ -26,7 +26,6 @@ export const GetPlans = (showError) => {
       }
     } catch (error) {
       console.log(error);
-      showError("Error!", "No se pudieron obtener los usuarios");
     }
   };
 };

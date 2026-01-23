@@ -1,3 +1,4 @@
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Ban, Check } from "lucide-react";
@@ -13,12 +14,12 @@ import {
 import { validatePassword } from "../../helpers/passwordValidator";
 import Loading from "../../components/UI/Loading";
 import "./ResetPassword.css";
-import { useParams } from "react-router-dom";
 
 const ResetPassword = () => {
   const user = useSelector((state) => state.user.user);
   const dispatch = useDispatch();
   const params = useParams();
+  const navigate = useNavigate();
   const { showWarning, showError, showSuccess } = useNotification();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -224,7 +225,7 @@ const ResetPassword = () => {
             </form>
             <Button
               className="btn btn-danger"
-              onClick={() => (window.location.href = "/login")}
+              onClick={() => navigate("/login")}
               label="Cancelar"
             />
           </div>

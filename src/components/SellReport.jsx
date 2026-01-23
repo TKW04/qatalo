@@ -2,7 +2,7 @@ import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { useCallback, useEffect, useState } from "react";
-import { formatDate, formatTextDateShort } from "../helpers/utils";
+import { formatDate, formatTextDateShort, getMonthName } from "../helpers/utils";
 import { ColumnGroup } from "primereact/columngroup";
 import { Row } from "primereact/row";
 import { Button } from "primereact/button";
@@ -305,14 +305,7 @@ const SellReport = ({
       </div>
     );
   };
-  const getMonthName = (monthNumber) => {
-    const date = new Date();
-    date.setMonth(monthNumber - 1);
 
-    const weekday = date.toLocaleString("es-ES", { month: "long" });
-    const capitalizedWeekday = weekday[0].toUpperCase() + weekday.slice(1);
-    return capitalizedWeekday;
-  };
 
   return (
     <div>

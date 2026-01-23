@@ -1,7 +1,7 @@
 import { getToken } from "../../helpers/token";
 
 
-export const CreateAccount = (user, showError, showWarning, showSuccess) => {
+export const CreateAccount = (user, navigate, showError, showWarning, showSuccess) => {
   return async () => {
     const RegisterUserInfo = async () => {
 
@@ -25,7 +25,7 @@ export const CreateAccount = (user, showError, showWarning, showSuccess) => {
       if (response.status === 200) {
         showSuccess("Usuario creado", "Usuario creado con éxito");
         setTimeout(() => {
-          window.location.href = "/login";
+          navigate("/login");
         }, 4500);
       } else {
         showWarning(
@@ -39,7 +39,8 @@ export const CreateAccount = (user, showError, showWarning, showSuccess) => {
     }
   };
 };
-export const UpdateUser = (user, showError, showWarning, showSuccess) => {
+
+export const UpdateUser = (user, navigate, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateUserInfo = async () => {
       return await fetch(
@@ -64,7 +65,7 @@ export const UpdateUser = (user, showError, showWarning, showSuccess) => {
       if (response.status === 200) {
         showSuccess("Usuario actualizado", "Usuario actualizado con éxito");
         setTimeout(() => {
-          window.location.reload();
+          navigate(0);
         }, 4500);
       } else {
         showWarning(
@@ -78,6 +79,7 @@ export const UpdateUser = (user, showError, showWarning, showSuccess) => {
     }
   };
 };
+
 export const Forgot_Password = (email, showError, showWarning, showSuccess) => {
   return async () => {
     const ForgotPasswordRequest = async () => {
@@ -110,6 +112,7 @@ export const Forgot_Password = (email, showError, showWarning, showSuccess) => {
     }
   };
 }
+
 export const Reset_Password = (token, password, showError, showWarning, showSuccess) => {
   return async () => {
     const ResetPasswordRequest = async () => {
@@ -148,7 +151,7 @@ export const Reset_Password = (token, password, showError, showWarning, showSucc
 };
 
 
-export const ActivateUser = (userId, showError, showWarning, showSuccess) => {
+export const ActivateUser = (userId, navigate, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateUserInfo = async () => {
       return await fetch(
@@ -166,7 +169,7 @@ export const ActivateUser = (userId, showError, showWarning, showSuccess) => {
       if (response.status === 200) {
         showSuccess("Usuario activado", "Usuario activado con éxito");
         setTimeout(() => {
-          window.location.reload();
+          navigate(0);
         }, 4500);
       } else {
         showWarning(
@@ -180,7 +183,8 @@ export const ActivateUser = (userId, showError, showWarning, showSuccess) => {
     }
   };
 };
-export const InactivateUser = (userId, showError, showWarning, showSuccess) => {
+
+export const InactivateUser = (userId, navigate, showError, showWarning, showSuccess) => {
   return async () => {
     const UpdateUserInfo = async () => {
       return await fetch(
@@ -199,7 +203,7 @@ export const InactivateUser = (userId, showError, showWarning, showSuccess) => {
       if (response.status === 200) {
         showSuccess("Usuario inactivado", "Usuario inactivado con éxito");
         setTimeout(() => {
-          window.location.reload();
+          navigate(0);
         }, 4500);
       } else {
         showWarning(

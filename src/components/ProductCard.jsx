@@ -1,8 +1,7 @@
+import { formatted } from "../helpers/utils";
+
 const ProductCard = ({ product, onClick }) => {
-  const formatted = Number(product.price).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+
   return (
     <div
       className="product-card"
@@ -26,7 +25,7 @@ const ProductCard = ({ product, onClick }) => {
         <h3 className="product-name">{product.name}</h3>
         <div className="product-price">
           {product.currency}
-          {formatted}
+          {formatted(product.price)}
         </div>
         <span
           className={`product-status  product-status_${

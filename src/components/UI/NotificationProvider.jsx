@@ -1,26 +1,8 @@
-
-import { createContext, useContext, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Notification from "./Notification";
+import NotificationContext, { useNotification } from "./NotificationContext";
 
-const NotificationContext = createContext({
-  showSuccess: () => {},
-  showError: () => {},
-  showWarning: () => {},
-  showInfo: () => {},
-  clearNotification: () => {},
-});
-
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-
-  if (!context || !context.showSuccess) {
-    throw new Error(
-      "useNotification must be used within a NotificationProvider"
-    );
-  }
-
-  return context;
-};
+export { useNotification };
 
 export const NotificationProvider = ({ children }) => {
   const [notification, setNotification] = useState(null);

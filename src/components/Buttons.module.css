@@ -83,6 +83,7 @@
 
 .yesNoButton.yes {
     background-color: var(--chart-3);
+    color: var(--color-navy);
     /* border-color: var(--chart-3); */
 }
 

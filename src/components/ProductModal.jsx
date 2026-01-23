@@ -59,9 +59,6 @@ const ProductModal = ({ product, business, onClose }) => {
   const [action, setAction] = useState("whatsapp");
   const [paymentMethod, setPaymentMethod] = useState(null);
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [termsDialog, setShowTermsDialog] = useState(false);
   const [selectedAge, setSelectedAge] = useState({
@@ -71,12 +68,6 @@ const ProductModal = ({ product, business, onClose }) => {
 
   const [sliderRef, instanceRef] = useKeenSlider({
     initial: 0,
-    slideChanged(slider) {
-      setCurrentSlide(slider.track.details.rel);
-    },
-    created() {
-      setLoaded(true);
-    },
   });
 
   useEffect(() => {

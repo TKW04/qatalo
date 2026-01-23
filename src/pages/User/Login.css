@@ -26,8 +26,10 @@ body {
     backdrop-filter: blur(10px);
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(17, 63, 103, 0.3);
-    width: 500px;
-    
+    width: 100%;
+    max-width: 500px;
+    /* Changed from fixed width to max-width */
+
     padding: 30px;
     margin-top: 0px;
     position: relative;
@@ -124,6 +126,7 @@ body {
     transition: all 0.3s ease;
     margin-bottom: 15px;
 }
+
 .btn-login-disabled {
     background: #e1e1e1;
     color: #a1a1a1;
@@ -235,13 +238,15 @@ body {
 
 @media (max-width: 480px) {
     .auth-container-login {
-        padding: 30px 25px;
-        width: 380px;
+        padding: 30px 20px;
+        /* Reduced padding for mobile */
+        /* Width is already handled by max-width and width: 100% on parent */
     }
 
     .navigation {
         position: static;
         justify-content: center;
         margin-bottom: 20px;
+        width: 100%;
     }
 }

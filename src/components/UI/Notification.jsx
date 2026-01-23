@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import "./Notification.css"
 
 const Notification = ({ status, title, message, onClose }) => {
@@ -16,7 +16,7 @@ const Notification = ({ status, title, message, onClose }) => {
     }
   }
 
-  const addNotification = (type, title, message) => {
+  const addNotification = useCallback((type, title, message) => {
     const id = nextIdRef.current
     nextIdRef.current += 1
 
@@ -40,15 +40,17 @@ const Notification = ({ status, title, message, onClose }) => {
     }, 4500)
 
     timeoutRefs.current.set(id, timeoutId)
-  }
+  }, [onClose])
 
   // Limpiar timeouts al desmontar el componente
+  // Limpiar timeouts al desmontar el componente
   useEffect(() => {
+    const currentTimeouts = timeoutRefs.current
     return () => {
-      timeoutRefs.current.forEach((timeoutId) => {
+      currentTimeouts.forEach((timeoutId) => {
         clearTimeout(timeoutId)
       })
-      timeoutRefs.current.clear()
+      currentTimeouts.clear()
     }
   }, [])
 

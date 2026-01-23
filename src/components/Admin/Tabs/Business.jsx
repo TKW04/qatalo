@@ -32,7 +32,7 @@ const Business = () => {
   useEffect(() => {
     if (business !== null && business.business_id === "" && once) {
       setIsLoading(true);
-      dispatch(GetBusiness(auth.sub, showError));
+      dispatch(GetBusiness(showError));
       setLoadingMessage("Cargando información del negocio...");
       once = false;
       setTimeout(() => {

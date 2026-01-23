@@ -62,3 +62,12 @@ export const getAges = () => {
   }
   return ages;
 };
+
+export const getMonthName = (monthNumber) => {
+  const date = new Date();
+  date.setMonth(monthNumber - 1);
+
+  const weekday = date.toLocaleString("es-ES", { month: "long" });
+  const capitalizedWeekday = weekday[0].toUpperCase() + weekday.slice(1);
+  return capitalizedWeekday;
+};

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Ban, Check } from "lucide-react";
@@ -14,6 +15,7 @@ import "./Register.css";
 const Register = () => {
   const user = useSelector((state) => state.user.user);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { showWarning, showError, showSuccess } = useNotification();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -62,10 +64,7 @@ const Register = () => {
       return;
     }
     setIsLoading(true);
-    dispatch(CreateAccount(user, showError, showWarning, showSuccess));
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 4500);
+    dispatch(CreateAccount(user, navigate, showError, showWarning, showSuccess));
   };
 
   return (
@@ -253,12 +252,12 @@ const Register = () => {
 
             <Button
               className="btn btn-secondary"
-              onClick={() => (window.location.href = "/login")}
+              onClick={() => navigate("/login")}
               label="Ya tengo una cuenta"
             />
             <Button
               className="btn btn-danger"
-              onClick={() => (window.location.href = "/")}
+              onClick={() => navigate("/")}
               label="Cancelar"
             />
           </div>

@@ -29,29 +29,13 @@ const Landing = () => {
   }, [dispatch, plans, showError]);
   return (
     <>
-      <div
-        class="flex align-items-center justify-content-start"
-        style={{
-          width: "100%",
-          height: "100px",
-          background:
-            "linear-gradient(135deg, var(--color-navy) 0%, var(--color-blue) 100%)",
-          color: "white",
-          zIndex: 1001,
-          left: "0",
-          top: "0",
-          gap: "20px",
-          borderRadius: "10px",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-          position: "fixed",
-        }}
-      >
+      <div className="landing-navbar-container">
         <Navbar />
       </div>
 
       <div>
-        <section className="hero" id="inicio" style={{ marginTop: "10px" }}>
-          <div className="hero-content" style={{ paddingTop: "0px" }}>
+        <section className="hero" id="inicio">
+          <div className="hero-content">
             <h1>Tu Catálogo Digital con QR</h1>
             <p>
               Crea catálogos interactivos, conecta con WhatsApp y recibe pedidos
@@ -76,7 +60,7 @@ const Landing = () => {
                 <div className="feature-icon">
                   <LuBuilding2
                     size={40}
-                    style={{ color: "var(--color-navy)" }}
+                    className="feature-icon-svg"
                   />
                 </div>
                 <h3>Crea tu Empresa</h3>
@@ -90,7 +74,7 @@ const Landing = () => {
                 <div className="feature-icon">
                   <LuFolderOpen
                     size={40}
-                    style={{ color: "var(--color-navy)" }}
+                    className="feature-icon-svg"
                   />
                 </div>
                 <h3>Organiza Categorías</h3>
@@ -102,7 +86,7 @@ const Landing = () => {
 
               <div className="feature-card">
                 <div className="feature-icon">
-                  <LuPackage size={40} style={{ color: "var(--color-navy)" }} />
+                  <LuPackage size={40} className="feature-icon-svg" />
                 </div>
                 <h3>Gestiona Productos</h3>
                 <p>
@@ -113,7 +97,7 @@ const Landing = () => {
 
               <div className="feature-card ">
                 <div className="feature-icon">
-                  <FaUsers size={40} style={{ color: "var(--color-navy)" }} />
+                  <FaUsers size={40} className="feature-icon-svg" />
                 </div>
                 <h3>Clientes</h3>
                 <p>
@@ -126,7 +110,7 @@ const Landing = () => {
                 <div className="feature-icon">
                   <IoQrCodeOutline
                     size={40}
-                    style={{ color: "var(--color-navy)" }}
+                    className="feature-icon-svg"
                   />
                 </div>
                 <h3>Códigos QR</h3>
@@ -140,7 +124,7 @@ const Landing = () => {
                 <div className="feature-icon">
                   <FaWhatsapp
                     size={40}
-                    style={{ color: "var(--color-navy)" }}
+                    className="feature-icon-svg"
                   />
                 </div>
                 <h3>Integración WhatsApp</h3>
