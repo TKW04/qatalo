@@ -1,0 +1,77 @@
+.card {
+  /* Fondo con degradado sutil usando tus colores de marca */
+  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+  border: 2px solid var(--color-sea); /* Borde con tu color 'sea' */
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  /* Sombra más marcada al pasar el mouse */
+  box-shadow: 0 15px 30px rgba(52, 105, 154, 0.2); 
+  border-color: var(--color-blue);
+}
+
+.name {
+  font-size: 1.4rem;
+  color: var(--color-navy);
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.description {
+  color: var(--color-blue);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.priceContainer {
+  margin-bottom: 0.5rem;
+  color: var(--color-navy);
+}
+
+.currency {
+  font-size: 1.2rem;
+  vertical-align: top;
+  margin-right: 2px;
+}
+
+.price {
+  font-size: 3rem; /* Más grande para que sea el foco */
+  font-weight: 800;
+}
+
+.period {
+  font-size: 2rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.features {
+  list-style: none;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+}
+
+.features li {
+  padding: 0.6rem 0;
+  font-size: 0.95rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+/* Iconito de check para que se vea más profesional */
+.features li::before {
+  content: "✓";
+  color: var(--color-sea);
+  font-weight: bold;
+  margin-right: 10px;
+}

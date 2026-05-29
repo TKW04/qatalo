@@ -1,0 +1,41 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 0;
+  border-radius: var(--border-radius);
+  border: none;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+.header {
+  background: var(--color-navy);
+  color: var(--color-yellow);
+  padding: 1rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.content {
+  padding: 1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

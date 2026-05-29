@@ -1,23 +1,33 @@
-const PlanCard = ({ plan, button }) => {
-  const isMobile = window.innerWidth <= 760;
+import styles from "./PlanCard.module.css";
+import PrimaryButton from "./PrimaryButton";
+
+const PlanCard = ({ plan }) => {
   return (
-    <div className={`plan-card col${isMobile ? '-12 mb-3' : ' ml-3'}  p-3`} key={plan.price_id}>
-      <h3 className="plan-name">{plan.name}</h3>
-      <p className="plan-description">{plan.description}</p>
-      <div className="plan-price">
-        <span className="currency">$</span>
-        <span id="basic-price">{plan.unit_price}</span>
+    <div className={styles.card}>
+      <h3 className={styles.name}>{plan.name}</h3>
+      {/* <p className={styles.description}>{plan.description}</p> */}
+      
+      <div className={styles.priceContainer}>
+        <span className={styles.currency}>$</span>
+        <span className={styles.price}>{plan.unit_price}</span>
       </div>
-      <div className="plan-period">por usuario/{plan.product_name}</div>
-      <ul className="plan-features">
-        <li>1 catálogo</li>
-        <li>Categorías ilimitadas</li>
-        <li>Productos ilimitados</li>
-        <li>Manejo de clientes</li>
-        <li>Integración con Whatsapp</li>
+      
+      <div className={styles.period}> {plan.product_name}</div>
+      
+      <ul className={styles.features}>
+        <li>✓ 1 catálogo</li>
+        <li>✓ Categorías ilimitadas</li>
+        <li>✓ Productos ilimitados</li>
+        <li>✓ Manejo de clientes</li>
+        <li>✓ Integración con Whatsapp</li>
       </ul>
-      {button}
+
+      {/* Aquí inyectamos nuestro botón estandarizado */}
+      <PrimaryButton to={`/register?plan=${plan.price_id}`} variant="primary">
+        Seleccionar Plan
+      </PrimaryButton>
     </div>
   );
 };
+
 export default PlanCard;

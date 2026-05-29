@@ -7,6 +7,8 @@
   --border-radius: 8px;
   --shadow: 0 2px 8px rgba(17, 63, 103, 0.1);
   --shadow-hover: 0 4px 16px rgba(17, 63, 103, 0.15);
+  
+  /* Modern CSS variables */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -78,8 +80,6 @@
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -149,6 +149,7 @@ body {
   padding: 0 1rem;
 }
 
+/* Base UI Elements - Temporales hasta migrarlos a CSS Modules */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -169,96 +170,28 @@ body {
   outline-offset: 2px;
 }
 
-.btn-primary {
-  background-color: var(--color-blue);
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-navy);
-}
-
-.btn-secondary {
-  background-color: var(--color-sea);
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-blue);
-}
-
-.btn-outline {
-  background-color: white;
-  color: var(--color-navy);
-  border: 2px solid var(--color-sea);
-}
-
-.btn-outline:hover {
-  background-color: var(--color-blue);
-  color: white;
-}
-
-.btn-yellow {
-  background-color: var(--color-yellow);
-  color: var(--color-navy);
-}
-
-.btn-yellow:hover {
-  background-color: #f5e97d;
-}
-
-.btn-whatsapp {
-  background-color: #25d366;
-  color: white;
-}
-
-.btn-whatsapp:hover {
-  background-color: #1ebe5b;
-}
-
-.btn-success {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-success:hover {
-  background-color: #218838;
-}
+.btn-primary { background-color: var(--color-blue); color: white; }
+.btn-primary:hover { background-color: var(--color-navy); }
+.btn-secondary { background-color: var(--color-sea); color: white; }
+.btn-secondary:hover { background-color: var(--color-blue); }
+.btn-outline { background-color: white; color: var(--color-navy); border: 2px solid var(--color-sea); }
+.btn-outline:hover { background-color: var(--color-blue); color: white; }
+.btn-yellow { background-color: var(--color-yellow); color: var(--color-navy); }
+.btn-yellow:hover { background-color: #f5e97d; }
+.btn-whatsapp { background-color: #25d366; color: white; }
+.btn-whatsapp:hover { background-color: #1ebe5b; }
+.btn-success { background-color: #28a745; color: white; }
+.btn-success:hover { background-color: #218838; }
 
 .input {
   width: 100%;
   padding: 0.75rem;
-  padding-left: 15px;
   border: 2px solid #e1e5e9;
   border-radius: var(--border-radius);
   color: var(--color-navy);
   font-size: 1rem;
   transition: border-color 0.2s ease;
   padding-left: 30px;
-}
-
-.p-inputnumber {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #fafafa;
-  border: 2px solid #e1e5e9;
-  border-radius: var(--border-radius);
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-  padding-left: 30px;
-}
-
-.p-inputnumber-input {
-  padding: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}
-
-[role="columnheader"],
-.p-column-header-content {
-  background-color: var(--color-navy) !important;
-  color: white !important;
 }
 
 .input:focus {
@@ -270,50 +203,13 @@ body {
   border-color: #e74c3c;
 }
 
-.form-group {
-  margin-bottom: 1rem;
-}
-
+.form-group { margin-bottom: 1rem; }
 .form-label {
   display: block;
   margin-bottom: 0.5rem;
   font-size: 18px !important;
   font-weight: 800 !important;
   color: var(--color-yellow) !important;
-}
-
-/* .form-label span {
-  color: #fafafa;
-} */
-
-.p-dialog-header {
-  background-color: var(--color-navy) !important;
-  top: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin-top: 0px !important;
-}
-
-.p-dialog-title {
-  font-size: 1.5rem !important;
-  font-weight: 800 !important;
-  color: var(--color-yellow) !important;
-  padding: 10px !important;
-  margin-bottom: 0px !important;
-}
-
-.p-dialog-content,
-.p-dialog {
-  background: linear-gradient(135deg, #113f67 0%, #34699a 100%);
-  width: auto;
-  padding: 0px !important;
-}
-
-.dialog-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: white;
-  margin-bottom: 1.5rem;
 }
 
 .important {
@@ -342,15 +238,8 @@ body {
 }
 
 @keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 .modal-overlay {
@@ -379,14 +268,8 @@ body {
 }
 
 @media (max-width: 760px) {
-  .container {
-    padding: 0 0.5rem;
-  }
-
-  .btn {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-  }
+  .container { padding: 0 0.5rem; }
+  .btn { padding: 0.625rem 1.25rem; font-size: 0.875rem; }
 }
 
 @media (max-width: 761px) {
@@ -396,9 +279,5 @@ body {
     align-items: center !important;
     justify-content: center !important;
   }
-
-  .btn {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-  }
+  .btn { padding: 0.625rem 1.25rem; font-size: 0.875rem; }
 }

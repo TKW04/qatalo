@@ -1,0 +1,43 @@
+.footer {
+  padding: 2rem;
+  background: var(--color-navy);
+  color: white;
+  text-align: center;
+}
+
+.links {
+  margin-bottom: 1rem;
+}
+
+.link {
+  text-decoration: none;
+  color: inherit;
+  margin: 0 0.5rem;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.inputField {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}

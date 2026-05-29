@@ -1,18 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Landing from "./pages/Landing";
-import AdminDashboard from "./pages/AdminDashboard";
-import Register from "./pages/User/Register";
-import Login from "./pages/User/Login";
-import ForgotPassword from "./pages/User/ForgotPassword";
-import Payment from "./pages/Payment";
-import CatalogPublic from "./pages/CatalogPublic";
-import PaymentValidation from "./pages/PaymentValidation";
-import TermsAndConditions from "./pages/TermsAndConditions";
-import NotFoundPage from "./pages/NotFoundPage";
-import ResetPassword from "./pages/User/ResetPassword";
-import PrivacyNotice from "./pages/PrivacyNotice";
-import RefundPolicy from "./pages/RefundPolicy";
+// import AdminDashboard from "./pages/AdminDashboard";
+// import Register from "./pages/User/Register";
+// import Login from "./pages/User/Login";
+// import ForgotPassword from "./pages/User/ForgotPassword";
+// import Payment from "./pages/Payment";
+// import CatalogPublic from "./pages/CatalogPublic";
+// import PaymentValidation from "./pages/PaymentValidation";
+// import TermsAndConditions from "./pages/TermsAndConditions";
+// import NotFoundPage from "./pages/NotFoundPage";
+// import ResetPassword from "./pages/User/ResetPassword";
+// import PrivacyNotice from "./pages/PrivacyNotice";
+// import RefundPolicy from "./pages/RefundPolicy";
 
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 
@@ -23,7 +23,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route
+          {/* <Route
             path="/terms-and-conditions"
             element={<TermsAndConditions />}
           />
@@ -41,7 +41,7 @@ function App() {
             element={<PaymentValidation />}
           />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="*" element={<NotFoundPage />} /> */}
         </Routes>
       </Router>
     </NotificationProvider>
