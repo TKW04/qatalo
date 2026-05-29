@@ -8,7 +8,6 @@ import { FaWhatsapp, FaUsers } from "react-icons/fa";
 
 // 1. Importamos el CSS Module
 import styles from "./Landing.module.css";
-import btnStyles from "../components/PrimaryButton.module.css"
 
 import { GetPlans } from "../store/payment-store/plan-actions";
 import { useNotification } from "../components/UI/NotificationProvider";

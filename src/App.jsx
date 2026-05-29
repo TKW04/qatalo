@@ -8,11 +8,11 @@ import Landing from "./pages/Landing";
 // import Payment from "./pages/Payment";
 // import CatalogPublic from "./pages/CatalogPublic";
 // import PaymentValidation from "./pages/PaymentValidation";
-// import TermsAndConditions from "./pages/TermsAndConditions";
+import TermsAndConditions from "./pages/Footer/TermsAndConditions";
 // import NotFoundPage from "./pages/NotFoundPage";
 // import ResetPassword from "./pages/User/ResetPassword";
-// import PrivacyNotice from "./pages/PrivacyNotice";
-// import RefundPolicy from "./pages/RefundPolicy";
+import PrivacyNotice from "./pages/Footer/PrivacyNotice";
+import RefundPolicy from "./pages/Footer/RefundPolicy";
 
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 
@@ -23,12 +23,17 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          {/* <Route
-            path="/terms-and-conditions"
+          <Route
+            path="/termsandconditions"
             element={<TermsAndConditions />}
           />
-          <Route path="/privacy-policy" element={<PrivacyNotice />} />
-          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route
+            path="/privacypolicy"
+            element={<PrivacyNotice />}
+          />
+          <Route path="/refundpolicy" element={<RefundPolicy />} />
+          {/* 
+          
 
           <Route path="/catalog/:slug" element={<CatalogPublic />} />
           <Route path="/register" element={<Register />} />

@@ -41,3 +41,16 @@
   justify-content: flex-end;
   margin-top: 1rem;
 }
+/* Variante Outline (para botones secundarios o cancelar) */
+.outline {
+  background: transparent;
+  color: var(--color-navy);
+  border-color: var(--color-navy);
+  box-shadow: none;
+}
+
+.outline:hover {
+  background: var(--color-navy);
+  color: white;
+  transform: translateY(-2px);
+}

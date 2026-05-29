@@ -10,6 +10,9 @@ import { useNotification } from "./UI/NotificationProvider";
 import Loading from "./UI/Loading";
 import styles from "./Footer.module.css";
 
+// 1. Importamos nuestro botón estandarizado
+import PrimaryButton from "./PrimaryButton"; 
+
 const Footer = () => {
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [name, setName] = useState("");
@@ -50,13 +53,23 @@ const Footer = () => {
               <label className="form-label">Mensaje:</label>
               <textarea className={styles.inputField} rows="5" value={message} onChange={(e) => setMessage(e.target.value)} required />
             </div>
+            
+            {/* 2. Reemplazamos los botones HTML por PrimaryButton */}
             <div className={styles.actions}>
-              <button type="button" className="btn btn-outline" onClick={() => setShowContactDialog(false)}>
-                <GiCancel /> Cancelar
-              </button>
-              <button type="submit" className="btn btn-success">
-                <BsFillSendFill /> Enviar
-              </button>
+              <PrimaryButton 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowContactDialog(false)}
+              >
+                <GiCancel style={{ marginRight: "8px" }} /> Cancelar
+              </PrimaryButton>
+              
+              <PrimaryButton 
+                type="submit" 
+                variant="primary"
+              >
+                <BsFillSendFill style={{ marginRight: "8px" }} /> Enviar
+              </PrimaryButton>
             </div>
           </form>
         </DialogModal>
@@ -64,9 +77,9 @@ const Footer = () => {
 
       <footer className={styles.footer}>
         <div className={styles.links}>
-          <Link to="/terms-and-conditions" className={styles.link}>Términos</Link> |
-          <Link to="/privacy-policy" className={styles.link}>Privacidad</Link> |
-          <Link to="/refund-policy" className={styles.link}>Reembolso</Link> |
+          <Link to="/termsandconditions" className={styles.link}>Términos</Link> |
+          <Link to="/privacypolicy" className={styles.link}>Privacidad</Link> |
+          <Link to="/refundpolicy" className={styles.link}>Reembolso</Link> |
           <span className={styles.link} onClick={() => setShowContactDialog(true)}>Contacto</span>
         </div>
         <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
