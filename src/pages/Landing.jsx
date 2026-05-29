@@ -37,7 +37,7 @@ const Landing = () => {
       </div>
 
       <div>
-        <section className={styles.hero} id="inicio">
+        <section className={styles.hero} id="home">
           <div className={styles.heroContent}>
             <h1>Tu Catálogo Digital con QR</h1>
             <p>
@@ -52,7 +52,7 @@ const Landing = () => {
           </div>
         </section>
 
-        <section className={styles.features} id="caracteristicas">
+        <section className={styles.features} id="features">
           <div className={styles.container}>
             <div className={styles.sectionTitle1}>
               <h2>Todo lo que necesitas para vender más</h2>
@@ -111,9 +111,9 @@ const Landing = () => {
           </div>
         </section>
 
-        <section className={styles.howItWorks} id="como-funciona">
+        <section className={styles.howItWorks} id="howItWorks">
           <div className={styles.container}>
-            <div className={styles.sectionTitle}>
+            <div className={styles.sectionTitleHowItWorks}>
               <h2>Cómo Funciona</h2>
               <p>En 4 simples pasos tendrás tu catálogo digital funcionando</p>
             </div>
@@ -146,7 +146,7 @@ const Landing = () => {
           </div>
         </section>
 
-        <section className={styles.pricingSection} id="planes-precios">
+        <section className={styles.pricingSection} id="pricing">
           <h1 className={styles.sectionTitle}>Planes y Precios</h1>
           <div className={styles.grid}>
             {plans.map((plan) => (

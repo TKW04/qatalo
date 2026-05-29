@@ -31,11 +31,17 @@ const Navbar = () => {
         </button>
 
         <nav className={`${styles.navMenu} ${abierto ? styles.isOpen : ""}`}>
-          <a href="#inicio" className={styles.navLink} onClick={cerrarMenu}>
+          <a href="#home" className={styles.navLink} onClick={cerrarMenu}>
             Inicio
           </a>
-          <a href="#caracteristicas" className={styles.navLink} onClick={cerrarMenu}>
+          <a href="#features" className={styles.navLink} onClick={cerrarMenu}>
             Características
+          </a>
+          <a href="#howItWorks" className={styles.navLink} onClick={cerrarMenu}>
+            Cómo funciona
+          </a>
+          <a href="#pricing" className={styles.navLink} onClick={cerrarMenu}>
+            Planes
           </a>
           <a href="/login" className={styles.navLink} onClick={cerrarMenu}>
             Iniciar Sesión
