@@ -3,7 +3,7 @@ import { IoMenu } from "react-icons/io5";
 
 import AdminSidebar from "./AdminSidebar";
 import Business from "./Tabs/Business";
-// import Categories from "../../components/Admin/Tabs/Categories";
+import Categories from "./Tabs/Categories";
 // import Products from "../../components/Admin/Tabs/Products";
 // import PaymentMethods from "../../components/Admin/Tabs/PaymentMethods";
 // import Customers from "../../components/Admin/Tabs/Customers";
@@ -59,7 +59,8 @@ const AdminDashboard = () => {
 
         <main className={`${styles.adminMain} ${!sidebarOpen ? styles.adminMainClose : ""}`}>
           {activeTab === "business" && <Business />}
-          {/* {activeTab === "categories" && <Categories setActiveTab={setActiveTab} />}
+          {activeTab === "categories" && <Categories setActiveTab={setActiveTab} />}
+          {/* 
           {activeTab === "products" && <Products setActiveTab={setActiveTab} />}
           {activeTab === "paymentMethods" && <PaymentMethods setActiveTab={setActiveTab} />}
           {activeTab === "customers" && <Customers setActiveTab={setActiveTab} />}

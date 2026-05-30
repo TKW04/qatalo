@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
 
 import { IoIosCog } from "react-icons/io";
 import { FiPackage } from "react-icons/fi";
@@ -9,11 +9,24 @@ import { FaFolderOpen, FaDollarSign, FaUsers } from "react-icons/fa";
 
 import { logout } from "../../services/authenticate";
 import { getTokenInfo } from "../../helpers/token";
+import { fetchBusinessData } from "../../services/businessApi";
 import styles from "./AdminSidebar.module.css";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const auth = getTokenInfo();
-  const business = useSelector((state) => state.business.business);
+  const tenantId = auth?.sub;
+
+  // Misma query que Business.jsx -> caché compartido, se refresca al guardar
+  const { data: business } = useQuery({
+    queryKey: ["business", tenantId],
+    queryFn: fetchBusinessData,
+    enabled: !!tenantId,
+    retry: false, // si el negocio aún no existe, fetchBusinessData lanza 404; no reintentamos
+  });
+
+  const status = auth?.["custom:transaction_status"];
+  const subscribed = status === "trialing" || status === "active";
+  const hasBusiness = !!business?.business_id;
 
   const menuItems = [
     { id: "business", label: "Configuración", icon: <IoIosCog size={22} className={styles.menuIcon} /> },
@@ -28,33 +41,26 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
-    if (window.innerWidth <= 992) {
-      onClose();
-    }
+    if (window.innerWidth <= 992) onClose();
   };
 
   useEffect(() => {
-    if (
-      auth["custom:transaction_status"] !== "trialing" &&
-      auth["custom:transaction_status"] !== "active"
-    ) {
-      if (activeTab !== "subscription") {
-        onTabChange("subscription");
-      }
+    if (!subscribed && activeTab !== "subscription") {
+      onTabChange("subscription");
     }
-  }, [activeTab, auth, onTabChange]);
+  }, [activeTab, subscribed, onTabChange]);
 
   const setEnabled = (itemId) => {
-    if (
-      auth["custom:transaction_status"] !== "trialing" &&
-      auth["custom:transaction_status"] !== "active"
-    ) {
-      return itemId === "subscription";
-    } else {
-      if (itemId === "business") return true;
-      if (business?.business_id === "") return false;
+    // Sin suscripción activa: solo Suscripción
+    if (!subscribed) return itemId === "subscription";
+
+    // Estas siempre disponibles
+    if (itemId === "business" || itemId === "subscription" || itemId === "changepassword") {
       return true;
     }
+
+    // El resto requiere un negocio ya creado
+    return hasBusiness;
   };
 
   return (
