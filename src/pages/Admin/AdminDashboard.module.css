@@ -1,0 +1,58 @@
+.adminLayout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa; /* Un fondo gris muy claro para el backoffice */
+  position: relative;
+  overflow-x: hidden;
+}
+
+.sidebarToggle {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  background: var(--color-navy);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: none; /* Oculto en escritorio por defecto */
+  box-shadow: 0 4px 10px rgba(17, 63, 103, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.sidebarToggle:active {
+  transform: scale(0.95);
+}
+
+.adminMain {
+  flex: 1;
+  padding: 2rem;
+  margin-left: 250px; /* Ancho estimado de tu AdminSidebar */
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Evita que el contenido desborde el grid */
+}
+
+.adminMainClose {
+  margin-left: 0;
+}
+
+/* Responsividad para móviles y tablets */
+@media (max-width: 992px) {
+  .sidebarToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .adminMain {
+    margin-left: 0;
+    padding: 5rem 1rem 2rem 1rem; /* Más espacio arriba para que el botón no tape el contenido */
+  }
+
+  .adminMainClose {
+    margin-left: 0;
+  }
+}

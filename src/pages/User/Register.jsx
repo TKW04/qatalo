@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Ban, Check } from "lucide-react";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
-import { Image } from "primereact/image";
+
 import { useNotification } from "../../components/UI/NotificationProvider";
 import { userActions } from "../../store/user-store/user-slice";
 import { CreateAccount } from "../../store/user-store/user-actions";
 import { validatePassword } from "../../helpers/passwordValidator";
 import Loading from "../../components/UI/Loading";
-import "./Register.css";
+
+import PrimaryButton from "../../components/PrimaryButton";
+import styles from "./Auth.module.css";
 
 const Register = () => {
   const user = useSelector((state) => state.user.user);
@@ -19,6 +19,7 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordInfo, setShowPasswordInfo] = useState(false);
   const [showConfirmPasswordInfo, setShowConfirmPasswordInfo] = useState(false);
+
   const [isValidPassword, setIsValidPassword] = useState({
     isValid: false,
     errors: {
@@ -26,8 +27,10 @@ const Register = () => {
       specialChar: false,
       upperCase: false,
       lowerCase: false,
+      minLength: false, // Añadido para evitar errores si no estaba en el estado inicial
     },
   });
+
   const [isConfirmPasswordValid, setIsConfirmPasswordValid] = useState(false);
 
   const onChange = (id, value) => {
@@ -35,23 +38,15 @@ const Register = () => {
       const passwordValidation = validatePassword(value);
       setIsValidPassword(passwordValidation);
     } else if (id === "confirmPassword") {
-      if (user.password === value) {
-        setIsConfirmPasswordValid(true);
-      } else {
-        setIsConfirmPasswordValid(false);
-      }
-      dispatch(userActions.modifyPropertyValue({ id, value: value }));
+      setIsConfirmPasswordValid(user.password === value);
     }
-    dispatch(userActions.modifyPropertyValue({ id, value: value }));
+    dispatch(userActions.modifyPropertyValue({ id, value }));
   };
 
   const handleRegister = (event) => {
     event.preventDefault();
     if (user.password !== user.confirmPassword) {
-      showWarning(
-        "Contraseñas no coinciden",
-        "Por favor, verifica tu contraseña"
-      );
+      showWarning("Contraseñas no coinciden", "Por favor, verifica tu contraseña");
       return;
     }
     if (!isValidPassword.isValid) {
@@ -61,6 +56,7 @@ const Register = () => {
       );
       return;
     }
+
     setIsLoading(true);
     dispatch(CreateAccount(user, showError, showWarning, showSuccess));
     setTimeout(() => {
@@ -68,203 +64,146 @@ const Register = () => {
     }, 4500);
   };
 
+  // Helper para renderizar los items de validación
+  const ValidationItem = ({ isValid, text }) => (
+    <span className={`${styles.validationItem} ${isValid ? styles.valid : styles.invalid}`}>
+      {isValid ? <Check size={16} /> : <Ban size={16} />}
+      {text}
+    </span>
+  );
+
   return (
     <>
-      {isLoading && <Loading />}
+      {isLoading && <Loading message="Creando cuenta..." />}
+
       {!isLoading && (
-        <div className="auth-container">
-          <div id="register" className="form-section active">
-            <div className="logo_register">
-              <Image
+        <div className={styles.pageWrapper}>
+          <div className={styles.authContainer}>
+            <div className={styles.logo}>
+              <img
                 src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
-                alt="CatalogQR logo_register"
-                width={200}
-                style={{ padding: "0rem" }}
+                alt="Qatalo Logo"
+                loading="lazy"
               />
               <h1>Crear Cuenta</h1>
-              <p>Únete a nuestra comunidad</p>
+              <p style={{ color: "var(--color-blue)" }}>Únete a nuestra plataforma</p>
             </div>
 
             <form onSubmit={handleRegister}>
-              <div className="form-group">
+              <div className={styles.formGroup}>
                 <label htmlFor="register-name">Nombre</label>
-                <InputText
+                <input
+                  type="text"
                   id="register-name"
-                  value={user.given_name}
+                  className={styles.input}
+                  value={user.given_name || ""}
                   onChange={(e) => onChange("given_name", e.target.value)}
                   required
-                  onFocus={() => {
-                    setShowPasswordInfo(false);
-                  }}
+                  onFocus={() => setShowPasswordInfo(false)}
+                  autoComplete="given-name"
                 />
               </div>
-              <div className="form-group">
+
+              <div className={styles.formGroup}>
                 <label htmlFor="register-family_name">Apellido</label>
-                <InputText
+                <input
+                  type="text"
                   id="register-family_name"
-                  value={user.family_name}
+                  className={styles.input}
+                  value={user.family_name || ""}
                   onChange={(e) => onChange("family_name", e.target.value)}
                   required
-                  onFocus={() => {
-                    setShowPasswordInfo(false);
-                  }}
+                  onFocus={() => setShowPasswordInfo(false)}
+                  autoComplete="family-name"
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles.formGroup}>
                 <label htmlFor="register-email">Correo Electrónico</label>
-                <InputText
+                <input
+                  type="email"
                   id="register-email"
-                  value={user.email}
+                  className={styles.input}
+                  value={user.email || ""}
                   onChange={(e) => onChange("email", e.target.value)}
                   required
-                  onFocus={() => {
-                    setShowPasswordInfo(false);
-                  }}
+                  onFocus={() => setShowPasswordInfo(false)}
+                  autoComplete="email"
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles.formGroup}>
                 <label htmlFor="register-password">Contraseña</label>
-                <InputText
-                  id="register-password"
+                <input
                   type="password"
-                  value={user.password}
+                  id="register-password"
+                  className={styles.input}
+                  value={user.password || ""}
                   onChange={(e) => onChange("password", e.target.value)}
                   required
                   minLength="8"
-                  onFocus={() => {
-                    setShowPasswordInfo(true);
-                  }}
+                  onFocus={() => setShowPasswordInfo(true)}
+                  autoComplete="new-password"
                 />
+
                 {showPasswordInfo && (
-                  <div
-                    className="password-requirements"
-                    style={{ marginTop: "0.5rem" }}
-                  >
-                    <div
-                      style={{
-                        color: isValidPassword.errors.upperCase
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.upperCase ? <Check /> : <Ban />}
-                        Debe contener al menos una letra mayúscula
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.lowerCase
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.lowerCase ? <Check /> : <Ban />}
-                        Debe contener al menos una letra minúscula
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.number ? "green" : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.number ? <Check /> : <Ban />}
-                        Debe contener al menos un número
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.specialChar
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.specialChar ? (
-                          <Check />
-                        ) : (
-                          <Ban />
-                        )}
-                        Debe contener al menos un carácter especial
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.minLength
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.minLength ? <Check /> : <Ban />}
-                        Debe contener al menos 8 caracteres
-                      </span>
-                    </div>
+                  <div className={styles.validationBox}>
+                    <ValidationItem isValid={isValidPassword.errors.upperCase} text="Al menos una mayúscula" />
+                    <ValidationItem isValid={isValidPassword.errors.lowerCase} text="Al menos una minúscula" />
+                    <ValidationItem isValid={isValidPassword.errors.number} text="Al menos un número" />
+                    <ValidationItem isValid={isValidPassword.errors.specialChar} text="Al menos un carácter especial" />
+                    <ValidationItem isValid={isValidPassword.errors.minLength} text="Mínimo 8 caracteres" />
                   </div>
                 )}
               </div>
 
-              <div className="form-group">
+              <div className={styles.formGroup}>
                 <label htmlFor="register-confirm">Confirmar Contraseña</label>
-                <InputText
-                  id="register-confirm"
+                <input
                   type="password"
-                  value={user.confirmPassword}
+                  id="register-confirm"
+                  className={styles.input}
+                  value={user.confirmPassword || ""}
                   onChange={(e) => onChange("confirmPassword", e.target.value)}
                   required
                   minLength="8"
                   onFocus={() => setShowConfirmPasswordInfo(true)}
+                  autoComplete="new-password"
                 />
+
                 {showConfirmPasswordInfo && (
-                  <div
-                    className="password-requirements"
-                    style={{ marginTop: "0.5rem" }}
-                  >
-                    <div
-                      style={{
-                        color: isConfirmPasswordValid ? "green" : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isConfirmPasswordValid ? <Check /> : <Ban />}
-                        {isConfirmPasswordValid
-                          ? "Las contraseñas coinciden"
-                          : "Las contraseñas no coinciden"}
-                      </span>
-                    </div>
+                  <div className={styles.validationBox}>
+                    <ValidationItem
+                      isValid={isConfirmPasswordValid}
+                      text={isConfirmPasswordValid ? "Las contraseñas coinciden" : "Las contraseñas no coinciden"}
+                    />
                   </div>
                 )}
               </div>
-              <Button
-                type="submit"
-                label="Crear Cuenta"
-                className={`btn  ${
-                  !isValidPassword.isValid || !isConfirmPasswordValid
-                    ? "btn-disabled"
-                    : "btn-primary"
-                }`}
-                disabled={!isValidPassword.isValid || !isConfirmPasswordValid}
-              />
-            </form>
 
-            <Button
-              className="btn btn-secondary"
-              onClick={() => (window.location.href = "/login")}
-              label="Ya tengo una cuenta"
-            />
-            <Button
-              className="btn btn-danger"
-              onClick={() => (window.location.href = "/")}
-              label="Cancelar"
-            />
+              <div className={styles.actions} style={{ marginTop: "20px" }}>
+                <PrimaryButton
+                  type="submit"
+                  variant="primary"
+                  disabled={!isValidPassword.isValid || !isConfirmPasswordValid}
+                >
+                  Crear Cuenta
+                </PrimaryButton>
+
+                <PrimaryButton to="/login" variant="secondary">
+                  Ya tengo una cuenta
+                </PrimaryButton>
+
+                <PrimaryButton to="/" variant="danger">
+                  Cancelar
+                </PrimaryButton>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </>
   );
 };
+
 export default Register;

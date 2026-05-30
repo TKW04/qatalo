@@ -1,0 +1,263 @@
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { TbLayoutDashboard, TbPalette } from "react-icons/tb";
+import { useNotification } from "../../../components/UI/NotificationProvider";
+import { getTokenInfo } from "../../../helpers/token";
+import Loading from "../../../components/UI/Loading";
+import PrimaryButton from "../../../components/PrimaryButton";
+import CatalogManager from "../../../components/CatalogTemplates/CatalogManager";
+import adminStyles from "../AdminDashboard.module.css";
+import styles from "./Business.module.css";
+import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
+import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
+
+const Business = () => {
+  const auth = getTokenInfo();
+  const tenantId = auth?.sub;
+  const { showError, showSuccess } = useNotification();
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState({
+    business_id: "", name: "", slug: "", phone: "", description: "",
+    logo_url: "", templateId: "default", themeType: "predefined",
+    themePalette: PREDEFINED_PALETTES[0].colors,
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const originalThemeRef = useRef(null);
+
+  const { data: businessData, isLoading: isFetching } = useQuery({
+    queryKey: ["business", tenantId],
+    queryFn: fetchBusinessData,
+    enabled: !!tenantId,
+  });
+
+  // Merge defensivo: si el backend no trae tema, conservamos los defaults
+  const parsePalette = (p) => {
+    if (!p) return null;
+    if (typeof p === "string") {
+      try { return JSON.parse(p); } catch { return null; }
+    }
+    return p;
+  };
+
+  useEffect(() => {
+    if (businessData) {
+      const palette = parsePalette(businessData.themePalette) || PREDEFINED_PALETTES[0].colors;
+      const themeType = businessData.themeType || "predefined";
+
+      // Recordamos el tema tal como vino del backend
+      originalThemeRef.current = { themePalette: palette, themeType };
+
+      setFormData((prev) => ({
+        ...prev,
+        ...businessData,
+        templateId: businessData.templateId || prev.templateId,
+        themeType,
+        themePalette: palette,
+      }));
+    }
+  }, [businessData]);
+
+  const mutation = useMutation({
+    mutationFn: (data) => saveBusinessData(tenantId, data),
+    onSuccess: () => {
+      showSuccess("¡Éxito!", "Configuración guardada correctamente");
+      queryClient.invalidateQueries(["business", tenantId]);
+    },
+    onError: () => showError("Error", "No se pudo guardar la configuración"),
+  });
+
+  // --- Helpers de tema ---
+  const selectPalette = (palette) =>
+    setFormData((prev) => ({ ...prev, themeType: "predefined", themePalette: palette.colors }));
+
+  const updateColor = (key, value) =>
+    setFormData((prev) => ({
+      ...prev,
+      themeType: "custom",
+      themePalette: { ...prev.themePalette, [key]: value },
+    }));
+
+  const resetPalette = () => {
+    const orig = originalThemeRef.current || {
+      themePalette: PREDEFINED_PALETTES[0].colors,
+      themeType: "predefined",
+    };
+    setFormData((prev) => ({ ...prev, ...orig }));
+  };
+
+  const isPaletteActive = (palette) =>
+    formData.themeType === "predefined" &&
+    JSON.stringify(palette.colors) === JSON.stringify(formData.themePalette);
+
+
+
+
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      setIsLoading(true);
+      setLoadingMessage("Subiendo logo...");
+      const extension = file.name.substring(file.name.lastIndexOf("."));
+      const { uploadUrl, publicUrl } = await getPresignedUrl("logo", extension, file.type);
+      await uploadToS3(uploadUrl, file);
+      setFormData((prev) => ({ ...prev, logo_url: publicUrl }));
+      showSuccess("Logo actualizado", "Imagen subida a S3");
+    } catch {
+      showError("Error", "Fallo al subir la imagen");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.slug) return showError("Error", "Campos obligatorios faltantes");
+    mutation.mutate(formData);
+  };
+
+  if (isFetching) return <Loading message="Cargando configuración..." />;
+
+  return (
+    <div className={styles.businessContainer}>
+      {isLoading && <Loading message={loadingMessage} />}
+
+      <div className={adminStyles.adminHeader}>
+        <h1>Configuración del Negocio</h1>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Información General</h2>
+
+          <div className={styles.formGroup}>
+            <label>Nombre del Negocio</label>
+            <input className="input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ej. Mi Tienda Increíble" />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Slug (URL de tu tienda)</label>
+            <input className="input" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="mi-tienda" />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Teléfono de Contacto</label>
+            <input className="input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 234 567 8900" />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Descripción</label>
+            <textarea className="input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Cuéntale a tus clientes de qué trata tu negocio..." rows="4"></textarea>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Logo del Negocio</label>
+            <div className={styles.fileUploadWrapper}>
+              <input type="file" onChange={handleFileChange} accept="image/*" />
+            </div>
+          </div>
+        </div>
+
+        {/* --- ESTILO (TEMPLATE) --- */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}><TbLayoutDashboard /> Estilo</h2>
+          <div className={styles.templateGrid}>
+            {PREDEFINED_TEMPLATES.map((tpl) => (
+              <div
+                key={tpl.id}
+                className={`${styles.templateCard} ${formData.templateId === tpl.id ? styles.selected : ""}`}
+                onClick={() => setFormData({ ...formData, templateId: tpl.id })}
+              >
+                {tpl.name}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* --- COLORES --- */}
+        <div className={styles.section}>
+          <div className={styles.sectionTitleRow}>
+            <h2 className={styles.sectionTitle}><TbPalette /> Colores</h2>
+            <button type="button" className={styles.resetBtn} onClick={resetPalette}>
+              Restaurar tema guardado
+            </button>
+          </div>
+
+          <div className={styles.themeTypeToggle}>
+            <button
+              type="button"
+              className={`${styles.toggleBtn} ${formData.themeType === "predefined" ? styles.toggleBtnActive : ""}`}
+              onClick={() => setFormData((p) => ({ ...p, themeType: "predefined" }))}
+            >
+              Paleta predefinida
+            </button>
+            <button
+              type="button"
+              className={`${styles.toggleBtn} ${formData.themeType === "custom" ? styles.toggleBtnActive : ""}`}
+              onClick={() => setFormData((p) => ({ ...p, themeType: "custom" }))}
+            >
+              Personalizado
+            </button>
+          </div>
+
+          {formData.themeType === "predefined" ? (
+            <div className={styles.paletteGrid}>
+              {PREDEFINED_PALETTES.map((palette) => (
+                <div
+                  key={palette.id}
+                  className={`${styles.paletteCard} ${isPaletteActive(palette) ? styles.paletteCardSelected : ""}`}
+                  onClick={() => selectPalette(palette)}
+                >
+                  <div className={styles.paletteSwatches}>
+                    {Object.values(palette.colors).map((c, i) => (
+                      <span key={i} className={styles.swatch} style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                  <span className={styles.paletteName}>{palette.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.customColors}>
+              {PALETTE_FIELDS.map(({ key, label }) => (
+                <div key={key} className={styles.colorRow}>
+                  <span>{label}</span>
+                  <div className={styles.colorInputs}>
+                    <input
+                      type="color"
+                      value={formData.themePalette?.[key] || "#000000"}
+                      onChange={(e) => updateColor(key, e.target.value)}
+                    />
+                    <input
+                      className="input"
+                      value={formData.themePalette?.[key] || ""}
+                      onChange={(e) => updateColor(key, e.target.value)}
+                      placeholder="#000000"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <PrimaryButton type="submit" disabled={mutation.isPending}>
+          {mutation.isPending ? "Guardando..." : "Guardar Cambios"}
+        </PrimaryButton>
+      </form>
+
+      <div className={styles.previewSection}>
+        <h2 className={styles.sectionTitle}>Previsualización en tiempo real</h2>
+        <div className={styles.previewContainer}>
+          <CatalogManager businessData={formData} products={[]} isPreview />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Business;

@@ -1,3 +1,4 @@
+/* Clase base compartida por todos los botones */
 .button {
   display: inline-flex;
   align-items: center;
@@ -10,8 +11,11 @@
   transition: all 0.3s ease;
   border: 2px solid transparent;
   text-decoration: none;
+  width: 100%;
+  /* Para que en el AuthLayout ocupen todo el ancho */
 }
 
+/* Variante Principal */
 .primary {
   background: var(--color-navy);
   color: var(--color-yellow);
@@ -21,17 +25,79 @@
 
 .primary:hover {
   background: var(--color-blue);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(17, 63, 103, 0.5);
 }
 
-/* Efecto visual extra para el Landing */
+/* Variante Secundaria */
+.secondary {
+  background: var(--color-yellow);
+  color: var(--color-navy);
+  border-color: var(--color-yellow);
+}
+
+.secondary:hover {
+  background: transparent;
+  color: var(--color-navy);
+  border-color: var(--color-navy);
+  transform: translateY(-2px);
+}
+
+/* Variante Peligro (Cancelar) */
+.danger {
+  background: transparent;
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.danger:hover {
+  background: #e74c3c;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Variante Outline (Usada en el Footer) */
+.outline {
+  background: transparent;
+  color: var(--color-navy);
+  border-color: var(--color-navy);
+}
+
+.outline:hover {
+  background: var(--color-navy);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Variante Deshabilitada */
+.disabled {
+  background: #e1e5e9;
+  color: #a0aab5;
+  border-color: #e1e5e9;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.disabled:hover {
+  transform: none;
+  /* Quitamos la animación de saltito */
+}
+
+/* Efecto Pulse */
 .pulse {
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(253, 245, 170, 0.7); }
-  70% { box-shadow: 0 0 0 15px rgba(253, 245, 170, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(253, 245, 170, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(253, 245, 170, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 15px rgba(253, 245, 170, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(253, 245, 170, 0);
+  }
 }

@@ -1,0 +1,329 @@
+/* TemplateFashion.module.css
+   Estilo: editorial / revista. Imágenes grandes, serif elegante,
+   mucho aire. Colores vía variables; mobile-first. */
+
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap");
+
+.page {
+  /* Mapeo al Theme Manager */
+  --bg-color: var(--theme-background, #ffffff);
+  --primary-color: var(--theme-primary, #111111);
+  --secondary-color: var(--theme-secondary, #333333);
+  --accent-color: var(--theme-accent, #8b7355);
+
+  background: var(--bg-color);
+  color: var(--secondary-color);
+  font-family: "Jost", system-ui, sans-serif;
+  padding: 1.5rem 1.25rem 4rem;
+  max-width: 1180px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* Navegación y Share */
+.topNav {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2rem;
+}
+
+.shareBtn {
+  background: transparent;
+  border: none;
+  color: var(--secondary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.shareBtn:hover {
+  color: var(--accent-color);
+}
+
+/* Header */
+.header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 3.5rem;
+}
+
+.logo {
+  height: 150px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  margin-bottom: 1.5rem;
+  
+}
+
+.businessName {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(2.6rem, 9vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: var(--primary-color);
+  text-transform: uppercase;
+}
+
+.intro {
+  margin: 1.25rem auto 0;
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--secondary-color) 75%, transparent);
+}
+
+/* Controles (Buscador y Categorías) */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 15%, transparent);
+  padding-bottom: 2rem;
+}
+
+.categoryNav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem 2.5rem;
+}
+
+.catLink {
+  background: transparent;
+  border: none;
+  font-family: "Jost", sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  cursor: pointer;
+  padding: 0 0 4px 0;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.catLink:hover {
+  color: var(--primary-color);
+}
+
+.activeCat {
+  color: var(--primary-color);
+}
+
+.activeCat::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--accent-color);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 30%, transparent);
+  padding-bottom: 0.4rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.searchIcon {
+  color: var(--secondary-color);
+  margin-right: 0.8rem;
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  color: var(--primary-color);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: color-mix(in srgb, var(--secondary-color) 50%, transparent);
+}
+
+/* Colección Editorial */
+.collection {
+  display: flex;
+  flex-direction: column;
+  gap: 6rem;
+}
+
+.editorial {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  cursor: pointer;
+}
+
+.figure {
+  margin: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--secondary-color) 5%, var(--bg-color));
+  position: relative;
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.imagePlaceholder {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: color-mix(in srgb, var(--secondary-color) 10%, transparent);
+}
+
+.editorial:hover .image {
+  transform: scale(1.04);
+}
+
+.soldOutBadge {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  background: var(--bg-color);
+  color: var(--primary-color);
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 0.5rem;
+}
+
+.label {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.productName {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0 0 1rem;
+  color: var(--primary-color);
+}
+
+.productDesc {
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 1.8;
+  margin: 0 0 2rem;
+  max-width: 42ch;
+  color: color-mix(in srgb, var(--secondary-color) 75%, transparent);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-top: auto;
+}
+
+.price {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.6rem;
+  color: var(--primary-color);
+}
+
+.cta {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: "Jost", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--secondary-color);
+  padding: 0 0 4px 0;
+  position: relative;
+}
+
+.cta::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--accent-color);
+  transform: scaleX(0.35);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.editorial:hover .cta::after {
+  transform: scaleX(1);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 5rem 1rem;
+  color: color-mix(in srgb, var(--secondary-color) 50%, transparent);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Desktop: layout editorial a dos columnas, alternado */
+@media (min-width: 820px) {
+  .controls {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .editorial {
+    flex-direction: row;
+    align-items: center;
+    gap: 5rem;
+  }
+
+  .reverse {
+    flex-direction: row-reverse;
+  }
+
+  .figure {
+    flex: 1 1 50%;
+  }
+
+  .copy {
+    flex: 1 1 50%;
+    padding: 0 2rem;
+  }
+}

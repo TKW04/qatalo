@@ -1,16 +1,19 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Landing from "./pages/Landing";
-// import AdminDashboard from "./pages/AdminDashboard";
-// import Register from "./pages/User/Register";
-// import Login from "./pages/User/Login";
-// import ForgotPassword from "./pages/User/ForgotPassword";
+
+import Register from "./pages/User/Register";
+import Login from "./pages/User/Login";
+import ForgotPassword from "./pages/User/ForgotPassword";
+
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 // import Payment from "./pages/Payment";
 // import CatalogPublic from "./pages/CatalogPublic";
 // import PaymentValidation from "./pages/PaymentValidation";
-import TermsAndConditions from "./pages/Footer/TermsAndConditions";
+
 // import NotFoundPage from "./pages/NotFoundPage";
 // import ResetPassword from "./pages/User/ResetPassword";
+import TermsAndConditions from "./pages/Footer/TermsAndConditions";
 import PrivacyNotice from "./pages/Footer/PrivacyNotice";
 import RefundPolicy from "./pages/Footer/RefundPolicy";
 
@@ -32,20 +35,24 @@ function App() {
             element={<PrivacyNotice />}
           />
           <Route path="/refundpolicy" element={<RefundPolicy />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgotpassword" element={<ForgotPassword />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           {/* 
           
 
           <Route path="/catalog/:slug" element={<CatalogPublic />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          
+          
+          
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/payment" element={<Payment />} />
           <Route
             path="/paymentValidation/:customer_id/"
             element={<PaymentValidation />}
           />
-          <Route path="/admin" element={<AdminDashboard />} />
+          
           <Route path="*" element={<NotFoundPage />} /> */}
         </Routes>
       </Router>
