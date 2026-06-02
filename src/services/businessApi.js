@@ -75,11 +75,11 @@ export const saveBusinessData = async (tenantId, businessData) => {
 };
 
 // Nueva función para pedir permiso a S3
-export const getPresignedUrl = async (fileType, fileExt, mimeType) => {
+export const getPresignedUrl = async (fileType, fileExt, mimeType, folder = "business") => {
   const response = await fetch(`${import.meta.env.VITE_APP_API_URL}businesses/presign`, {
     method: "POST",
-    headers: { Authorization: getToken() },
-    body: JSON.stringify({ type: fileType, ext: fileExt, mime: mimeType })
+    headers: { Authorization: getToken(), "Content-Type": "application/json" },
+    body: JSON.stringify({ type: fileType, ext: fileExt, mime: mimeType, folder }),
   });
   return await response.json();
 };
