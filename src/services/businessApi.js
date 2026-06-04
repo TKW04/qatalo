@@ -18,27 +18,18 @@ export const fetchBusinessData = async () => {
   }
 
   const data = await response.json();
-  return data; 
+  return data;
 };
 
 /**
  * Obtiene el catálogo por su Slug (Para la vista pública)
  */
 export const fetchBusinessBySlug = async (slug) => {
-  const response = await fetch(`${API_URL}businesses/${slug}`, {
-    method: "GET",
-    // Nota: Si esta ruta pública no requiere token en tu API Gateway, puedes quitar el header.
-    headers: {
-      Authorization: getToken(), 
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Catálogo no encontrado");
-  }
-
+  const response = await fetch(`${API_URL}businesses/${slug}`, { method: "GET" });
+  if (!response.ok) throw new Error("Catálogo no encontrado");
   return await response.json();
 };
+
 
 /**
  * Crea o Actualiza el negocio (Smart Save)
@@ -52,7 +43,8 @@ export const saveBusinessData = async (tenantId, businessData) => {
     logo_url: businessData.logo_url || "",
     templateId: businessData.templateId || "default",
     themeType: businessData.themeType || "predefined",
-    themePalette: businessData.themePalette || null, // objeto -> se guarda como Map
+    themePalette: businessData.themePalette || null,
+    localities: businessData.localities || [],
   };
 
   const isUpdating = businessData.business_id && businessData.business_id !== "";

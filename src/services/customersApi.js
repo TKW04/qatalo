@@ -24,6 +24,16 @@ export const createCustomer = async (customer) => {
   return handle(res); // 409 -> "Cliente ya existe"
 };
 
+export const createCatalogOrder = async (payload) => {
+  const response = await fetch(`${API_URL}customers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("No se pudo crear la orden");
+  return await response.json();
+};
+
 export const updateCustomer = async (customer) => {
   const res = await fetch(`${API_URL}customers/${customer.customer_id}`, {
     method: "PUT", headers: authHeaders(),

@@ -15,7 +15,7 @@
   color: var(--secondary-color);
   font-family: "Jost", system-ui, sans-serif;
   padding: 1.5rem 1.25rem 4rem;
-  max-width: 1180px;
+  max-width: none;
   margin: 0 auto;
   min-height: 100vh;
 }
@@ -54,12 +54,12 @@
 }
 
 .logo {
-  height: 150px;
+  height: 250px;
   width: auto;
-  max-width: 200px;
+  max-width: 300px;
   object-fit: contain;
   margin-bottom: 1.5rem;
-  
+  /* background: #fff; padding: 8px; */
 }
 
 .businessName {
@@ -169,6 +169,7 @@
 
 .editorial {
   display: flex;
+  width: auto;
   flex-direction: column;
   gap: 2rem;
   cursor: pointer;

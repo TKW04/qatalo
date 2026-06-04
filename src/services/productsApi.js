@@ -18,8 +18,9 @@ export const fetchProducts = async () => {
 };
 
 export const fetchProductsByBusinessId = async (businessId) => {
-  const res = await fetch(`${API_URL}products/${businessId}`, { method: "GET", headers: authHeaders() });
-  return handle(res);
+  const response = await fetch(`${API_URL}products/${businessId}`, { method: "GET" });
+  if (!response.ok) throw new Error("No se pudieron cargar los productos");
+  return await response.json();
 };
 
 export const createProduct = async (product) => {

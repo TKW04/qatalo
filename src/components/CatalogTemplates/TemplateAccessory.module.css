@@ -15,7 +15,7 @@
   color: var(--secondary-color);
   font-family: "Archivo", system-ui, sans-serif;
   padding: 2.25rem 1rem 3.5rem;
-  max-width: 1240px;
+  max-width: none;
   margin: 0 auto;
   min-height: 100vh;
 }
@@ -40,11 +40,10 @@
 }
 
 .logo {
-  height: 150px;
   width: auto;
-  max-width: 160px;
-  object-fit: contain;
-  border-radius: 12px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .businessName {
@@ -168,8 +167,8 @@
 /* --- GRID DE PRODUCTOS (TU CÓDIGO ORIGINAL) --- */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
 }
 
 .card {
@@ -179,6 +178,8 @@
 }
 
 .media {
+  max-width: auto !important;
+  max-height: 600px !important;
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
@@ -276,7 +277,7 @@
   color: color-mix(in srgb, var(--secondary-color) 58%, transparent);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  /* white-space: wrap; */
 }
 
 .price {
@@ -322,5 +323,27 @@
 
   .productName {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .headerTop {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  .brandInfo {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  .logo {
+    height: 110px;
+  }
+   .controls {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
   }
 }

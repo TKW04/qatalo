@@ -13,7 +13,7 @@
   color: var(--secondary-color);
   font-family: ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif;
   padding: 2rem 1.25rem 4rem;
-  max-width: 1240px;
+  max-width: none;
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;

@@ -1,139 +1,92 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
-import HeaderPublic from "../components/HeaderPublic";
-import SearchBar from "../components/SearchBar";
-import CategoryFilter from "../components/CategoryFilter";
-import ProductGrid from "../components/ProductGrid";
-import ProductModal from "../components/ProductModal";
-
-import { useDispatch, useSelector } from "react-redux";
-import { GetCategoriesByBusinessId } from "../store/categories-store/category-actions";
-import { useNotification } from "../components/UI/NotificationProvider";
-import { GetProductsByBusinessId } from "../store/product-store/product-actions";
 import Loading from "../components/UI/Loading";
+import CatalogManager from "../components/CatalogTemplates/CatalogManager";
+import { fetchBusinessBySlug } from "../services/businessApi";
+import { fetchProductsByBusinessId } from "../services/productsApi";
+import { fetchCategoriesByBusinessId } from "../services/categoryApi";
+import { PREDEFINED_PALETTES } from "../constants/themePalettes";
 import "../styles/catalog.css";
-import { productActions } from "../store/product-store/product-slice";
 
-let orderProducts = true;
+const DEFAULT_PALETTE =
+  (PREDEFINED_PALETTES.find((p) => p.id === "ocean-breeze") || PREDEFINED_PALETTES[0]).colors;
+
+const parsePalette = (raw) => {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+  if (typeof raw === "object") return raw;
+  return null;
+};
+
+const isAvailable = (status) =>
+  !status || status === "trialing" || status === "active";
+
 const CatalogPublic = () => {
-  const business = useSelector((state) => state.business.business);
-  const categories = useSelector((state) => state.category.categories);
-  const products = useSelector((state) => state.product.products);
-  const dispatch = useDispatch();
-  const { showError } = useNotification();
+  const { slug } = useParams();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: business, isLoading: loadingBusiness, isError } = useQuery({
+    queryKey: ["public-business", slug],
+    queryFn: () => fetchBusinessBySlug(slug),
+    enabled: !!slug,
+    retry: false,
+  });
 
-  useEffect(() => {
-    if (
-      business &&
-      business.business_id !== undefined &&
-      business.business_id !== null &&
-      business.business_id !== ""
-    ) {
-      if (categories.length === 0) {
-        dispatch(GetCategoriesByBusinessId(business.business_id, showError));
-      }
-      if (products.length === 0) {
-        dispatch(GetProductsByBusinessId(business.business_id, showError));
-      }
-      setTimeout(() => {
-        if (business.status === "trialing" || business.status === "active") {
-          setIsLoading(false);
-        }
-      }, 4500);
-    }
-  }, [business, categories, dispatch, products, showError]);
+  const businessId = business?.business_id;
 
-  useEffect(() => {
-     if (
-      business &&
-      business.business_id !== undefined &&
-      business.business_id !== null &&
-      business.business_id !== ""
-    ) {
-      if (products.length > 0 && orderProducts) {
-        const sortedProducts = [...products].sort((a, b) => a.order - b.order);
-        dispatch(productActions.setProducts({products: sortedProducts}) );
-        orderProducts = false;
-      }
-    }
-  },[business, dispatch, products]);
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
+    queryKey: ["public-products", businessId],
+    queryFn: () => fetchProductsByBusinessId(businessId),
+    enabled: !!businessId,
+    retry: false,
+  });
 
-  // Filtrar productos
-  const filteredProducts = useMemo(() => {
-    return products
-      .filter((product) => {
-        const matchesSearch =
-          searchTerm === "" ||
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const { data: categories = [] } = useQuery({
+    queryKey: ["public-categories", businessId],
+    queryFn: () => fetchCategoriesByBusinessId(businessId),
+    enabled: !!businessId,
+    retry: false,
+  });
 
-        const matchesCategory =
-          selectedCategory === "all" ||
-          product.category_id === selectedCategory;
+  // Normaliza: template por defecto + paleta (parse / fallback ocean-breeze)
+  const normalizedBusiness = useMemo(() => {
+    if (!business) return null;
+    return {
+      ...business,
+      templateId: business.templateId || "default",
+      themePalette: parsePalette(business.themePalette) || DEFAULT_PALETTE,
+    };
+  }, [business]);
 
-        return matchesSearch && matchesCategory;
-      })
-      .sort((a, b) => a.order - b.order);
-  }, [products, searchTerm, selectedCategory]);
+  const sortedProducts = useMemo(
+    () => [...products].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)),
+    [products]
+  );
 
-  if (isLoading) {
-    return <Loading message="Cargando..." visible={isLoading} />;
+  if (loadingBusiness || (businessId && loadingProducts)) {
+    return <Loading message="Cargando catálogo..." visible />;
   }
 
-  if (!business) {
+  if (isError || !business || !isAvailable(business.status)) {
     return (
       <div className="catalog">
-        <div
-          className="container"
-          style={{ padding: "4rem 1rem", textAlign: "center" }}
-        >
-          <h1>Catálogo no encontrado</h1>
-          <p>El catálogo que buscas no existe o no está disponible.</p>
+        <div className="container" style={{ padding: "4rem 1rem", textAlign: "center" }}>
+          <h1>Catálogo no disponible</h1>
+          <p>El catálogo que buscas no existe o no está disponible en este momento.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="catalog">
-        <HeaderPublic setIsLoading={setIsLoading} />
-        <main className="catalog-main">
-          <div className="container">
-            <div className="catalog-controls">
-              <SearchBar
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Buscar productos..."
-              />
-              <CategoryFilter
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-              />
-            </div>
-
-            <ProductGrid
-              products={filteredProducts}
-              onProductClick={setSelectedProduct}
-            />
-          </div>
-        </main>
-
-        {selectedProduct && (
-          <ProductModal
-            product={selectedProduct}
-            business={business}
-            onClose={() => setSelectedProduct(null)}
-          />
-        )}
-      </div>
-    </>
+    <CatalogManager
+      businessData={normalizedBusiness}
+      products={sortedProducts}
+      categories={categories}
+    />
   );
 };
 

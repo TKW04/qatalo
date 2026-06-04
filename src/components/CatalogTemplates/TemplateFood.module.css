@@ -16,7 +16,7 @@
   color: var(--secondary-color);
   font-family: "Nunito Sans", system-ui, sans-serif;
   padding: 1.5rem 1rem 4rem;
-  max-width: 1200px;
+  max-width: none;
   margin: 0 auto;
   min-height: 100vh;
 }
@@ -360,5 +360,16 @@
 
   .searchContainer {
     width: 350px;
+  }
+}
+@media (max-width: 640px) {
+  .brandContainer {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.85rem;
+  }
+  .logo {
+    height: 110px;
   }
 }

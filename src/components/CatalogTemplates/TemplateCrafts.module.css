@@ -15,7 +15,7 @@
   color: var(--secondary-color);
   font-family: "Quicksand", system-ui, sans-serif;
   padding: 2rem 1rem 3.5rem;
-  max-width: 1280px;
+  max-width: none;
   margin: 0 auto;
   min-height: 100vh;
 }

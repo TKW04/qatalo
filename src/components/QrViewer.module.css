@@ -1,44 +1,61 @@
-/* Contenedor */
 .qrContainer {
-  background: linear-gradient(135deg, #113f67 0%, #34699a 100%) !important;
-  border: #34699a 1px solid !important;
-  border-radius: 10px !important;
-  padding: 2rem !important;
-  box-shadow: var(--shadow ) !important;
-  margin: 0rem !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #113f67 0%, #34699a 100%);
+  border-radius: 16px;
+  padding: 2rem;
 }
-/* Contenedor de los botones */
+
+.qrPanel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  line-height: 0;
+}
+
+.qrPanel canvas,
+.qrPanel svg {
+  display: block;
+  border-radius: 8px;
+}
+
 .qrActions {
-  margin-top: 1rem !important;
-  gap: 10px !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-}
-/* Botón de descarga */
-.qrDownloadButton {
-  display: flex !important;
-  align-items: center !important;
-  margin: 5px !important;
-  padding: 0.75rem 1.5rem !important;
-  border-color: #ffffff !important;
-  background-color: #113f67 !important;
-  width: 100% !important;
-}
-.qrDownloadButton:hover {
-  background-color: #0e2e4b !important;
-}
-/* Botón de impresión */
-.qrPrintButton {
-  display: flex !important;
-  align-items: center !important;
-  margin: 5px !important;
-  padding: 0.75rem 1.5rem !important;
-  border-color: #ffffff !important;
-  background-color: var(--color-sea) !important;
-  width: 100% !important;
-}
-.qrPrintButton:hover {
-  background-color: #2a7a9a !important;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
 
+.btnDownload {
+  background: #fff;
+  color: #113f67;
+}
+
+.btnDownload:hover {
+  background: #eaf1f7;
+}
+
+.btnPrint {
+  background: transparent;
+  color: #fff;
+  border-color: #fff;
+}
+
+.btnPrint:hover {
+  background: rgba(255, 255, 255, 0.12);
+}

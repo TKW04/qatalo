@@ -21,6 +21,7 @@
     "keen-slider": "^6.8.6",
     "lucide-react": "^0.539.0",
     "process": "^0.11.10",
+    "qr-code-styling": "^1.9.2",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.1",

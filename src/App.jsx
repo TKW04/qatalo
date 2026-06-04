@@ -8,7 +8,7 @@ import ForgotPassword from "./pages/User/ForgotPassword";
 
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 // import Payment from "./pages/Payment";
-// import CatalogPublic from "./pages/CatalogPublic";
+import CatalogPublic from "./pages/CatalogPublic";
 // import PaymentValidation from "./pages/PaymentValidation";
 
 // import NotFoundPage from "./pages/NotFoundPage";
@@ -39,10 +39,11 @@ function App() {
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/catalog/:slug" element={<CatalogPublic />} />
           {/* 
           
 
-          <Route path="/catalog/:slug" element={<CatalogPublic />} />
+          
           
           
           

@@ -1,4 +1,3 @@
-// src/components/CatalogTemplates/CatalogManager.jsx
 import { useState, useMemo } from "react";
 import TemplateDefault from "./TemplateDefault";
 import TemplateFashion from "./TemplateFashion";
@@ -6,6 +5,7 @@ import TemplateTech from "./TemplateTech";
 import TemplateCrafts from "./TemplateCrafts";
 import TemplateFood from "./TemplateFood";
 import TemplateAccessory from "./TemplateAccessory";
+import ProductModal from "../ProductModal";
 import { DUMMY_PRODUCTS, DUMMY_CATEGORIES } from "./previewData";
 
 const Templates = {
@@ -17,26 +17,47 @@ const Templates = {
   accessory: TemplateAccessory,
 };
 
-const noop = () => { };
+const noop = () => {};
 
-const CatalogManager = ({ businessData, products = [], isPreview = false }) => {
+const parsePalette = (raw) => {
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return {}; }
+  }
+  if (typeof raw === "object") return raw;
+  return {};
+};
+
+const CatalogManager = ({ businessData, products = [], categories: categoriesProp, isPreview = false }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedLocality, setSelectedLocality] = useState("all");
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const usingDummy = isPreview && products.length === 0;
   const sourceProducts = usingDummy ? DUMMY_PRODUCTS : products;
-  const categories = usingDummy
-    ? DUMMY_CATEGORIES
-    : Array.from(
+
+  const categories = useMemo(() => {
+    if (usingDummy) return DUMMY_CATEGORIES;
+    if (categoriesProp && categoriesProp.length) return categoriesProp;
+    return Array.from(
       new Map(
         sourceProducts
           .filter((p) => p.category_id)
           .map((p) => [p.category_id, { category_id: p.category_id, name: p.category_name || p.category_id }])
       ).values()
     );
+  }, [usingDummy, categoriesProp, sourceProducts]);
 
-  // 👇 Nombres canónicos que TODOS los templates escuchan
-  const palette = businessData?.themePalette || {};
+  const localityOptions = useMemo(() => {
+    if (businessData?.localities && businessData.localities.length) return businessData.localities;
+    const set = new Set();
+    sourceProducts.forEach((p) => (p.localities || []).forEach((l) => set.add(l)));
+    return Array.from(set);
+  }, [businessData, sourceProducts]);
+
+  // Variables canónicas que TODOS los templates escuchan
+  const palette = parsePalette(businessData?.themePalette);
   const themeStyles = {
     "--theme-primary": palette.primary,
     "--theme-secondary": palette.secondary,
@@ -49,14 +70,36 @@ const CatalogManager = ({ businessData, products = [], isPreview = false }) => {
     return sourceProducts.filter((p) => {
       const matchesSearch = p.name?.toLowerCase().includes(term);
       const matchesCat = selectedCategory === "all" || p.category_id === selectedCategory;
-      return matchesSearch && matchesCat;
+      const locs = p.localities || [];
+      const matchesLoc = selectedLocality === "all" || locs.length === 0 || locs.includes(selectedLocality);
+      return matchesSearch && matchesCat && matchesLoc;
     });
-  }, [sourceProducts, searchTerm, selectedCategory]);
+  }, [sourceProducts, searchTerm, selectedCategory, selectedLocality]);
 
   const SelectedTemplate = Templates[businessData?.templateId] || TemplateDefault;
+  const handleProductClick = isPreview ? noop : setSelectedProduct;
 
   return (
-    <div style={{ ...themeStyles, width: "100%", height: "100%" }}>
+    <div style={{ ...themeStyles, width: "100%", minHeight: "100%" }}>
+      {localityOptions.length > 0 && (
+        <div style={{
+          background: "var(--theme-background, #f7fafc)",
+          padding: ".75rem 1rem",
+          display: "flex", justifyContent: "center", alignItems: "center", gap: ".6rem",
+          borderBottom: "1px solid rgba(0,0,0,.06)",
+        }}>
+          <span style={{ fontSize: ".9rem", color: "var(--theme-secondary, #2d3e50)", fontWeight: 600 }}>Localidad:</span>
+          <select
+            value={selectedLocality}
+            onChange={(e) => setSelectedLocality(e.target.value)}
+            style={{ padding: ".45rem .8rem", borderRadius: "8px", border: "1px solid rgba(0,0,0,.15)", background: "#fff", color: "#1d2939", fontWeight: 600, fontSize: "16px" }}
+          >
+            <option value="all">Todas</option>
+            {localityOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+          </select>
+        </div>
+      )}
+
       <SelectedTemplate
         business={businessData}
         products={filteredProducts}
@@ -65,9 +108,17 @@ const CatalogManager = ({ businessData, products = [], isPreview = false }) => {
         onSearchChange={setSearchTerm}
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
-        onProductClick={noop}
+        onProductClick={handleProductClick}
         onShare={noop}
       />
+
+      {!isPreview && selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          business={businessData}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 };

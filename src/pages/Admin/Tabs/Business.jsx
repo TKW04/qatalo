@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TbLayoutDashboard, TbPalette } from "react-icons/tb";
+import { TbLayoutDashboard, TbPalette, TbMapPin } from "react-icons/tb";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
 import Loading from "../../../components/UI/Loading";
@@ -20,11 +20,12 @@ const Business = () => {
   const [formData, setFormData] = useState({
     business_id: "", name: "", slug: "", phone: "", description: "",
     logo_url: "", templateId: "default", themeType: "predefined",
-    themePalette: PREDEFINED_PALETTES[0].colors,
+    themePalette: PREDEFINED_PALETTES[0].colors, localities: [],
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [localityInput, setLocalityInput] = useState("");
   const originalThemeRef = useRef(null);
 
   const { data: businessData, isLoading: isFetching } = useQuery({
@@ -47,7 +48,6 @@ const Business = () => {
       const palette = parsePalette(businessData.themePalette) || PREDEFINED_PALETTES[0].colors;
       const themeType = businessData.themeType || "predefined";
 
-      // Recordamos el tema tal como vino del backend
       originalThemeRef.current = { themePalette: palette, themeType };
 
       setFormData((prev) => ({
@@ -56,6 +56,7 @@ const Business = () => {
         templateId: businessData.templateId || prev.templateId,
         themeType,
         themePalette: palette,
+        localities: businessData.localities || [],
       }));
     }
   }, [businessData]);
@@ -92,9 +93,18 @@ const Business = () => {
     formData.themeType === "predefined" &&
     JSON.stringify(palette.colors) === JSON.stringify(formData.themePalette);
 
-
-
-
+  // --- Helpers de localidades ---
+  const addLocality = () => {
+    const v = localityInput.trim();
+    if (!v) return;
+    setFormData((p) => {
+      const exists = (p.localities || []).some((l) => l.toLowerCase() === v.toLowerCase());
+      return exists ? p : { ...p, localities: [...(p.localities || []), v] };
+    });
+    setLocalityInput("");
+  };
+  const removeLocality = (loc) =>
+    setFormData((p) => ({ ...p, localities: (p.localities || []).filter((l) => l !== loc) }));
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -160,6 +170,36 @@ const Business = () => {
               <input type="file" onChange={handleFileChange} accept="image/*" />
             </div>
           </div>
+        </div>
+
+        {/* --- LOCALIDADES --- */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}><TbMapPin /> Localidades de disponibilidad</h2>
+          <p style={{ color: "#667085", fontSize: ".9rem", marginTop: "-.5rem", marginBottom: "1rem" }}>
+            Define las localidades donde entregas. Luego asignas a cada producto en cuáles está disponible
+            (si un producto no tiene ninguna asignada, estará disponible en todas).
+          </p>
+          <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+            <input
+              className="input"
+              style={{ flex: 1, minWidth: 200 }}
+              value={localityInput}
+              onChange={(e) => setLocalityInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLocality(); } }}
+              placeholder="Ej. Santo Domingo"
+            />
+            <button type="button" className={styles.resetBtn} onClick={addLocality}>Agregar</button>
+          </div>
+          {(formData.localities || []).length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", marginTop: "1rem" }}>
+              {formData.localities.map((loc) => (
+                <span key={loc} style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: "#eef2f7", color: "#113f67", borderRadius: "999px", padding: ".35rem .75rem", fontSize: ".88rem", fontWeight: 600 }}>
+                  {loc}
+                  <button type="button" onClick={() => removeLocality(loc)} style={{ border: "none", background: "transparent", color: "#d92d20", cursor: "pointer", fontSize: "1rem", lineHeight: 1 }} aria-label={`Quitar ${loc}`}>×</button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* --- ESTILO (TEMPLATE) --- */}

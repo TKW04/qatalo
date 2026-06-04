@@ -27,6 +27,7 @@ const emptyForm = {
   category_id: "", is_available: "available", orden: 0, quantity: 0,
   show_quantity: false, just_one: false, min_age_allow: false, min_age: 0,
   required_delivery_day: false, delivery_start_day: "", terms: "", imagesUrl: [],
+  localities: [],
 };
 
 const Toggle = ({ checked, onChange, label }) => (
@@ -53,6 +54,8 @@ const Products = () => {
     queryKey: ["products", tenantId], queryFn: fetchProducts, enabled: !!tenantId, retry: false,
   });
 
+  const businessLocalities = business?.localities || [];
+
   const [form, setForm] = useState(emptyForm);
   const [newFiles, setNewFiles] = useState([]);
   const [errors, setErrors] = useState({});
@@ -67,6 +70,12 @@ const Products = () => {
 
   const setField = (id, value) => setForm((p) => ({ ...p, [id]: value }));
   const resetForm = () => { setForm(emptyForm); setNewFiles([]); setErrors({}); };
+
+  const toggleLocality = (loc) =>
+    setForm((p) => {
+      const list = p.localities || [];
+      return { ...p, localities: list.includes(loc) ? list.filter((l) => l !== loc) : [...list, loc] };
+    });
 
   const existingUrls = (form.imagesUrl || []).map((i) => (typeof i === "string" ? i : i.image));
   const totalImages = existingUrls.length + newFiles.length;
@@ -135,6 +144,7 @@ const Products = () => {
         delivery_start_day: form.delivery_start_day,
         terms: form.terms,
         imagesUrl: [...existingUrls, ...uploaded],
+        localities: form.localities || [],
       };
       return form.product_id ? updateProduct(payload) : createProduct(payload);
     },
@@ -172,6 +182,7 @@ const Products = () => {
       show_quantity: !!p.show_quantity, just_one: !!p.just_one, min_age_allow: !!p.min_age_allow,
       min_age: p.min_age ?? 0, required_delivery_day: !!p.required_delivery_day,
       delivery_start_day: p.delivery_start_day || "", terms: p.terms || "", imagesUrl: p.imagesUrl || [],
+      localities: p.localities || [],
     });
     setNewFiles([]); setErrors({});
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -247,6 +258,36 @@ const Products = () => {
               <input type="number" min="0" className="input" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} />
             </div>
           </div>
+
+          {businessLocalities.length > 0 && (
+            <div className={styles.formGroup}>
+              <label>Localidades disponibles</label>
+              <p style={{ color: "#667085", fontSize: ".82rem", margin: "-.2rem 0 .5rem" }}>
+                Si no seleccionas ninguna, el producto estará disponible en <strong>todas</strong>.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                {businessLocalities.map((loc) => {
+                  const active = (form.localities || []).includes(loc);
+                  return (
+                    <button
+                      type="button"
+                      key={loc}
+                      onClick={() => toggleLocality(loc)}
+                      style={{
+                        border: active ? "1px solid #113f67" : "1px solid #d0d5dd",
+                        background: active ? "#113f67" : "#fff",
+                        color: active ? "#fff" : "#344054",
+                        borderRadius: "999px", padding: ".4rem .9rem",
+                        fontSize: ".85rem", fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      {loc}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
             <label>Imágenes * (máx. {MAX_IMAGES})</label>
@@ -370,6 +411,7 @@ const Products = () => {
               <li><span>Categoría</span><strong>{categoryName(viewing.category_id)}</strong></li>
               <li><span>Cantidad</span><strong>{viewing.quantity}</strong></li>
               <li><span>Estado</span><strong>{viewing.is_available === "available" ? "Disponible" : "Agotado"}</strong></li>
+              <li><span>Localidades</span><strong>{(viewing.localities && viewing.localities.length) ? viewing.localities.join(", ") : "Todas"}</strong></li>
               {viewing.min_age_allow && <li><span>Edad mínima</span><strong>{viewing.min_age} años</strong></li>}
               {viewing.terms && <li><span>Términos</span><strong>{viewing.terms}</strong></li>}
             </ul>
