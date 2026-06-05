@@ -9,7 +9,8 @@ import ProductModal from "../ProductModal";
 import { DUMMY_PRODUCTS, DUMMY_CATEGORIES } from "./previewData";
 import CustomerAuthModal from "./CustomerAuthModal";
 import CustomerOrders from "./CustomerOrders";
-import { getCustomerSession, setCustomerSession } from "../../services/customerAuthApi";
+import CartDrawer from "./CartDrawer";
+import { getCustomerSession, setCustomerSession, getValidCustomerSession, decodeCustomerToken, getCart, cartCount } from "../../services/customerAuthApi";
 import portal from "./CustomerPortal.module.css";
 
 const Templates = {
@@ -52,12 +53,18 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     else setAuthOpen(true);
   };
 
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartCnt, setCartCnt] = useState(0);
+  const refreshCart = () => setCartCnt(cartCount(getCart(businessId)));
+  useEffect(() => { if (businessId) refreshCart(); }, [businessId]); // eslint-disable-line
+
   useEffect(() => {
     if (isPreview || !businessId) return;
     const m = window.location.hash.match(/orders-token=([^&]+)/);
     if (m) {
-      setCustomerSession(businessId, { token: decodeURIComponent(m[1]) });
-      // borra el token de la URL para que no quede a la vista ni en el historial
+      const token = decodeURIComponent(m[1]);
+      const payload = decodeCustomerToken(token);
+      setCustomerSession(businessId, { token, email: payload?.email || "" });
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
       setOrdersOpen(true);
     }
@@ -142,14 +149,26 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
         <ProductModal
           product={selectedProduct}
           business={businessData}
-          customerSession={getCustomerSession(businessId)}
+          customerSession={getValidCustomerSession(businessId)}
           onClose={() => setSelectedProduct(null)}
+          onAdded={() => { refreshCart(); setCartOpen(true); }}
+        />
+      )}
+      {cartOpen && (
+        <CartDrawer
+          businessId={businessId}
+          businessName={businessData?.business_name || businessData?.name}
+          onClose={() => { setCartOpen(false); refreshCart(); }}
+          onChanged={refreshCart}
         />
       )}
 
       {!isPreview && businessId && (
         <>
           <button className={portal.fab} onClick={openOrders}>Mis órdenes</button>
+          <button className={portal.fabCart} onClick={() => setCartOpen(true)}>
+            🛒{cartCnt > 0 && <span className={portal.fabBadge}>{cartCnt}</span>}
+          </button>
 
           {authOpen && (
             <CustomerAuthModal

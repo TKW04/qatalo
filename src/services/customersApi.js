@@ -34,6 +34,16 @@ export const createCatalogOrder = async (payload) => {
   return await response.json();
 };
 
+export const createCatalogCart = async (payload) => {
+  const res = await fetch(`${import.meta.env.VITE_APP_API_URL}customers/cart`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload), // { business_id, given_name, family_name, email, phone, age, payment_method:{payment_method_id}, items }
+  });
+  if (!res.ok) throw new Error("No se pudo crear la orden");
+  return res.json();
+};
+
 export const updateCustomer = async (customer) => {
   const res = await fetch(`${API_URL}customers/${customer.customer_id}`, {
     method: "PUT", headers: authHeaders(),

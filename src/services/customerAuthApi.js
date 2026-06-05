@@ -2,6 +2,30 @@ const API_URL = import.meta.env.VITE_APP_API_URL;
 
 const tokenKey = (businessId) => `qatalo_cust_${businessId}`;
 
+// decodifica el payload del token (sin verificar firma, solo para leer exp)
+const decodeTokenPayload = (token) => {
+  try {
+    let p = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+    p += "=".repeat((4 - (p.length % 4)) % 4);
+    return JSON.parse(atob(p));
+  } catch {
+    return null;
+  }
+};
+export const decodeCustomerToken = (token) => decodeTokenPayload(token);
+
+// devuelve la sesión solo si el token sigue vigente; si venció, la limpia
+export const getValidCustomerSession = (businessId) => {
+  const s = getCustomerSession(businessId);
+  if (!s?.token) return null;
+  const payload = decodeTokenPayload(s.token);
+  if (!payload?.exp || payload.exp * 1000 <= Date.now()) {
+    clearCustomerSession(businessId);
+    return null;
+  }
+  return s;
+};
+
 export const getCustomerSession = (businessId) => {
   try {
     return JSON.parse(localStorage.getItem(tokenKey(businessId)) || "null");
@@ -11,9 +35,51 @@ export const getCustomerSession = (businessId) => {
 };
 export const setCustomerSession = (businessId, data) =>
   localStorage.setItem(tokenKey(businessId), JSON.stringify(data));
-export const clearCustomerSession = (businessId) =>
+
+// --- memoria de la sesión del navegador (elección + datos de invitado) ---
+const modeKey = (b) => `qatalo_cust_mode_${b}`;
+const guestKey = (b) => `qatalo_cust_guest_${b}`;
+
+export const getCustomerMode = (businessId) => {
+  try { return sessionStorage.getItem(modeKey(businessId)); } catch { return null; } // "guest" | null
+};
+export const setCustomerMode = (businessId, mode) => {
+  try { sessionStorage.setItem(modeKey(businessId), mode); } catch { }
+};
+export const clearCustomerMode = (businessId) => {
+  try { sessionStorage.removeItem(modeKey(businessId)); } catch { }
+};
+
+export const getGuestInfo = (businessId) => {
+  try { return JSON.parse(sessionStorage.getItem(guestKey(businessId)) || "null"); } catch { return null; }
+};
+export const setGuestInfo = (businessId, info) => {
+  try { sessionStorage.setItem(guestKey(businessId), JSON.stringify(info)); } catch { }
+};
+
+
+export const clearCustomerSession = (businessId) => {
   localStorage.removeItem(tokenKey(businessId));
-  
+  clearCustomerMode(businessId);
+};
+
+const cartKey = (b) => `qatalo_cart_${b}`;
+export const getCart = (b) => { try { return JSON.parse(sessionStorage.getItem(cartKey(b)) || "[]"); } catch { return []; } };
+export const setCart = (b, items) => { try { sessionStorage.setItem(cartKey(b), JSON.stringify(items)); } catch { } };
+export const clearCart = (b) => { try { sessionStorage.removeItem(cartKey(b)); } catch { } };
+export const cartTotal = (items) => (items || []).reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+export const cartCount = (items) => (items || []).reduce((s, it) => s + (Number(it.quantity) || 1), 0);
+
+export const checkoutCartWithToken = async (businessId, paymentMethodId, items) => {
+  const res = await fetch(`${API_URL}customers/orders/cart`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(businessId) },
+    body: JSON.stringify({ payment_method: { payment_method_id: paymentMethodId }, items }),
+  });
+  if (!res.ok) throw new Error("No se pudo crear la orden");
+  return res.json();
+};
+
 
 const authHeaders = (businessId) => {
   const s = getCustomerSession(businessId);
@@ -38,8 +104,14 @@ export const verifyAccessCode = async (businessId, email, code) => {
   });
   if (!res.ok) throw new Error("Código inválido o expirado");
   const data = await res.json(); // { token, customer }
-  
-  setCustomerSession(businessId, { token: data.token, email });
+  setCustomerSession(businessId, {
+    token: data.token,
+    email,
+    given_name: data.customer?.given_name || "",
+    family_name: data.customer?.family_name || "",
+    full_name: data.customer?.full_name || "",
+  });
+  clearCustomerMode(businessId);
   return data;
 };
 
@@ -48,7 +120,7 @@ export const fetchMyOrders = async (businessId) => {
     method: "GET",
     headers: { "Content-Type": "application/json", ...authHeaders(businessId) },
   });
-  
+
   if (res.status === 401) {
     clearCustomerSession(businessId);
     throw new Error("Sesión expirada");

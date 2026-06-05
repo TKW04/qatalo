@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchMyOrders,
-  cancelOrderWithToken,
-  uploadReceipt,
-  clearCustomerSession,
-} from "../../services/customerAuthApi";
+import { fetchMyOrders, cancelOrderWithToken, uploadReceipt, clearCustomerSession } from "../../services/customerAuthApi";
 import { currencies, formatted, getStatusStyle } from "../../helpers/utils";
 import styles from "./CustomerPortal.module.css";
 
@@ -19,12 +14,27 @@ const STATUS_LABEL = {
 const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 const accountType = (t) => (t === "checking" ? "Corriente" : t === "savings" ? "Ahorros" : t || "");
 
+// agrupa por order_group; las viejas sin order_group quedan como grupo de una
+const buildGroups = (txs) => {
+  const map = new Map();
+  txs.forEach((t) => {
+    const key = t.order_group || t.transaction_id;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(t);
+  });
+  return Array.from(map.entries()).map(([key, items]) => {
+    const ref = items[0];
+    const total = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+    return { key, items, ref, total, status: ref.status, pm: ref.payment_method || {} };
+  });
+};
+
 const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
-  const [uploadingId, setUploadingId] = useState(null);
+  const [uploadingKey, setUploadingKey] = useState(null);
   const fileRefs = useRef({});
 
   const { data, isLoading, isError, isFetching } = useQuery({
@@ -32,32 +42,28 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
     queryFn: () => fetchMyOrders(businessId),
     retry: false,
     staleTime: 0,
-    refetchOnMount: "always", // ignora el error/caché viejo y vuelve a pedir al montar
+    refetchOnMount: "always",
   });
 
-  useEffect(() => {
-    // solo si ya terminó de cargar Y de verdad falló (no por un error cacheado)
-    if (isError && !isFetching) onSessionExpired?.();
-  }, [isError, isFetching, onSessionExpired]);
+  useEffect(() => { if (isError && !isFetching) onSessionExpired?.(); }, [isError, isFetching, onSessionExpired]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["my-orders", businessId] });
 
   const cancelM = useMutation({
-    mutationFn: () =>
-      cancelOrderWithToken(businessId, cancelTarget.transaction_id, cancelReason || "Cancelada por el cliente"),
+    mutationFn: () => cancelOrderWithToken(businessId, cancelTarget.ref.transaction_id, cancelReason || "Cancelada por el cliente"),
     onSuccess: () => { invalidate(); setCancelTarget(null); setCancelReason(""); },
   });
 
-  const onPickFile = async (tx, file) => {
+  const onPickFile = async (group, file) => {
     if (!file) return;
-    setUploadingId(tx.transaction_id);
+    setUploadingKey(group.key);
     try {
-      await uploadReceipt(businessId, tx.transaction_id, file);
+      await uploadReceipt(businessId, group.ref.transaction_id, file); // el backend lo aplica a todo el grupo
       invalidate();
     } catch {
       alert("No se pudo subir el comprobante. Intenta de nuevo.");
     } finally {
-      setUploadingId(null);
+      setUploadingKey(null);
     }
   };
 
@@ -74,7 +80,7 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
   }
 
   const customer = data || {};
-  const txs = customer.transactions || [];
+  const groups = buildGroups(customer.transactions || []);
 
   return (
     <div className={styles.portal} onClick={onClose}>
@@ -84,9 +90,7 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
         <div className={styles.portalHead}>
           {customer.business_logo_url ? (
             <img src={customer.business_logo_url} alt={customer.business_name} className={styles.brandLogo} />
-          ) : (
-            <h2 className={styles.title} style={{ margin: 0 }}>{customer.business_name}</h2>
-          )}
+          ) : (<h2 className={styles.title} style={{ margin: 0 }}>{customer.business_name}</h2>)}
           <div>
             <div className={styles.hello}>Hola, {customer.given_name || customer.full_name}</div>
             <div className={styles.email}>{customer.email}</div>
@@ -94,56 +98,59 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
         </div>
 
         <div className={styles.list}>
-          {txs.length === 0 && <p className={styles.empty}>Aún no tienes órdenes.</p>}
+          {groups.length === 0 && <p className={styles.empty}>Aún no tienes órdenes.</p>}
 
-          {txs.map((t) => {
-            const cur = symbol(t.payment_method?.currency);
-            const open = expanded === t.transaction_id;
-            const isBank = t.payment_method?.payment_type === "bank_transfer";
-            const payable = t.status === "Pendiente de pago";
-            const inReview = t.status === "Pendiente de validación";
-            const pm = t.payment_method || {};
+          {groups.map((g) => {
+            const cur = symbol(g.pm.currency);
+            const open = expanded === g.key;
+            const isBank = g.pm.payment_type === "bank_transfer";
+            const payable = g.status === "Pendiente de pago";
+            const inReview = g.status === "Pendiente de validación";
+            const multi = g.items.length > 1;
+            const title = multi ? `Orden de ${g.items.length} productos` : g.ref.product_name;
             return (
-              <div key={t.transaction_id} className={styles.orderCard}>
-                <button className={styles.orderHead} onClick={() => setExpanded(open ? null : t.transaction_id)}>
+              <div key={g.key} className={styles.orderCard}>
+                <button className={styles.orderHead} onClick={() => setExpanded(open ? null : g.key)}>
                   <div>
-                    <div className={styles.productName}>{t.product_name}</div>
-                    <div className={styles.meta}>x{t.quantity} · {cur} {formatted(t.price * t.quantity)}</div>
+                    <div className={styles.productName}>{title}</div>
+                    <div className={styles.meta}>Total: {cur} {formatted(g.total)}</div>
                   </div>
-                  <span className={styles.badge} style={getStatusStyle(t.status)}>
-                    {STATUS_LABEL[t.status] || t.status}
-                  </span>
+                  <span className={styles.badge} style={getStatusStyle(g.status)}>{STATUS_LABEL[g.status] || g.status}</span>
                 </button>
 
                 {open && (
                   <div className={styles.orderBody}>
                     <ul className={styles.detail}>
-                      <li><span>Precio unitario</span><strong>{cur} {formatted(t.price)}</strong></li>
-                      <li><span>Total</span><strong>{cur} {formatted(t.price * t.quantity)}</strong></li>
-                      {t.delivery_day && <li><span>Entrega</span><strong>{t.delivery_day}</strong></li>}
-                      {t.locality && <li><span>Localidad</span><strong>{t.locality}</strong></li>}
+                      {g.items.map((it) => (
+                        <li key={it.transaction_id}>
+                          <span>{it.product_name} (x{it.quantity}){it.locality ? ` · ${it.locality}` : ""}{it.delivery_day ? ` · ${it.delivery_day}` : ""}</span>
+                          <strong>{cur} {formatted(it.price * it.quantity)}</strong>
+                        </li>
+                      ))}
                       <li><span>Método</span><strong>{isBank ? "Transferencia" : "Link de pago"}</strong></li>
-                      {t.status === "Cancelada" && t.cancellation_reason && (
-                        <li><span>Motivo</span><strong>{t.cancellation_reason}</strong></li>
+                      <li><span>Total</span><strong>{cur} {formatted(g.total)}</strong></li>
+                      {g.status === "Cancelada" && g.ref.cancellation_reason && (
+                        <li><span>Motivo</span><strong>{g.ref.cancellation_reason}</strong></li>
                       )}
                     </ul>
 
                     {isBank && payable && (
                       <div className={styles.payBox}>
                         <div className={styles.payTitle}>Datos para transferir</div>
-                        {pm.bank_name && <div className={styles.payRow}><span>Banco</span><b>{pm.bank_name}</b></div>}
-                        {pm.account_number && <div className={styles.payRow}><span>Cuenta</span><b>{pm.account_number}</b></div>}
-                        {pm.account_type && <div className={styles.payRow}><span>Tipo</span><b>{accountType(pm.account_type)}</b></div>}
-                        {pm.owner_name && <div className={styles.payRow}><span>Titular</span><b>{pm.owner_name}</b></div>}
-                        {pm.owner_document && <div className={styles.payRow}><span>Documento</span><b>{pm.owner_document}</b></div>}
+                        {g.pm.bank_name && <div className={styles.payRow}><span>Banco</span><b>{g.pm.bank_name}</b></div>}
+                        {g.pm.account_number && <div className={styles.payRow}><span>Cuenta</span><b>{g.pm.account_number}</b></div>}
+                        {g.pm.account_type && <div className={styles.payRow}><span>Tipo</span><b>{accountType(g.pm.account_type)}</b></div>}
+                        {g.pm.owner_name && <div className={styles.payRow}><span>Titular</span><b>{g.pm.owner_name}</b></div>}
+                        {g.pm.owner_document && <div className={styles.payRow}><span>Documento</span><b>{g.pm.owner_document}</b></div>}
+                        <div className={styles.payRow}><span>Monto total</span><b>{cur} {formatted(g.total)}</b></div>
                       </div>
                     )}
 
-                    {pm.payment_link && payable && (
-                      <a className={styles.payLink} href={pm.payment_link} target="_blank" rel="noreferrer">Pagar ahora</a>
+                    {g.pm.payment_link && payable && (
+                      <a className={styles.payLink} href={g.pm.payment_link} target="_blank" rel="noreferrer">Pagar ahora</a>
                     )}
-                    {t.receipt_url && (
-                      <a className={styles.viewReceipt} href={t.receipt_url} target="_blank" rel="noreferrer">Ver comprobante enviado</a>
+                    {g.ref.receipt_url && (
+                      <a className={styles.viewReceipt} href={g.ref.receipt_url} target="_blank" rel="noreferrer">Ver comprobante enviado</a>
                     )}
 
                     {(payable || inReview) && (
@@ -151,24 +158,16 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                         {payable && (
                           <>
                             <input
-                              ref={(el) => (fileRefs.current[t.transaction_id] = el)}
-                              type="file"
-                              accept="image/*,application/pdf"
-                              hidden
-                              onChange={(e) => onPickFile(t, e.target.files?.[0])}
+                              ref={(el) => (fileRefs.current[g.key] = el)}
+                              type="file" accept="image/*,application/pdf" hidden
+                              onChange={(e) => onPickFile(g, e.target.files?.[0])}
                             />
-                            <button
-                              className={styles.uploadBtn}
-                              disabled={uploadingId === t.transaction_id}
-                              onClick={() => fileRefs.current[t.transaction_id]?.click()}
-                            >
-                              {uploadingId === t.transaction_id
-                                ? "Subiendo..."
-                                : t.receipt_url ? "Reemplazar comprobante" : "Subir comprobante"}
+                            <button className={styles.uploadBtn} disabled={uploadingKey === g.key} onClick={() => fileRefs.current[g.key]?.click()}>
+                              {uploadingKey === g.key ? "Subiendo..." : g.ref.receipt_url ? "Reemplazar comprobante" : "Subir comprobante"}
                             </button>
                           </>
                         )}
-                        <button className={styles.cancelBtn} onClick={() => setCancelTarget(t)}>Cancelar orden</button>
+                        <button className={styles.cancelBtn} onClick={() => setCancelTarget(g)}>Cancelar orden</button>
                       </div>
                     )}
                   </div>
@@ -185,14 +184,10 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
         <div className={styles.overlay} onClick={() => setCancelTarget(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.title}>Cancelar orden</h3>
-            <p className={styles.lead}>¿Seguro que deseas cancelar la orden de <strong>{cancelTarget.product_name}</strong>?</p>
-            <textarea
-              className={styles.input}
-              rows={3}
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Motivo (opcional)"
-            />
+            <p className={styles.lead}>
+              ¿Seguro que deseas cancelar {cancelTarget.items.length > 1 ? `esta orden de ${cancelTarget.items.length} productos` : <strong>{cancelTarget.ref.product_name}</strong>}?
+            </p>
+            <textarea className={styles.input} rows={3} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Motivo (opcional)" />
             <div className={styles.modalActions}>
               <button className={styles.linkBtn} onClick={() => { setCancelTarget(null); setCancelReason(""); }}>Volver</button>
               <button className={styles.cancelBtn} disabled={cancelM.isPending} onClick={() => cancelM.mutate()}>
