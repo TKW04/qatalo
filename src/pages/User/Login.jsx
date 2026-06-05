@@ -1,115 +1,103 @@
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
-import { Image } from "primereact/image";
+import { Link } from "react-router-dom";
 
 import { authenticate } from "../../services/authenticate";
+import userpoolMerchants from "../../services/userpoolMerchants";
 import { getTokenInfo, setToken } from "../../helpers/token";
-import { userActions } from "../../store/user-store/user-slice";
 import Loading from "../../components/UI/Loading";
 import { useNotification } from "../../components/UI/NotificationProvider";
-import "./Login.css";
+import PrimaryButton from "../../components/PrimaryButton";
+import styles from "./Auth.module.css";
 
 const Login = () => {
-  const user = useSelector((state) => state.user.user);
+  const [form, setForm] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const dispatch = useDispatch();
   const { showWarning } = useNotification();
 
-  const onChange = (id, value) => {
-    dispatch(userActions.modifyPropertyValue({ id, value: value }));
-  };
+  const onChange = (id, value) => setForm((p) => ({ ...p, [id]: value }));
 
   const handleLogin = (event) => {
     event.preventDefault();
     setIsLoading(true);
 
-    authenticate(user.email, user.password)
-      .then(
-        (data) => {
-          setToken(data.idToken.jwtToken);
-          const userInfo = getTokenInfo();
-          if (userInfo && userInfo["custom:transaction_status"] === "pending") {
-            window.location.href = "/payment";
-          } else {
-            window.location.href = "/admin";
-          }
-        },
-        () => {
-          showWarning("No autorizado!", "Usuario o contraseña incorrectos");
-          setIsLoading(false);
+    authenticate(form.email, form.password, userpoolMerchants)
+      .then((data) => {
+        setToken(data.idToken.jwtToken);
+        const userInfo = getTokenInfo();
+        if (userInfo && userInfo["custom:transaction_status"] === "pending") {
+          window.location.href = "/payment";
+        } else {
+          window.location.href = "/admin";
         }
-      )
-      .catch((err) => console.log(err));
+      })
+      .catch(() => {
+        showWarning("No autorizado", "Usuario o contraseña incorrectos");
+        setIsLoading(false);
+      });
   };
 
+  if (isLoading) return <Loading message="Iniciando sesión..." />;
+
   return (
-    <>
-      <Loading message={"Iniciando sesión..."} visible={isLoading} />
-      <div className="auth-container-login">
-        <div id="login">
-          <div className="logo_login">
-            <Image
-              src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
-              alt="CatalogQR logo_login"
-              width={200}
-              style={{ padding: "0rem" }}
+    <div className={styles.pageWrapper}>
+      <div className={styles.authContainer}>
+        <div className={styles.logo}>
+          <img
+            src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
+            alt="Qatalo Logo"
+            loading="lazy"
+          />
+          <h1>Bienvenido</h1>
+        </div>
+
+        <form onSubmit={handleLogin}>
+          <div className={styles.formGroup}>
+            <label htmlFor="login-email">Correo Electrónico</label>
+            <input
+              type="email"
+              id="login-email"
+              className={styles.input}
+              required
+              value={form.email}
+              onChange={(e) => onChange("email", e.target.value)}
+              autoComplete="email"
             />
-            <h1>Bienvenido</h1>
           </div>
 
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label htmlFor="login-email">Correo Electrónico</label>
-              <InputText
-                type="email"
-                id="login-email"
-                required
-                value={user.email}
-                onChange={(e) => onChange("email", e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="login-password">Contraseña</label>
-              <InputText
-                type="password"
-                id="login-password"
-                required
-                value={user.password}
-                onChange={(e) => onChange("password", e.target.value)}
-              />
-            </div>
-            <div className="form-links">
-              <a
-                href="#"
-                onClick={() => (window.location.href = "/forgot-password")}
-              >
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-
-            <Button
-              type="submit"
-              className="btn btn-login-primary"
-              label="Iniciar Sesión"
+          <div className={styles.formGroup}>
+            <label htmlFor="login-password">Contraseña</label>
+            <input
+              type="password"
+              id="login-password"
+              className={styles.input}
+              required
+              value={form.password}
+              onChange={(e) => onChange("password", e.target.value)}
+              autoComplete="current-password"
             />
-          </form>
+          </div>
 
-          <Button
-            className="btn btn-login-secondary"
-            onClick={() => (window.location.href = "/register")}
-            label=" Crear Nueva Cuenta"
-          />
-          <Button
-            className="btn btn-danger"
-            onClick={() => (window.location.href = "/")}
-            label="Cancelar"
-          />
-        </div>
+          <div className={styles.formLinks}>
+            <Link to="/forgotpassword">¿Olvidaste tu contraseña?</Link>
+          </div>
+
+          <div className={styles.actions}>
+            <PrimaryButton type="submit" variant="primary">
+              Iniciar Sesión
+            </PrimaryButton>
+
+            <PrimaryButton to="/register" variant="secondary">
+              Crear Nueva Cuenta
+            </PrimaryButton>
+
+            <PrimaryButton to="/" variant="danger">
+              Cancelar
+            </PrimaryButton>
+          </div>
+        </form>
       </div>
-    </>
+    </div>
   );
 };
+
 export default Login;

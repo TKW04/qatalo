@@ -1,0 +1,104 @@
+.page {
+  background: linear-gradient(135deg, var(--color-sea, #58a0c8) 0%, var(--color-blue, #34699a) 100%);
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  animation: rise 0.4s ease both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.iconWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.check {
+  width: 88px;
+  height: 88px;
+}
+
+.circle {
+  stroke: var(--color-sea, #58a0c8);
+  stroke-width: 3;
+  stroke-dasharray: 151;
+  stroke-dashoffset: 151;
+  animation: drawCircle 0.5s ease-out 0.1s forwards;
+}
+
+.tick {
+  stroke: var(--color-sea, #58a0c8);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: drawTick 0.35s ease-out 0.55s forwards;
+}
+
+@keyframes drawCircle { to { stroke-dashoffset: 0; } }
+@keyframes drawTick { to { stroke-dashoffset: 0; } }
+
+.title {
+  font-size: 1.8rem;
+  color: var(--color-navy, #113f67);
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+}
+
+.message {
+  color: #555;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0 0 2rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 2rem;
+  border-radius: 50px;
+  background: linear-gradient(45deg, var(--color-blue, #34699a), var(--color-sea, #58a0c8));
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+.note {
+  color: #999;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 1.5rem 0 0;
+}
+
+@media (max-width: 480px) {
+  .card { padding: 2.25rem 1.5rem; }
+  .title { font-size: 1.5rem; }
+}

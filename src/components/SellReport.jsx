@@ -1,465 +1,249 @@
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable } from "primereact/datatable";
-import { useCallback, useEffect, useState } from "react";
-import { formatDate, formatTextDateShort, getMonthName } from "../helpers/utils";
-import { ColumnGroup } from "primereact/columngroup";
-import { Row } from "primereact/row";
-import { Button } from "primereact/button";
+import { useMemo, useState } from "react";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from "recharts";
+import { saveAs } from "file-saver";
+import { currencies, formatted } from "../helpers/utils";
+import styles from "./SellReport.module.css";
 
-const SellReport = ({
-  customers,
-  getCurrencySymbol,
-  formatted,
-  getStatusStyle,
-}) => {
-  const [customersData, setCustomersData] = useState([]);
-  const [showTotalsByProductFlag, setShowTotalsByProductFlag] = useState(false);
-  const [years, setYears] = useState([]);
-  const [months, setMonths] = useState([]);
-  const [selectedYear, setSelectedYear] = useState([]);
-  const [showMonthsFilter, setShowMonthsFilter] = useState(false);
+const PAID = ["Aprobada", "Entregada"];
+const STATUS_COLORS = {
+  "Pendiente de pago": "#F59E0B",
+  "Pendiente de validación": "#3B82F6",
+  Aprobada: "#10B981",
+  Entregada: "#0E7490",
+  Cancelada: "#EF4444",
+};
+const BAR_COLORS = ["#113F67", "#34699A", "#0E7490", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#6B7280"];
+const NO_LOC = "Sin especificar";
 
-  const [filters] = useState({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    full_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    product_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    status: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    date: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  });
-
-  const transactionDate = (date, isDeliveryDate) => {
-    if(isDeliveryDate){
-      return formatTextDateShort(date.split(" ")[0]);
-    }
-    const dateParts = date.split(" ")[0].split("-");
-    return formatTextDateShort(dateParts[2] + "/" + dateParts[1] + "/" + dateParts[0]);
-
-  };
-
-  const isMobile = window.innerWidth <= 480;
-  const getCustomerData = useCallback(() => {
-    const data = [];
-    customers.forEach((customer) => {
-      customer.transactions.forEach((transaction) => {
-        data.push({
-          full_name: customer.full_name,
-          product_name: transaction.product_name,
-          quantity: transaction.quantity,
-          price: transaction.price,
-          total: transaction.price * transaction.quantity,
-          currency: transaction.payment_method.currency,
-          date: transaction.delivery_day
-            ? transactionDate(transaction.delivery_day, true)
-            : transactionDate(transaction.create_date, false),
-          created_at: transaction.create_date ? transaction.create_date : "",
-          status:
-            transaction.status === "Aprobada"
-              ? "Pago Completado"
-              : transaction.status === "Pendiente de pago"
-              ? "Pendiente de pago"
-              : transaction.status === "Pendiente de validación"
-              ? "Pendiente de validación"
-              : transaction.status === "Entregada"
-              ? "Orden Entregada"
-              : "Cancelada",
-        });
-      });
-    });
-    setCustomersData(data);
-  }, [customers]);
-
-  useEffect(() => {
-    if (customersData.length > 0) return;
-    if (customersData.length === 0) getCustomerData();
-  }, [customersData.length, getCustomerData]);
-
-  useEffect(() => {
-    if (customersData.length > 0) {
-      customersData.forEach((customer) => {
-        const year = customer.date.split("/")[2];
-        const listYears = [...years];
-        if (!listYears.includes(year)) {
-          listYears.push(year);
-          setYears(listYears);
-        }
-        const month = customer.date.split("/")[1];
-        const listMonths = [...months];
-        if (!listMonths.includes(month)) {
-          listMonths.push(month);
-          setMonths(listMonths);
-        }
-      });
-    }
-  }, [customersData, months, years]);
-
-  const getTotal = () => {
-    let total = 0;
-    let currency = "";
-    for (let customer of customersData) {
-      total += customer.total;
-      currency = customer.currency;
-    }
-
-    return getCurrencySymbol(currency) + " " + formatted(total);
-  };
-  const getTotalReceived = () => {
-    let total = 0;
-    let currency = "";
-    for (let customer of customersData) {
-      if (
-        customer.status === "Pago Completado" ||
-        customer.status === "Orden Entregada"
-      ) {
-        total += customer.total;
-        currency = customer.currency;
-      }
-    }
-
-    return getCurrencySymbol(currency) + " " + formatted(total);
-  };
-
-  const footerGroup = (
-    <ColumnGroup>
-      <Row>
-        <Column
-          footer="Totals:"
-          colSpan={4}
-          footerStyle={{ textAlign: "right", paddingRight: "15px" }}
-        />
-        <Column style={{ textAlign: "center" }} footer={getTotal} />
-
-        <Column
-          colSpan={2}
-          style={{ textAlign: "center", color: "green" }}
-          footer={"Recibido: " + getTotalReceived()}
-        />
-      </Row>
-    </ColumnGroup>
+const flatten = (customers) => {
+  const rows = [];
+  customers.forEach((c) =>
+    (c.transactions || []).forEach((t) =>
+      rows.push({
+        full_name: c.full_name || `${c.given_name} ${c.family_name}`,
+        product_name: t.product_name || "—",
+        quantity: Number(t.quantity) || 0,
+        price: Number(t.price) || 0,
+        total: (Number(t.price) || 0) * (Number(t.quantity) || 0),
+        currency: t.payment_method?.currency || "",
+        status: t.status,
+        date: (t.create_date || "").slice(0, 10),
+        delivery_day: t.delivery_day || "",
+        locality: t.locality || "",
+      })
+    )
   );
-  let isAscending = true; // variable global o externa para recordar el estado
+  return rows;
+};
 
-  const toggleSortByDate = (rows) => {
-    const sorted = [...rows.data].sort((a, b) => {
-      const [dayA, monthA, yearA] = a.date.split("/").map(Number);
-      const [dayB, monthB, yearB] = b.date.split("/").map(Number);
-      const dateA = new Date(yearA, monthA - 1, dayA);
-      const dateB = new Date(yearB, monthB - 1, dayB);
-      return isAscending ? dateA - dateB : dateB - dateA;
+const SellReport = ({ customers = [] }) => {
+  const allRows = useMemo(() => flatten(customers), [customers]);
+  const currencyCodes = useMemo(() => [...new Set(allRows.map((r) => r.currency).filter(Boolean))], [allRows]);
+  const localityCodes = useMemo(() => [...new Set(allRows.map((r) => r.locality).filter(Boolean))], [allRows]);
+  const hasLocalities = localityCodes.length > 0;
+
+  const [currency, setCurrency] = useState(currencyCodes[0] || "");
+  const [locality, setLocality] = useState("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const symbol = currencies.find((c) => c.code === currency)?.symbol || currency || "";
+
+  const rows = useMemo(
+    () => allRows.filter((r) =>
+      (!currency || r.currency === currency) &&
+      (locality === "all" || (r.locality || NO_LOC) === locality) &&
+      (!from || r.date >= from) &&
+      (!to || r.date <= to)
+    ),
+    [allRows, currency, locality, from, to]
+  );
+
+  const stats = useMemo(() => {
+    const paid = rows.filter((r) => PAID.includes(r.status));
+    const revenue = paid.reduce((s, r) => s + r.total, 0);
+    const delivered = rows.filter((r) => r.status === "Entregada").length;
+    const cancelled = rows.filter((r) => r.status === "Cancelada").length;
+
+    const byStatusMap = {};
+    rows.forEach((r) => { byStatusMap[r.status] = (byStatusMap[r.status] || 0) + 1; });
+    const byStatus = Object.entries(byStatusMap).map(([name, value]) => ({ name, value }));
+
+    const byDayMap = {};
+    paid.forEach((r) => { if (r.date) byDayMap[r.date] = (byDayMap[r.date] || 0) + r.total; });
+    const byDay = Object.entries(byDayMap).sort((a, b) => a[0].localeCompare(b[0])).map(([date, total]) => ({ date, total }));
+
+    const prodMap = {};
+    paid.forEach((r) => {
+      if (!prodMap[r.product_name]) prodMap[r.product_name] = { name: r.product_name, units: 0, revenue: 0 };
+      prodMap[r.product_name].units += r.quantity;
+      prodMap[r.product_name].revenue += r.total;
     });
+    const topProducts = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
 
-    // Alternar el estado para la próxima llamada
-    isAscending = !isAscending;
-
-    return sorted;
-  };
-  const totalByProduct = () => {
-    let totals = [];
-    //sort customersData by created_at date ascending
-    const transactions = [...customersData].sort((a, b) => {
-      const dateA = new Date(a.created_at);
-      const dateB = new Date(b.created_at);
-      return dateA - dateB;
+    const locMap = {};
+    rows.forEach((r) => {
+      const key = r.locality || NO_LOC;
+      if (!locMap[key]) locMap[key] = { name: key, orders: 0, revenue: 0 };
+      locMap[key].orders += 1;
+      if (PAID.includes(r.status)) locMap[key].revenue += r.total;
     });
+    const byLocality = Object.values(locMap).sort((a, b) => b.revenue - a.revenue);
 
-    transactions.forEach((item) => {
-      const productExist = totals.find(
-        (prod) => prod.product_name === item.product_name
-      );
+    return {
+      revenue, orders: rows.length, paidOrders: paid.length, delivered, cancelled,
+      avgTicket: paid.length ? revenue / paid.length : 0,
+      conversion: rows.length ? Math.round((delivered / rows.length) * 100) : 0,
+      cancellation: rows.length ? Math.round((cancelled / rows.length) * 100) : 0,
+      byStatus, byDay, topProducts, byLocality,
+    };
+  }, [rows]);
 
-      if (!productExist) {
-        totals.push({
-          product_name: item.product_name,
-          total: item.total,
-          quantity: parseInt(item.quantity),
-          lastSell: item.created_at,
-        });
-      } else {
-        productExist.total += item.total;
-        productExist.quantity += parseInt(item.quantity);
-        productExist.lastSell = item.created_at;
-      }
-    });
-
-    return totals;
-  };
-  const showTotalsByProduct = () => {
-    const totals = totalByProduct();
-    return (
-      <div
-        style={{
-          marginBottom: "20px",
-          border: "1px solid var(--color-navy)",
-          borderRadius: "8px",
-          padding: "30px",
-          backgroundColor: "var(--color-navy)",
-          color: "white",
-        }}
-      >
-        <div className="grid">
-          <div
-            className="col-12"
-            style={{
-              textAlign: "center",
-              color: "var(--color-yellow)",
-              fontSize: "22px",
-              fontWeight: "bold",
-            }}
-          >
-            <h2>Totales por Producto:</h2>
-          </div>
-          <DataTable
-            value={totals}
-            tableStyle={{ width: isMobile ? "100%" : "80vw" }}
-            paginator
-            stripedRows
-            filters={filters}
-            filterDisplay="row"
-            rows={5}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            style={{
-              border: "1px solid var(--color-yellow)",
-              borderRadius: "8px",
-              padding: "10px",
-            }}
-          >
-            <Column
-              header="Producto"
-              className="align-items-center"
-              filter
-              style={{
-                padding: "10px",
-                width: "25%",
-              }}
-              field="product_name"
-            />
-            <Column
-              header="Vendido"
-              style={{
-                padding: "10px",
-                width: "5%",
-                paddingLeft: "50px",
-                paddingRight: "auto",
-                textAlign: "left",
-              }}
-              field="quantity"
-              body={(rowData) => {
-                return (
-                  <div className="grid">
-                    <div className="col-4"></div>
-                    <div className="col-4">{rowData.quantity}</div>
-                    <div className="col-4"></div>
-                  </div>
-                );
-              }}
-            />
-            <Column
-              header="Total Vendido"
-              style={{ padding: "10px", width: "10%" }}
-              body={(rowData) => {
-                return (
-                  <span>
-                    {getCurrencySymbol(customersData[0]?.currency || "")}{" "}
-                    {formatted(rowData.total)}
-                  </span>
-                );
-              }}
-            />
-            <Column
-              header="Ultima Venta"
-              style={{ padding: "10px", width: "25%" }}
-              field="lastSell"
-              body={(rowData) => {
-                return <span>{formatDate(rowData.lastSell)}</span>;
-              }}
-            />
-          </DataTable>
-        </div>
-      </div>
-    );
-  };
-  const showMonths = (month) => {
-    return (
-      <div className="col">
-        <Button
-          onClick={() => {
-            const filtered = customersData.filter((customer) => {
-              return (
-                customer.date.split("/")[1] === month &&
-                customer.date.split("/")[2] === selectedYear
-              );
-            });
-            setCustomersData(filtered);
-          }}
-          style={{
-            padding: "10px",
-            margin: "10px",
-            borderColor: "var(--color-sea)",
-            backgroundColor: "#ffffff",
-            color: "var(--color-sea)",
-            fontWeight: "bold",
-          }}
-        >
-          {getMonthName(month)}
-        </Button>
-      </div>
-    );
+  const exportToExcel = async () => {
+    const XLSX = await import("xlsx-js-style");
+    const header = ["Cliente", "Producto", "Cantidad", "Precio", "Total", "Estado", "Fecha"];
+    if (hasLocalities) header.splice(6, 0, "Localidad");
+    const wsData = [
+      header,
+      ...rows.map((r) => {
+        const base = [r.full_name, r.product_name, r.quantity, r.price, r.total, r.status, r.date];
+        if (hasLocalities) base.splice(6, 0, r.locality || NO_LOC);
+        return base;
+      }),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" }, sz: 13 }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "113F67" } } };
+    header.forEach((_, c) => { const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]; if (cell) cell.s = headerStyle; });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(new Blob([buffer], { type: "application/octet-stream" }), "Ventas.xlsx");
   };
 
+  const colSpan = hasLocalities ? 8 : 7;
 
   return (
     <div>
-      <Button
-        onClick={() => setShowTotalsByProductFlag(!showTotalsByProductFlag)}
-        style={{
-          padding: "10px",
-          margin: "10px",
-          borderColor: "var(--color-navy)",
-          backgroundColor: "var(--color-sea)",
-          color: "white",
-          fontWeight: "bold",
-        }}
-      >
-        {showTotalsByProductFlag
-          ? "Ocultar Totales por Producto"
-          : "Mostrar Totales por Producto"}
-      </Button>
-      {years.map((year) => {
-        return (
-          <Button
-            onClick={() => {
-              setShowMonthsFilter(!showMonthsFilter);
-              setSelectedYear(year);
-            }}
-            style={{
-              padding: "10px",
-              margin: "10px",
-              borderColor: "var(--color-sea)",
-              backgroundColor: "var(--color-navy)",
-              color: "white",
-              fontWeight: "bold",
-            }}
-          >
-            {year}
-          </Button>
-        );
-      })}
-      {showMonthsFilter && (
-        <div className="grid">
-          <div className="col">
-            <Button
-              onClick={() => {
-                getCustomerData();
-              }}
-              style={{
-                padding: "10px",
-                margin: "10px",
-                borderColor: "var(--color-sea)",
-                backgroundColor: "var(--color-navy)",
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              Todos los meses
-            </Button>
-          </div>
-          {months.sort().map((month) => {
-            return showMonths(month);
-          })}
-        </div>
-      )}
-      {showTotalsByProductFlag && showTotalsByProduct()}
+      <div className={styles.filters}>
+        {currencyCodes.length > 1 && (
+          <label className={styles.filter}>Moneda
+            <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              {currencyCodes.map((c) => (<option key={c} value={c}>{c}</option>))}
+            </select>
+          </label>
+        )}
+        {hasLocalities && (
+          <label className={styles.filter}>Localidad
+            <select className="input" value={locality} onChange={(e) => setLocality(e.target.value)}>
+              <option value="all">Todas</option>
+              {localityCodes.map((l) => (<option key={l} value={l}>{l}</option>))}
+            </select>
+          </label>
+        )}
+        <label className={styles.filter}>Desde<input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+        <label className={styles.filter}>Hasta<input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+        <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
+      </div>
 
-      <DataTable
-        value={customersData}
-        tableStyle={{ minWidth: "50rem" }}
-        stripedRows
-        filters={filters}
-        filterDisplay="row"
-        footerColumnGroup={footerGroup}
-        paginator
-        rows={25}
-        rowsPerPageOptions={[25, 50, 75, 100]}
-      >
-        <Column
-          header={<span style={{ margin: "10px" }}>Cliente </span>}
-          style={{ padding: "10px", width: "280px" }}
-          sortable
-          filter
-          filterPlaceholder="Buscar por nombre"
-          field="full_name"
-        />
-        <Column
-          header={<span style={{ margin: "10px" }}>Producto </span>}
-          style={{ padding: "10px", width: "20%" }}
-          field="product_name"
-          sortable
-          filter
-          filterPlaceholder="Buscar producto"
-        />
-        <Column
-          field="quantity"
-          header={<span style={{ margin: "10px" }}>Cant </span>}
-          sortable
-          style={{
-            textAlign: "center",
-            width: "80px",
-          }}
-        />
-        <Column
-          header={<span style={{ margin: "10px" }}>Precio </span>}
-          field="price"
-          sortable
-          style={{ width: "10%" }}
-          body={(rowData) => {
-            return (
-              <span>
-                {getCurrencySymbol(rowData.currency)} {formatted(rowData.price)}
-              </span>
-            );
-          }}
-        />
-        <Column
-          header={<span style={{ margin: "10px" }}>Total </span>}
-          sortable
-          field="total"
-          style={{ width: "15%"}}
-          body={(rowData) => {
-            return (
-              <span>
-                {getCurrencySymbol(rowData.currency)} {formatted(rowData.total)}
-              </span>
-            );
-          }}
-        />
-        <Column
-          field="date"
-          sortable
-          sortFunction={(rows) => {
-            return toggleSortByDate(rows);
-          }}
-          filter
-          filterPlaceholder="Buscar fecha"
-          style={{ width: "15%" }}
-          header={<span style={{ margin: "10px" }}>Fecha de entrega</span>}
-        />
-        <Column
-          header={<span style={{ margin: "10px" }}>Estado </span>}
-          style={{ width: "15%" }}
-          sortable
-          field="status"
-          filter
-          filterPlaceholder="Buscar estado"
-          body={(rowData) => {
-            return (
-              <span style={getStatusStyle(rowData.status)}>
-                {rowData.status}
-              </span>
-            );
-          }}
-        />
-      </DataTable>
+      <div className={styles.kpis}>
+        <div className={styles.kpi}><span>Ingresos (cobrados)</span><strong>{symbol} {formatted(stats.revenue)}</strong></div>
+        <div className={styles.kpi}><span>Órdenes</span><strong>{stats.orders}</strong></div>
+        <div className={styles.kpi}><span>Ticket promedio</span><strong>{symbol} {formatted(stats.avgTicket)}</strong></div>
+        <div className={styles.kpi}><span>Conversión (entregadas)</span><strong>{stats.conversion}%</strong></div>
+        <div className={styles.kpi}><span>Cancelación</span><strong>{stats.cancellation}%</strong></div>
+      </div>
+
+      <div className={styles.chartsGrid}>
+        <div className={styles.chartCard}>
+          <h3>Ingresos por día</h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={stats.byDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34699A" stopOpacity={0.6} /><stop offset="95%" stopColor="#34699A" stopOpacity={0} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
+              <XAxis dataKey="date" fontSize={11} />
+              <YAxis fontSize={11} />
+              <Tooltip formatter={(v) => `${symbol} ${formatted(v)}`} />
+              <Area type="monotone" dataKey="total" stroke="#113F67" fill="url(#rev)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className={styles.chartCard}>
+          <h3>Órdenes por estado</h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie data={stats.byStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
+                {stats.byStatus.map((s) => (<Cell key={s.name} fill={STATUS_COLORS[s.name] || "#6B7280"} />))}
+              </Pie>
+              <Tooltip />
+              <Legend fontSize={11} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className={`${styles.chartCard} ${styles.full}`}>
+          <h3>Top productos (por ingreso)</h3>
+          <ResponsiveContainer width="100%" height={Math.max(220, stats.topProducts.length * 42)}>
+            <BarChart data={stats.topProducts} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
+              <XAxis type="number" fontSize={11} />
+              <YAxis type="category" dataKey="name" width={140} fontSize={11} />
+              <Tooltip formatter={(v) => `${symbol} ${formatted(v)}`} />
+              <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
+                {stats.topProducts.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {hasLocalities && (
+          <div className={`${styles.chartCard} ${styles.full}`}>
+            <h3>Ventas por localidad (ingreso cobrado)</h3>
+            <ResponsiveContainer width="100%" height={Math.max(220, stats.byLocality.length * 42)}>
+              <BarChart data={stats.byLocality} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
+                <XAxis type="number" fontSize={11} />
+                <YAxis type="category" dataKey="name" width={140} fontSize={11} />
+                <Tooltip formatter={(v, n) => n === "revenue" ? `${symbol} ${formatted(v)}` : v} />
+                <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
+                  {stats.byLocality.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.tableCard}>
+        <h3>Detalle de ventas</h3>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Cliente</th><th>Producto</th><th>Cant</th><th>Precio</th><th>Total</th>
+                <th>Estado</th>{hasLocalities && <th>Localidad</th>}<th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td>{r.full_name}</td><td>{r.product_name}</td><td>{r.quantity}</td>
+                  <td>{symbol} {formatted(r.price)}</td><td>{symbol} {formatted(r.total)}</td>
+                  <td><span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>{r.status}</span></td>
+                  {hasLocalities && <td>{r.locality || NO_LOC}</td>}
+                  <td>{r.date}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && <tr><td colSpan={colSpan} className={styles.tableEmpty}>Sin ventas en el rango seleccionado.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
+
 export default SellReport;

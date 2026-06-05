@@ -1,0 +1,283 @@
+/* =========================================
+   TEMPLATE DEFAULT - ESTILOS BASE
+   ========================================= */
+
+.templateWrapper {
+  /* Lee las 4 variables inyectadas; fallbacks = paleta Brisa Oceánica */
+  --bg-color: var(--theme-background, #fafafa);
+  --primary-color: var(--theme-primary, #113f67);
+  --secondary-color: var(--theme-secondary, #34699a);
+  --accent-color: var(--theme-accent, #fdf5aa);
+
+  /* Derivados (no vienen en la paleta de 4) */
+  --card-bg: #ffffff;
+  --text: var(--secondary-color);
+  --text-light: color-mix(in srgb, var(--secondary-color) 60%, transparent);
+
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  font-family: "Roboto", sans-serif;
+}
+
+/* --- HEADER --- */
+.header {
+  background-color: var(--card-bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 2rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.businessInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logo {
+  height: 150px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  
+}
+
+.businessName {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  margin: 0 0 0.25rem 0;
+}
+
+.businessDescription {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin: 0;
+  max-width: 500px;
+}
+
+.shareButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: transparent;
+  color: var(--secondary-color);
+  border: 2px solid var(--secondary-color);
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shareButton:hover {
+  background-color: var(--secondary-color);
+  color: #fff;
+}
+
+/* --- MAIN CONTENT --- */
+.mainContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem 1rem;
+}
+
+/* --- CONTROLES (BUSCADOR Y FILTROS) --- */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.searchBar {
+  position: relative;
+  max-width: 500px;
+  width: 100%;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary-color) 12%, transparent);
+}
+
+.categoryFilters {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.categoryPill {
+  white-space: nowrap;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid #e1e5e9;
+  background-color: var(--card-bg);
+  color: var(--text);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.categoryPill:hover {
+  border-color: var(--secondary-color);
+}
+
+.activeCategory {
+  background-color: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
+/* --- GRILLA Y TARJETAS DE PRODUCTO --- */
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.productCard {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.productCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.productImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.productCard:hover .productImage {
+  transform: scale(1.05);
+}
+
+.badgeUnavailable {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(231, 76, 60, 0.9);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.productInfo {
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.productName {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.productPrice {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  font-weight: 800;
+  margin-top: auto;
+  /* Empuja el precio al fondo si el título es corto */
+}
+
+.productStock {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-top: 0.5rem;
+}
+
+/* --- ESTADO VACÍO --- */
+.noProducts {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--text-light);
+}
+
+.emptyIcon {
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .headerContent {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .businessInfo {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .businessDescription {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .logo {
+    height: 110px;
+  }
+  .shareButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

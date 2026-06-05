@@ -1,168 +1,85 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-import { Button } from "primereact/button";
-import { InputText } from "primereact/inputtext";
-import { InputTextarea } from "primereact/inputtextarea";
-
+import { useMutation } from "@tanstack/react-query";
 import { GiCancel } from "react-icons/gi";
 import { BsFillSendFill } from "react-icons/bs";
 
 import DialogModal from "./DialogModal";
-import { useDispatch } from "react-redux";
-import { ContactTeam } from "../store/qatalo-store/qatalo-actions";
+import { contactTeam } from "../services/qataloApi";
 import { useNotification } from "./UI/NotificationProvider";
 import Loading from "./UI/Loading";
+import styles from "./Footer.module.css";
+import PrimaryButton from "./PrimaryButton";
 
 const Footer = () => {
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const dispatch = useDispatch();
   const { showError, showSuccess } = useNotification();
+
+  const contact = useMutation({
+    mutationFn: () => contactTeam({ name, email, message }),
+    onSuccess: () => {
+      showSuccess("Mensaje enviado", "Gracias por contactarnos, te responderemos pronto.");
+      setShowContactDialog(false);
+      setName("");
+      setEmail("");
+      setMessage("");
+    },
+    onError: (e) => showError("Error", e.message || "No se pudo enviar el mensaje"),
+  });
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
-    setShowContactDialog(false);
-    setName("");
-    setEmail("");
-    setMessage("");
-    setIsLoading(true);
-
-    dispatch(ContactTeam(name, email, message, showError, showSuccess));
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 4500);
+    contact.mutate();
   };
 
   return (
     <>
-      {isLoading && <Loading message="Enviando mensaje" />}
-      {!isLoading && (
+      {contact.isPending && <Loading message="Enviando mensaje" />}
+
+      {showContactDialog && (
         <DialogModal
           title="Contacta el equipo de Qatalo"
           visible={showContactDialog}
           onHide={() => setShowContactDialog(false)}
-          width={"30vw"}
         >
-          <form onSubmit={handleContactSubmit}>
-            <div className="grid mt-2">
-              <div className="col-12">
-                <label htmlFor="contactName" className="form-label">
-                  Nombre Completo:
-                </label>
-                <InputText
-                  id="contactName"
-                  className="form-control"
-                  style={{ width: "80%", height: "45px", padding: "10px" }}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="col-12">
-                <label htmlFor="contactEmail" className="form-label">
-                  Correo Electrónico:
-                </label>
-                <InputText
-                  id="contactEmail"
-                  className="form-control"
-                  style={{ width: "80%", height: "45px", padding: "10px" }}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="col-12">
-                <label htmlFor="contactMessage" className="form-label">
-                  Mensaje:
-                </label>
-                <InputTextarea
-                  id="contactMessage"
-                  className="form-control"
-                  style={{ width: "80%", height: "150px", padding: "10px" }}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-              </div>
-              <div className="col-12">
-                <div>
-                  <Button
-                    type="button"
-                    label="Cancelar"
-                    icon={<GiCancel style={{ margin: "5px" }} />}
-                    onClick={() => setShowContactDialog(false)}
-                    style={{
-                      width: "110px",
-                      height: "45px",
-                      margin: "2px",
-                      backgroundColor: "#f44336",
-                      borderColor: "#ffffff",
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    label="Enviar"
-                    icon={<BsFillSendFill style={{ margin: "5px" }} />}
-                    // onClick={handleContactSubmit}
-                    style={{
-                      width: "100px",
-                      height: "45px",
-                      margin: "2px",
-                      backgroundColor: "#4CAF50",
-                      borderColor: "#ffffff",
-                    }}
-                  />
-                </div>
-              </div>
+          <form onSubmit={handleContactSubmit} className={styles.formContainer}>
+            <div>
+              <label className="form-label">Nombre Completo:</label>
+              <input className={styles.inputField} value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <label className="form-label">Correo Electrónico:</label>
+              <input className={styles.inputField} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div>
+              <label className="form-label">Mensaje:</label>
+              <textarea className={styles.inputField} rows="5" value={message} onChange={(e) => setMessage(e.target.value)} required />
+            </div>
+
+            <div className={styles.actions}>
+              <PrimaryButton type="button" variant="outline" onClick={() => setShowContactDialog(false)}>
+                <GiCancel style={{ marginRight: "8px" }} /> Cancelar
+              </PrimaryButton>
+
+              <PrimaryButton type="submit" variant="primary" disabled={contact.isPending}>
+                <BsFillSendFill style={{ marginRight: "8px" }} /> Enviar
+              </PrimaryButton>
             </div>
           </form>
         </DialogModal>
       )}
-      <footer>
-        <div
-          className="grid justify-content-center align-items-center"
-          style={{ marginLeft: "auto", marginRight: "auto" }}
-        >
-          <div className="col-12">
-            <p>
-              <Link
-                target="_blank"
-                to="/terms-and-conditions"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Términos de Servicio
-              </Link>
-              {" | "}
-              <Link
-                target="_blank"
-                to="/privacy-policy"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Política de Privacidad
-              </Link>
-              {" | "}
-              <Link
-                target="_blank"
-                to="/refund-policy"
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                Política de Reembolso
-              </Link>
-              {" | "}
-              <Link
-                style={{ textDecoration: "none", color: "inherit" }}
-                onClick={() => {
-                  setShowContactDialog(true);
-                }}
-              >
-                Contacto
-              </Link>
-            </p>
-            <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
-          </div>
+
+      <footer className={styles.footer}>
+        <div className={styles.links}>
+          <Link to="/termsandconditions" className={styles.link}>Términos</Link> |
+          <Link to="/privacypolicy" className={styles.link}>Privacidad</Link> |
+          <Link to="/refundpolicy" className={styles.link}>Reembolso</Link> |
+          <span className={styles.link} onClick={() => setShowContactDialog(true)}>Contacto</span>
         </div>
+        <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
       </footer>
     </>
   );

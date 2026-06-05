@@ -1,0 +1,78 @@
+.page {
+    background: linear-gradient(135deg, var(--color-sea, #58a0c8) 0%, var(--color-blue, #34699a) 100%);
+    min-height: 100vh;
+    width: 100%;
+}
+
+.containerPayment {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+    box-sizing: border-box;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 60px;
+    color: #fff;
+}
+
+.logo {
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    opacity: 0.95;
+    margin-bottom: 24px;
+    color: #fff;
+}
+
+.subtitle h3 {
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.pricingSection {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.sectionTitle {
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: #fff;
+    margin-bottom: 30px;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.plansGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.loginBtn {
+    width: 200px;
+    padding: 0.7rem 1.4rem;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    background: transparent;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.loginBtn:hover {
+    background: #fff;
+    color: var(--color-navy, #113f67);
+}
+
+@media (max-width: 480px) {
+    .plansGrid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,12 +1,12 @@
 import { AuthenticationDetails, CognitoUser } from "amazon-cognito-identity-js";
-import userpool from "./userpool";
-import { removeToken } from "../helpers/token";
+import { removeToken } from "../helpers/token"; // Ajusta si la ruta cambió
 
-export const authenticate = (Email, Password) => {
+// 1. Añadimos 'targetPool' como tercer parámetro
+export const authenticate = (Email, Password, targetPool) => {
   return new Promise((resolve, reject) => {
     const user = new CognitoUser({
       Username: Email,
-      Pool: userpool,
+      Pool: targetPool, // Usamos el pool inyectado
     });
 
     const authDetails = new AuthenticationDetails({
@@ -19,26 +19,24 @@ export const authenticate = (Email, Password) => {
         resolve(result);
       },
       onFailure: (err) => {
-        console.log("Authentication failed:", err);
-
+        console.error("Authentication failed:", err);
         reject(err);
       },
     });
   });
 };
 
-export const logout = () => {
-  const user = userpool.getCurrentUser();
-  if (user) {
-    user.signOut();
-    removeToken();
-    window.location.href = "/login";
-  }
+// 2. Necesitamos saber de qué pool cerrar sesión
+export const logout = (redirectUrl = "/login") => {
+  // user.signOut();
+  removeToken();
+  window.location.href = redirectUrl;
 };
 
-export const getCurrentSession = () => {
+// 3. Revisamos la sesión en el pool correcto
+export const getCurrentSession = (targetPool) => {
   return new Promise((resolve, reject) => {
-    const user = userpool.getCurrentUser();
+    const user = targetPool.getCurrentUser();
 
     if (!user) {
       return reject("No user");
@@ -57,4 +55,3 @@ export const getCurrentSession = () => {
     });
   });
 };
-

@@ -1,64 +1,102 @@
-import { useState } from "react";
-import "./Navbar.css";
+import { useEffect, useRef, useState } from "react";
+import styles from "./Navbar.module.css";
+import PrimaryButton from "../components/PrimaryButton";
+import { getTokenInfo } from "../helpers/token";
+
+const LINKS = [
+  { href: "/#home", label: "Inicio" },
+  { href: "/#features", label: "Características" },
+  { href: "/#howItWorks", label: "Cómo funciona" },
+  { href: "/#pricing", label: "Planes" },
+];
 
 const Navbar = () => {
   const [abierto, setAbierto] = useState(false);
-  const isMobile = window.innerWidth <= 760;
+  const menuRef = useRef(null);
+  const toggleRef = useRef(null);
+  const isLogged = !!getTokenInfo()?.email;
+
+  const cerrarMenu = () => setAbierto(false);
+
+  // Escape para cerrar
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && setAbierto(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Cerrar al volver a desktop
+  useEffect(() => {
+    const onResize = () => window.innerWidth > 760 && setAbierto(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    if (!abierto) return;
+    const onClick = (e) => {
+      if (menuRef.current?.contains(e.target) || toggleRef.current?.contains(e.target)) return;
+      setAbierto(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [abierto]);
+
+  // Bloquear scroll del fondo cuando el menú está abierto
+  useEffect(() => {
+    document.body.style.overflow = abierto ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [abierto]);
 
   return (
-    <header className="nav" style={{paddingTop:"0px", marginTop:"0px",marginBottom:"0px"}}>
-      <div className="nav__wrap">
-        {/* Logo */}
-        <a href="#inicio" className="nav__brand" aria-label="Qatalo Home">
+    <header className={styles.nav}>
+      <div className={styles.navWrap}>
+        <a href="/#home" className={styles.navBrand} onClick={cerrarMenu}>
           <img
             src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-            alt="CatalogQR Logo"
-            width="130"
-            height="auto"
-            loading="lazy"
+            alt="Qatalo"
+            className={styles.logo}
           />
         </a>
 
-        {isMobile && (
-          <button
-            className="nav__toggle"
-            aria-expanded={abierto}
-            aria-controls="menu-principal"
-            onClick={() => setAbierto((s) => !s)}
-          >
-            <span className="nav__sr-only">Abrir/cerrar menú</span>
-            <span className="nav__bar" />
-            <span className="nav__bar" />
-            <span className="nav__bar" />
-          </button>
-        )}
-
-        {/* Menú */}
-        <nav
-          id="menu-principal"
-          className={`nav__menu ${abierto ? "is-open" : ""}`}
+        <button
+          ref={toggleRef}
+          className={`${styles.navToggle} ${abierto ? styles.isActive : ""}`}
+          onClick={() => setAbierto((v) => !v)}
+          aria-label="Abrir menú"
+          aria-expanded={abierto}
+          aria-controls="nav-menu"
         >
-          <a href="#inicio" className="nav__link">
-            Inicio
-          </a>
-          <a href="#caracteristicas" className="nav__link">
-            Características
-          </a>
-          <a href="#como-funciona" className="nav__link">
-            Cómo Funciona
-          </a>
-          <a href="#planes-precios" className="nav__link">
-            Precios
-          </a>
-          <a href="/register" className="primary-btn pulse">
-            Comenzar Gratis
-          </a>
-          <a href="/login" className="nav__link">
-            Iniciar Sesión
-          </a>
+          <span className={styles.navBar} />
+          <span className={styles.navBar} />
+          <span className={styles.navBar} />
+        </button>
+
+        <nav
+          id="nav-menu"
+          ref={menuRef}
+          aria-label="Navegación principal"
+          className={`${styles.navMenu} ${abierto ? styles.isOpen : ""}`}
+        >
+          {LINKS.map((l) => (
+            <a key={l.href} href={l.href} className={styles.navLink} onClick={cerrarMenu}>
+              {l.label}
+            </a>
+          ))}
+
+          {isLogged ? (
+            <PrimaryButton to="/admin" variant="primary">Ir al panel</PrimaryButton>
+          ) : (
+            <>
+              <a href="/login" className={styles.navLink} onClick={cerrarMenu}>Iniciar Sesión</a>
+              <PrimaryButton to="/register" variant="primary">Comenzar Gratis</PrimaryButton>
+            </>
+          )}
         </nav>
       </div>
     </header>
   );
 };
+
 export default Navbar;

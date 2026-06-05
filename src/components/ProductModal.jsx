@@ -1,680 +1,179 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Image } from "primereact/image";
-
+import { useState } from "react";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
-
-import {
-  Check,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MessageCircle,
-  ShoppingCart,
-  X,
-} from "lucide-react";
-
-import { InputText } from "primereact/inputtext";
-import { InputNumber } from "primereact/inputnumber";
-
-import { Dropdown } from "primereact/dropdown";
-import { Button } from "primereact/button";
-
-import { customerActions } from "../store/customer-store/customer-slice";
-import { GetPaymentMethodsByBusinessId } from "../store/paymentMethod-store/paymentMethod-actions";
+import { ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Check } from "lucide-react";
 import { useNotification } from "./UI/NotificationProvider";
-import DialogModal from "./DialogModal";
-
-import { CreateCustomer } from "../store/customer-store/customer-actions";
-import Loading from "./UI/Loading";
-import { InputSwitch } from "primereact/inputswitch";
-import { Dialog } from "primereact/dialog";
-import "../styles/components.css";
 import {
-  formatDate,
-  formatted,
-  formatTextDate,
-  getAges,
-} from "../helpers/utils";
-import { Calendar } from "primereact/calendar";
+  getCart, setCart, getValidCustomerSession, setCustomerSession, fetchMyOrders,
+} from "../services/customerAuthApi";
+import { formatted, formatTextDate } from "../helpers/utils";
+import styles from "./ProductModal.module.css";
 
-let once = true;
-const ProductModal = ({ product, business, onClose }) => {
-  const dispatch = useDispatch();
-  const { showError, showSuccess, showWarning } = useNotification();
+const toISO = (s) => {
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) { let [, mm, dd, yy] = m; if (yy.length === 2) yy = "20" + yy; return `${yy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`; }
+  return "";
+};
 
-  const [showCustomerDialog, setShowCustomerDialog] = useState(false);
-  const [showBuyDialog, setShowBuyDialog] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const isMobile = window.innerWidth <= 760;
-
-  const paymentMethods = useSelector(
-    (state) => state.paymentMethod.paymentMethods
-  );
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("");
-
-  const customer = useSelector((state) => state.customer.customer);
-  const [action, setAction] = useState("whatsapp");
-  const [paymentMethod, setPaymentMethod] = useState(null);
-
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [termsDialog, setShowTermsDialog] = useState(false);
-  const [selectedAge, setSelectedAge] = useState({
-    code: 0,
-    name: 0,
+const ProductModal = ({ product, business, onClose, onAdded }) => {
+  const { showWarning } = useNotification();
+  const productLocalities = product.localities || [];
+  const noTerms = !product.terms;
+  const images = (product.imagesUrl || []).map((i) => i.image).filter(Boolean);
+  const [form, setForm] = useState({
+    quantity: 1, delivery_day: "", acceptTerms: noTerms,
+    locality: productLocalities.length === 1 ? productLocalities[0] : "",
   });
+  const [step, setStep] = useState(null); // "cart" | null
+  const [showTerms, setShowTerms] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [sliderRef, instanceRef] = useKeenSlider({ initial: 0, slideChanged: (s) => setCurrentSlide(s.track.details.rel) });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const maxQty = product.show_quantity ? product.quantity : 9999;
 
-  const [sliderRef, instanceRef] = useKeenSlider({
-    initial: 0,
-  });
-
-  useEffect(() => {
-    if (once) {
-      dispatch(GetPaymentMethodsByBusinessId(business.business_id, showError));
-      once = false;
+  const openWhatsApp = (who) => {
+    const saludo = who ? `soy ${who}, ` : "";
+    const msg = `Hola, ${saludo}estoy interesad@ en "${product.name}". Lo vi en tu catálogo: ${window.location.href}`;
+    window.open(`https://wa.me/${(business.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+  const handleWhatsApp = async () => {
+    const s = getValidCustomerSession(business.business_id);
+    if (!s?.token) return openWhatsApp("");
+    let name = s.full_name || `${s.given_name || ""} ${s.family_name || ""}`.trim();
+    if (!name) {
+      try {
+        const c = await fetchMyOrders(business.business_id);
+        name = c.full_name || `${c.given_name || ""} ${c.family_name || ""}`.trim();
+        setCustomerSession(business.business_id, { ...s, given_name: c.given_name, family_name: c.family_name, full_name: c.full_name, email: c.email || s.email });
+      } catch { /* sin nombre */ }
     }
-  }, [dispatch, business, showError]);
-
-  useEffect(() => {
-    if (
-      product &&
-      product.product_id !== undefined &&
-      product.product_id !== null &&
-      product.product_id !== "" &&
-      (product.terms === null ||
-        product.terms === undefined ||
-        product.terms === "")
-    ) {
-      setAcceptTerms(true);
-    }
-  }, [product]);
-
-  const productTemplate = (image) => {
-    return (
-      <>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100%",
-          }}
-        >
-          <Button
-            rounded
-            icon={<ChevronLeftIcon color="var(--color-sea)" />}
-            style={{
-              width: "40px",
-              height: "40px",
-              backgroundColor: "transparent",
-              border: "1px solid var(--color-sea)",
-            }}
-            className="image-arrow-left"
-            onClick={(e) => e.stopPropagation() || instanceRef.current?.prev()}
-          />
-          <div className="image-carousel">
-            <Image
-              preview
-              src={image}
-              alt="image"
-              width={isMobile ? "400px" : "500px"}
-              height="290"
-              style={{ objectFit: "fill" }}
-            />
-          </div>
-          <Button
-            icon={<ChevronRightIcon color="var(--color-sea)" />}
-            className="image-arrow-right"
-            style={{
-              width: "40px",
-              height: "40px",
-              backgroundColor: "transparent",
-              border: "1px solid var(--color-sea)",
-            }}
-            onClick={(e) => e.stopPropagation() || instanceRef.current?.next()}
-          />
-        </div>
-      </>
-    );
+    openWhatsApp(name);
   };
 
-  const handleWhatsApp = () => {
-    const catalogUrl = window.location.href;
+  const addToCart = () => {
+    if (productLocalities.length > 0 && !form.locality) return showWarning("Aviso", "Selecciona tu localidad");
+    if (product.required_delivery_day && !form.delivery_day) return showWarning("Aviso", "Selecciona la fecha de entrega");
+    if (product.terms && !form.acceptTerms) return showWarning("Aviso", "Debes aceptar los términos");
+    if (product.show_quantity && Number(form.quantity) > product.quantity) return showWarning("Aviso", "Excede el inventario disponible");
 
-    const message = `Hola, soy ${customer.given_name || "el cliente"} ${
-      customer.family_name || ""
-    }, estoy interesad@ en "${
-      product.name
-    }". Lo vi en tu catálogo: ${catalogUrl}`;
-    const whatsappUrl = `https://wa.me/${
-      business.phone
-    }?text=${encodeURIComponent(message)}`;
-
-    window.open(whatsappUrl, "_blank");
+    const items = getCart(business.business_id);
+    const idx = items.findIndex((i) => i.product_id === product.product_id && i.locality === form.locality && i.delivery_day === form.delivery_day);
+    if (idx >= 0) items[idx].quantity = Number(items[idx].quantity || 0) + (Number(form.quantity) || 1);
+    else items.push({
+      product_id: product.product_id, product_name: product.name,
+      price: Number(product.price) || 0, currency: product.currency,
+      quantity: Number(form.quantity) || 1, locality: form.locality,
+      delivery_day: form.delivery_day, accept_terms: !!form.acceptTerms, image: images[0] || "",
+    });
+    setCart(business.business_id, items);
+    onAdded?.();
+    onClose();
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const onCreate = (action) => {
-    if (product.min_age_allow) {
-      if (selectedAge.code === 0) {
-        showWarning("Debe seleccionar una edad válida");
-        return;
-      } else if (selectedAge.code < parseInt(product.min_age)) {
-        showWarning(
-          `La edad mínima para este producto es ${product.min_age} años`
-        );
-        return;
-      } else {
-        dispatch(
-          customerActions.modifyPropertyValue({
-            id: "age",
-            value: selectedAge.code,
-          })
-        );
-      }
-    }
-    setShowCustomerDialog(false);
-    if (action === "whatsapp") {
-      handleWhatsApp();
-    }
-    if (action === "buy") {
-      setShowBuyDialog(true);
-    }
-  };
-
-  const onBuy = () => {
-    const customerCreate = {
-      ...customer,
-      business_id: business.business_id,
-      transaction: {
-        product_id: product.product_id,
-        product_name: product.name,
-        quantity: customer.transaction_quantity,
-        price: product.price,
-        status: "Pendiente de pago",
-        accept_terms: acceptTerms,
-        age: selectedAge.code,
-        delivery_day: customer.delivery_day,
-        payment_method: {
-          payment_method_id: paymentMethods.find(
-            (pm) => pm.payment_method_id === paymentMethod.code
-          )?.payment_method_id,
-          payment_type: paymentMethods.find(
-            (pm) => pm.payment_method_id === paymentMethod.code
-          )?.payment_type,
-          currency: product.currency,
-          payment_link: paymentMethods.find(
-            (pm) => pm.payment_method_id === paymentMethod.code
-          )?.payment_link,
-        },
-      },
-    };
-
-    setIsLoading(true);
-    setLoadingMessage("Creando Solicitud...");
-    dispatch(CreateCustomer(customerCreate, showWarning, showSuccess));
-
-    setTimeout(() => {
-      setShowCustomerDialog(false);
-      setShowBuyDialog(false);
-      setShowPaymentDialog(true);
-      setIsLoading(false);
-    }, 4500);
-  };
-
-  const handleCustomerCreation = (customer_action) => {
-    dispatch(customerActions.startCustomer());
-    setAction(customer_action);
-    setShowCustomerDialog(true);
-  };
-  const disableButton = () => {
-    let disable = false;
-    if (!paymentMethod) disable = true;
-    if (!customer.transaction_quantity) disable = true;
-    if (!acceptTerms) disable = true;
-    if (product.required_delivery_day && customer.delivery_day === "")
-      disable = true;
-    return disable;
-  };
-   const setDefaultDate = (dateString) => {
-    if (dateString) {
-      const date = dateString.split("/");
-      return new Date(date[2], date[1] - 1, date[0]);
-    }
-
-    return null;
-  };
-
+  const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
 
   return (
-    <>
-      <Loading message={loadingMessage} visible={isLoading} />
-      <div className="modal-overlay" onClick={handleOverlayClick}>
-        <Dialog
-          visible={termsDialog}
-          position={"center"}
-          className="termisModal"
-          onHide={() => setShowTermsDialog(false)}
-          draggable={false}
-          resizable={false}
-        >
-          <div
-            style={{
-              textAlign: "left",
-              padding: "5px",
-              overflowY: "hidden",
-            }}
-          >
-            <span
-              style={{
-                textAlign: "center",
-                fontSize: "24px",
-                fontWeight: "bold",
-                color: "#fff",
-                alignItems: "center",
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: "10px",
-                borderBottom: "2px solid var(--color-yellow)",
-                paddingBottom: "5px",
-                width: "100%",
-              }}
-            >
-              Términos y Condiciones
-            </span>
-            <p
-              style={{
-                fontSize: "18px",
-                color: "#fff",
-                textAlign: "justify",
-                padding: "10px",
-                wordSpacing: "2px",
-                lineHeight: "1.6",
-              }}
-            >
-              {product.terms}
-            </p>
-          </div>
-        </Dialog>
-        {/* Modal de creacion de usuario */}
-        <DialogModal
-          visible={showCustomerDialog}
-          onHide={() => setShowCustomerDialog(false)}
-        >
-          <div
-            style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
-          >
-            <div style={{ width: "100%", textAlign: "left" }}>
-              <div className="field col">
-                <label className="form-label">Nombre</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.given_name}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "given_name",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="Juan"
-                />
-              </div>
-              <div className="field col">
-                <label className="form-label">Apellido</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.family_name}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "family_name",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="Pérez"
-                />
-              </div>
-              <div className="field col">
-                <label className="form-label">Correo Electrónico</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.email}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "email",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="juan@example.com"
-                />
-              </div>
-              <div className="field col">
-                <label className="form-label">Teléfono</label>
-                <InputText
-                  type="text"
-                  className="input"
-                  value={customer.phone}
-                  onChange={(e) => {
-                    dispatch(
-                      customerActions.modifyPropertyValue({
-                        id: "phone",
-                        value: e.target.value,
-                      })
-                    );
-                  }}
-                  placeholder="809-555-1234"
-                />
-              </div>
-              {product.min_age_allow && (
-                <div className="field col">
-                  <label className="form-label">Edad</label>
-                  <Dropdown
-                    value={selectedAge}
-                    className="input"
-                    onChange={(e) => {
-                      setSelectedAge(e.value);
-                    }}
-                    options={getAges()}
-                    optionLabel="name"
-                    placeholder="Seleccionar edad"
-                  />
-                </div>
-              )}
-              <div className="flex justify-content-end">
-                <Button
-                  className="btn btn-primary"
-                  label="Continuar"
-                  icon={<Check />}
-                  onClick={() => onCreate(action)}
-                  style={{ width: "100px", margin: "2px" }}
-                />
-                <Button
-                  className="btn btn-danger"
-                  label="Cancelar"
-                  icon={<X />}
-                  onClick={() => setShowCustomerDialog(false)}
-                  style={{ width: "100px", margin: "2px" }}
-                />
-              </div>
-            </div>
-          </div>
-        </DialogModal>
-        {/* Modal de compra */}
-        <DialogModal
-          visible={showBuyDialog}
-          width="30vw"
-          onHide={() => setShowBuyDialog(false)}
-        >
-          <div
-            style={{
-              textAlign: "left",
-              padding: "5px",
-              overflowX: "hidden"
-            }}
-          >
-            <div style={{  textAlign: "left" }}>
-              <div className="field col">
-                <label className="form-label">Método de pago</label>
-                <Dropdown
-                  value={paymentMethod}
-                  className="input"
-                  style={{width:"100%"}}
-                  onChange={(e) => {
-                    setPaymentMethod(e.value);
-                  }}
-                  options={paymentMethods.map((method) => ({
-                    name: method.payment_method_name,
-                    code: method.payment_method_id,
-                  }))}
-                  optionLabel="name"
-                  placeholder="Método de pago"
-                />
-              </div>
-              <div className="field col-12">
-                <label className="form-label" >
-                  Cantidad
-                  {product.show_quantity && (
-                    <span style={{ color: "white" }}>
-                      {" "}
-                      ({product.quantity} Disponible)
-                    </span>
-                  )}
-                </label>
-                <InputNumber
-                  className={`input ${product.just_one ? "pii" : ""}`}
-                  value={customer.transaction_quantity}
-                  disabled={product.just_one}
-                  min={1}
-                  max={product.show_quantity ? product.quantity : 1000}
-                  style={{
-                    width:"100%",
-                    backgroundColor:
-                      product.just_one === true ? "gray" : "white",
-                    color:
-                      product.just_one === true
-                        ? "var(--color-yellow)"
-                        : "white",
-                  }}
-                  onChange={(e) => {
-                    if (e.value <= product.quantity) {
-                      dispatch(
-                        customerActions.modifyPropertyValue({
-                          id: "transaction_quantity",
-                          value: e.value,
-                        })
-                      );
-                    } else {
-                      showWarning(
-                        "La cantidad excede el inventario disponible"
-                      );
-                    }
-                  }}
-                />
-              </div>
-              {product.required_delivery_day && (
-                <div className="field col-12">
-                  <label className="form-label">
-                    Fecha de entrega <br />
-                    (A partir de : {formatTextDate(product.delivery_start_day)})
-                  </label>
-                  <Calendar
-                    style={{ width: "100%", height: "60px" }}
-                    inputStyle={{ height: "40px", fontSize: "18px", textAlign: "center" }}
-                    value={setDefaultDate(customer.delivery_day)}
-                    minDate={setDefaultDate(product.delivery_start_day)}
-                    dateFormat="mm/dd/yy"
-                    onChange={(e) => {
-                      dispatch(
-                        customerActions.modifyPropertyValue({
-                          id: "delivery_day",
-                          value: formatDate(e.value),
-                        })
-                      );
-                    }}
-                  />
-                </div>
-              )}
-              {product.terms && (
-                <div className="field col flex align-items-center">
-                  <label className="form-label">
-                    <Button
-                      style={{
-                        backgroundColor: "transparent",
-                        border: "none",
-                        padding: 0,
-                        textDecoration: "underline",
-                        color: "var(--color-yellow)",
-                      }}
-                      label="Términos y condiciones"
-                      onClick={() => setShowTermsDialog(true)}
-                    />
-                  </label>{" "}
-                  <div className="field col-5 flex align-items-center">
-                    <InputSwitch
-                      checked={acceptTerms}
-                      onChange={(e) => {
-                        setAcceptTerms(e.value);
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="flex justify-content-end">
-                <Button
-                  disabled={disableButton()}
-                  className={`btn ${
-                    disableButton() ? "btn-disabled" : "btn-success"
-                  }`}
-                  label="Guardar"
-                  icon={<Check color="#ffffff" />}
-                  onClick={() => onBuy()}
-                  style={{ width: "100px", margin: "2px" }}
-                />
-                <Button
-                  className="btn btn-danger"
-                  label="Cancelar"
-                  icon={<X />}
-                  onClick={() => setShowBuyDialog(false)}
-                  style={{ width: "100px", margin: "2px" }}
-                />
-              </div>
-            </div>
-          </div>
-        </DialogModal>
-        {/* Modal de información */}
-        <Dialog
-          visible={showPaymentDialog}
-          onHide={() => setShowPaymentDialog(false)}
-          header={"Solicitud Enviada"}
-          className={"termisModal"}
-        >
-          <div
-            style={{ textAlign: "left", padding: "5px", overflowX: "hidden" }}
-          >
-            <div
-              style={{
-                width: "100%",
-                textAlign: "center",
-                border: "1px solid var(--color-yellow)",
-                borderRadius: "8px",
-                padding: "10px",
-              }}
-            >
-              <p style={{ color: "white" }}>
-                Su solicitud ha sido enviada con éxito. En breve recibirá una
-                notificación. En caso de no encontrarla en su bandeja de
-                entrada, por favor verifique su carpeta de{" "}
-                <span style={{ color: "var(--color-yellow)" }}>
-                  spam, promociones o correo no deseado
-                </span>
-                .
-              </p>
-              <p style={{ color: "white" }}>Gracias por su preferencia.</p>
-            </div>{" "}
-          </div>
-        </Dialog>
-        <div
-          className="modal-content product-modal-content"
-          style={{
-            // height: "610px",
-            maxHeight: "800px",
-            overflowY: "auto",
-          }}
-        >
-          <div className="product-modal-header">
-            <div className="navigation-wrapper">
-              <div
-                ref={sliderRef}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "0px",
-                  margin: "0px",
-                  width: "100%",
-                }}
-              >
-                {product.imagesUrl.map((imgObj, index) => (
-                  <div className="keen-slider__slide number-slide1" key={index}>
-                    {productTemplate(imgObj.image)}
+    <div className={styles.overlay} onClick={overlay}>
+      <div className={styles.modal}>
+        <button className={styles.close} onClick={onClose} aria-label="Cerrar">✕</button>
+
+        <div className={styles.gallery}>
+          {images.length > 0 ? (
+            <>
+              <div ref={sliderRef} className="keen-slider">
+                {images.map((src, i) => (
+                  <div className={`keen-slider__slide ${styles.slide}`} key={i}>
+                    <img src={src} alt={product.name} className={styles.galleryImg} />
                   </div>
                 ))}
               </div>
-            </div>
-            <button
-              className="product-modal-close"
-              onClick={onClose}
-              aria-label="Cerrar modal"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div
-            className="product-modal-body"
-            style={{ borderTop: "4px dashed var(--color-navy)" }}
-          >
-            <h2 className="product-modal-title">{product.name}</h2>
-            <div className="product-modal-price">
-              {product.currency} {formatted(product.price)}
-            </div>
-
-            {product.description && (
-              <p className="product-modal-description">{product.description}</p>
-            )}
-
-            <div className="product-modal-actions">
-              {product.is_available === "available" && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: "12px",
-                  }}
-                >
-                  <Button
-                    icon={<ShoppingCart size={40} />}
-                    style={{ width: "100%" }}
-                    className="btn btn-primary"
-                    label="Comprar"
-                    onClick={() => handleCustomerCreation("buy")}
-                  />
-                  <Button
-                    style={{ width: "100%" }}
-                    icon={<MessageCircle size={40} />}
-                    className="btn btn-whatsapp"
-                    label="Contactar por WhatsApp"
-                    onClick={() => handleCustomerCreation("whatsapp")}
-                  />
-                </div>
+              {images.length > 1 && (
+                <>
+                  <button className={`${styles.arrow} ${styles.arrowLeft}`} onClick={() => instanceRef.current?.prev()}><ChevronLeft /></button>
+                  <button className={`${styles.arrow} ${styles.arrowRight}`} onClick={() => instanceRef.current?.next()}><ChevronRight /></button>
+                  <div className={styles.dots}>
+                    {images.map((_, i) => (
+                      <span key={i} className={`${styles.dot} ${currentSlide === i ? styles.dotActive : ""}`} onClick={() => instanceRef.current?.moveToIdx(i)} />
+                    ))}
+                  </div>
+                </>
               )}
-              {product.is_available === "unavailable" && (
-                <Button
-                  style={{ width: "100%" }}
-                  className="btn"
-                  label="Producto agotado"
-                  disabled
-                />
-              )}
-            </div>
+            </>
+          ) : (<img src="/placeholder.svg" alt={product.name} className={styles.galleryImg} />)}
+        </div>
+
+        <div className={styles.body}>
+          <h2 className={styles.title}>{product.name}</h2>
+          <div className={styles.price}>{product.currency} {formatted(product.price)}</div>
+          {product.description && <p className={styles.description}>{product.description}</p>}
+          {product.show_quantity && product.quantity > 0 && (<div className={styles.stock}>Disponible: <strong>{product.quantity}</strong></div>)}
+          {productLocalities.length > 0 && (<div className={styles.stock}>Disponible en: <strong>{productLocalities.join(", ")}</strong></div>)}
+          <div className={styles.actions}>
+            {product.is_available === "available" ? (
+              <>
+                <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setStep("cart")}><ShoppingCart size={18} /> Agregar al carrito</button>
+                <button className={`${styles.btn} ${styles.btnWhats}`} onClick={handleWhatsApp}><MessageCircle size={18} /> WhatsApp</button>
+              </>
+            ) : (<button className={`${styles.btn} ${styles.btnDisabled}`} disabled>Producto agotado</button>)}
           </div>
         </div>
       </div>
-    </>
+
+      {step === "cart" && (
+        <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.subModal}>
+            <h3>Agregar al carrito</h3>
+            {productLocalities.length > 0 && (
+              <div className={styles.field}>
+                <label>Localidad</label>
+                <select className={styles.input} value={form.locality} onChange={(e) => set("locality", e.target.value)}>
+                  <option value="">Selecciona tu localidad</option>
+                  {productLocalities.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+                </select>
+              </div>
+            )}
+            <div className={styles.field}>
+              <label>Cantidad {product.show_quantity && <span>({product.quantity} disponibles)</span>}</label>
+              <input type="number" className={styles.input} min={1} max={maxQty} disabled={product.just_one}
+                value={form.quantity}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (product.show_quantity && v > product.quantity) return showWarning("Aviso", "Excede el inventario disponible");
+                  set("quantity", v);
+                }} />
+            </div>
+            {product.required_delivery_day && (
+              <div className={styles.field}>
+                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {formatTextDate(product.delivery_start_day)})</span>}</label>
+                <input type="date" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(e) => set("delivery_day", e.target.value)} />
+              </div>
+            )}
+            {product.terms && (
+              <div className={styles.terms}>
+                <button type="button" className={styles.termsLink} onClick={() => setShowTerms(true)}>Términos y condiciones</button>
+                <label className={styles.checkbox}><input type="checkbox" checked={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.checked)} /> Acepto</label>
+              </div>
+            )}
+            <div className={styles.subActions}>
+              <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(null)}>Cancelar</button>
+              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={addToCart}><Check size={16} /> Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTerms && (
+        <div className={styles.subOverlay} onClick={(e) => { e.stopPropagation(); setShowTerms(false); }}>
+          <div className={styles.subModal} onClick={(e) => e.stopPropagation()}>
+            <h3>Términos y condiciones</h3>
+            <p className={styles.termsText}>{product.terms}</p>
+            <div className={styles.subActions}><button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setShowTerms(false)}>Entendido</button></div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

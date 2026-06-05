@@ -1,0 +1,136 @@
+/* Auth.module.css */
+.pageWrapper {
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-blue) 50%, var(--color-sea) 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.authContainer {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(17, 63, 103, 0.3);
+  width: 100%;
+  max-width: 450px;
+  padding: 40px 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+.authContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--color-navy), var(--color-blue), var(--color-sea), var(--color-yellow));
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo img {
+  width: 180px;
+  height: auto;
+}
+
+.logo h1 {
+  color: var(--color-navy);
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  color: var(--color-navy);
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: white;
+  color: var(--color-navy);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-sea);
+  box-shadow: 0 0 0 3px rgba(88, 160, 200, 0.2);
+}
+
+.formLinks {
+  text-align: right;
+  margin-top: -10px;
+  margin-bottom: 1.5rem;
+}
+
+.formLinks a {
+  color: var(--color-blue);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.formLinks a:hover {
+  color: var(--color-navy);
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Estilos para la validación de contraseñas */
+.validationBox {
+  margin-top: 0.5rem;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.validationItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.valid {
+  color: #28a745; /* Verde éxito */
+}
+
+.invalid {
+  color: #dc3545; /* Rojo error */
+}
+
+@media (max-width: 480px) {
+  .authContainer {
+    padding: 30px 20px;
+  }
+}

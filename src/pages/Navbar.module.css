@@ -1,0 +1,122 @@
+.nav {
+  background: var(--color-navy);
+  border-bottom: 1px solid var(--color-yellow);
+  width: 100%;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.logo {
+  display: block;
+  height: 150px;
+  width: auto;
+  margin-top: 20px;
+}
+
+.navWrap {
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative; /* contexto para el menú móvil */
+}
+
+.navBrand {
+  display: inline-flex;
+  align-items: center;
+}
+
+.navMenu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navLink {
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  text-wrap: nowrap;
+}
+
+.navLink:hover {
+  color: var(--color-yellow);
+}
+
+/* Botón hamburguesa: oculto por defecto en desktop */
+.navToggle {
+  display: none;
+}
+
+/* Las barritas del icono */
+.navBar {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* ========================= */
+/* Estilos móvil (≤ 760px)   */
+/* ========================= */
+@media (max-width: 760px) {
+  .navToggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid white;
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 60;
+  }
+
+  /* Animación a "X" cuando está abierto */
+  .navToggle.isActive .navBar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .navToggle.isActive .navBar:nth-child(2) {
+    opacity: 0;
+  }
+  .navToggle.isActive .navBar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* Menú desplegable: oculto por defecto */
+  .navMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: flex-end;   /* ← antes era flex-start */
+    text-align: right;        /* ← añade esto por si algún elemento lo necesita */
+    gap: 1rem;
+    padding: 16px;
+    background: var(--color-navy);
+    border-top: solid 2px var(--color-yellow);
+    box-shadow: var(--shadow);
+
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  }
+
+  /* Menú visible al abrir */
+  .navMenu.isOpen {
+    max-height: 500px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
