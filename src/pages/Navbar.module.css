@@ -7,6 +7,12 @@
   top: 0;
   z-index: 50;
 }
+.logo {
+  display: block;
+  height: 150px;
+  width: auto;
+  margin-top: 20px;
+}
 
 .navWrap {
   margin: 0 auto;
@@ -33,6 +39,7 @@
   text-decoration: none;
   font-weight: 700;
   font-size: 1rem;
+  text-wrap: nowrap;
 }
 
 .navLink:hover {

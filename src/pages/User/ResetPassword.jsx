@@ -1,236 +1,150 @@
-import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { Ban, Check } from "lucide-react";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
-import { Image } from "primereact/image";
+
 import { useNotification } from "../../components/UI/NotificationProvider";
-import { userActions } from "../../store/user-store/user-slice";
-import {
-  CreateAccount,
-  Reset_Password,
-} from "../../store/user-store/user-actions";
-import { validatePassword } from "../../helpers/passwordValidator";
 import Loading from "../../components/UI/Loading";
-import "./ResetPassword.css";
-import { useParams } from "react-router-dom";
+import { validatePassword } from "../../helpers/passwordValidator";
+import { resetPassword } from "../../services/userApi";
+import styles from "./ResetPassword.module.css";
 
 const ResetPassword = () => {
-  const user = useSelector((state) => state.user.user);
-  const dispatch = useDispatch();
   const params = useParams();
+  const navigate = useNavigate();
   const { showWarning, showError, showSuccess } = useNotification();
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPasswordInfo, setShowPasswordInfo] = useState(false);
-  const [showConfirmPasswordInfo, setShowConfirmPasswordInfo] = useState(false);
-  const [isValidPassword, setIsValidPassword] = useState({
-    isValid: false,
-    errors: {
-      number: false,
-      specialChar: false,
-      upperCase: false,
-      lowerCase: false,
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPwInfo, setShowPwInfo] = useState(false);
+  const [showConfirmInfo, setShowConfirmInfo] = useState(false);
+
+  const validation = useMemo(() => validatePassword(password), [password]);
+  const passwordsMatch =
+    confirmPassword.length > 0 && password === confirmPassword;
+  const canSubmit = validation.isValid && passwordsMatch;
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => resetPassword(params.token, password),
+    onSuccess: () => {
+      showSuccess("¡Listo!", "Tu contraseña fue actualizada correctamente.");
+      navigate("/login");
+    },
+    onError: () => {
+      showError(
+        "Error",
+        "No se pudo restablecer la contraseña. El enlace puede haber expirado."
+      );
     },
   });
-  const [isConfirmPasswordValid, setIsConfirmPasswordValid] = useState(false);
 
-  const onChange = (id, value) => {
-    if (id === "password") {
-      const passwordValidation = validatePassword(value);
-      setIsValidPassword(passwordValidation);
-    } else if (id === "confirmPassword") {
-      if (user.password === value) {
-        setIsConfirmPasswordValid(true);
-      } else {
-        setIsConfirmPasswordValid(false);
-      }
-      dispatch(userActions.modifyPropertyValue({ id, value: value }));
-    }
-    dispatch(userActions.modifyPropertyValue({ id, value: value }));
-  };
-
-  const handleRegister = (event) => {
-    event.preventDefault();
-    if (user.password !== user.confirmPassword) {
-      showWarning(
-        "Contraseñas no coinciden",
-        "Por favor, verifica tu contraseña"
-      );
-      return;
-    }
-    if (!isValidPassword.isValid) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validation.isValid) {
       showWarning(
         "Contraseña no válida",
-        "La contraseña debe contener al menos 8 caracteres, incluyendo una mayúscula, una minúscula, un número y un carácter especial."
+        "Debe tener 8+ caracteres, mayúscula, minúscula, número y carácter especial."
       );
       return;
     }
-    setIsLoading(true);
-    dispatch(
-      Reset_Password(
-        params.token,
-        user.password,
-        showError,
-        showWarning,
-        showSuccess
-      )
-    );
+    if (!passwordsMatch) {
+      showWarning("Contraseñas no coinciden", "Por favor, verifica tu contraseña.");
+      return;
+    }
+    mutate();
   };
 
+  const reqs = [
+    { ok: validation.errors.upperCase, text: "Al menos una letra mayúscula" },
+    { ok: validation.errors.lowerCase, text: "Al menos una letra minúscula" },
+    { ok: validation.errors.number, text: "Al menos un número" },
+    { ok: validation.errors.specialChar, text: "Al menos un carácter especial" },
+    { ok: validation.errors.minLength, text: "Al menos 8 caracteres" },
+  ];
+
+  if (isPending) return <Loading message="Guardando..." />;
+
   return (
-    <>
-      {isLoading && <Loading />}
-      {!isLoading && (
-        <div className="auth-container-reset">
-          <div id="register" className="form-section active">
-            <div className="logo">
-              <Image
-                src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
-                alt="CatalogQR Logo"
-                width={200}
-                style={{ padding: "0rem" }}
-              />
-              <h1>Crear Cuenta</h1>
-              <p>Únete a nuestra comunidad</p>
-            </div>
-
-            <form onSubmit={handleRegister}>
-              <div className="form-group">
-                <label htmlFor="register-password">Contraseña</label>
-                <InputText
-                  id="register-password"
-                  type="password"
-                  value={user.password}
-                  onChange={(e) => onChange("password", e.target.value)}
-                  required
-                  minLength="8"
-                  onFocus={() => {
-                    setShowPasswordInfo(true);
-                  }}
-                />
-                {showPasswordInfo && (
-                  <div
-                    className="password-requirements"
-                    style={{ marginTop: "0.5rem" }}
-                  >
-                    <div
-                      style={{
-                        color: isValidPassword.errors.upperCase
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.upperCase ? <Check /> : <Ban />}
-                        Debe contener al menos una letra mayúscula
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.lowerCase
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.lowerCase ? <Check /> : <Ban />}
-                        Debe contener al menos una letra minúscula
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.number ? "green" : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.number ? <Check /> : <Ban />}
-                        Debe contener al menos un número
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.specialChar
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.specialChar ? (
-                          <Check />
-                        ) : (
-                          <Ban />
-                        )}
-                        Debe contener al menos un carácter especial
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        color: isValidPassword.errors.minLength
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isValidPassword.errors.minLength ? <Check /> : <Ban />}
-                        Debe contener al menos 8 caracteres
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="register-confirm">Confirmar Contraseña</label>
-                <InputText
-                  id="register-confirm"
-                  type="password"
-                  value={user.confirmPassword}
-                  onChange={(e) => onChange("confirmPassword", e.target.value)}
-                  required
-                  minLength="8"
-                  onFocus={() => setShowConfirmPasswordInfo(true)}
-                />
-                {showConfirmPasswordInfo && (
-                  <div
-                    className="password-requirements"
-                    style={{ marginTop: "0.5rem" }}
-                  >
-                    <div
-                      style={{
-                        color: isConfirmPasswordValid ? "green" : "red",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {isConfirmPasswordValid ? <Check /> : <Ban />}
-                        {isConfirmPasswordValid
-                          ? "Las contraseñas coinciden"
-                          : "Las contraseñas no coinciden"}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <Button
-                type="submit"
-                label="Guardar"
-                className={`btn  ${
-                  !isValidPassword.isValid || !isConfirmPasswordValid
-                    ? "btn-disabled"
-                    : "btn-primary"
-                }`}
-                disabled={!isValidPassword.isValid || !isConfirmPasswordValid}
-              />
-            </form>
-            <Button
-              className="btn btn-danger"
-              onClick={() => (window.location.href = "/login")}
-              label="Cancelar"
-            />
-          </div>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.logo}>
+          <img
+            src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo_blue.png"
+            alt="Qatalo"
+            width={200}
+          />
+          <h1>Restablecer contraseña</h1>
+          <p>Crea tu nueva contraseña</p>
         </div>
-      )}
-    </>
+
+        <form onSubmit={handleSubmit}>
+          <div className={styles.formGroup}>
+            <label htmlFor="password">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setShowPwInfo(true)}
+              required
+              minLength={8}
+            />
+            {showPwInfo && (
+              <div className={styles.requirements}>
+                {reqs.map((r, i) => (
+                  <div key={i} className={r.ok ? styles.reqOk : styles.reqBad}>
+                    {r.ok ? <Check size={16} /> : <Ban size={16} />}
+                    <span>{r.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="confirm">Confirmar contraseña</label>
+            <input
+              id="confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onFocus={() => setShowConfirmInfo(true)}
+              required
+              minLength={8}
+            />
+            {showConfirmInfo && (
+              <div className={styles.requirements}>
+                <div className={passwordsMatch ? styles.reqOk : styles.reqBad}>
+                  {passwordsMatch ? <Check size={16} /> : <Ban size={16} />}
+                  <span>
+                    {passwordsMatch
+                      ? "Las contraseñas coinciden"
+                      : "Las contraseñas no coinciden"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className={`${styles.btn} ${canSubmit ? styles.btnPrimary : styles.btnDisabled}`}
+            disabled={!canSubmit}
+          >
+            Guardar
+          </button>
+        </form>
+
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnDanger}`}
+          onClick={() => navigate("/login")}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 };
+
 export default ResetPassword;

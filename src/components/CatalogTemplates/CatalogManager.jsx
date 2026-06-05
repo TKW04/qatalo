@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import TemplateDefault from "./TemplateDefault";
 import TemplateFashion from "./TemplateFashion";
 import TemplateTech from "./TemplateTech";
@@ -7,6 +7,10 @@ import TemplateFood from "./TemplateFood";
 import TemplateAccessory from "./TemplateAccessory";
 import ProductModal from "../ProductModal";
 import { DUMMY_PRODUCTS, DUMMY_CATEGORIES } from "./previewData";
+import CustomerAuthModal from "./CustomerAuthModal";
+import CustomerOrders from "./CustomerOrders";
+import { getCustomerSession, setCustomerSession } from "../../services/customerAuthApi";
+import portal from "./CustomerPortal.module.css";
 
 const Templates = {
   default: TemplateDefault,
@@ -17,7 +21,7 @@ const Templates = {
   accessory: TemplateAccessory,
 };
 
-const noop = () => {};
+const noop = () => { };
 
 const parsePalette = (raw) => {
   if (!raw) return {};
@@ -36,6 +40,28 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
 
   const usingDummy = isPreview && products.length === 0;
   const sourceProducts = usingDummy ? DUMMY_PRODUCTS : products;
+
+  const businessId = businessData?.business_id;
+  const [authOpen, setAuthOpen] = useState(false);
+  const [ordersOpen, setOrdersOpen] = useState(false);
+  // fuerza re-lectura de la sesión tras login
+  const [, setSessionTick] = useState(0);
+
+  const openOrders = () => {
+    if (getCustomerSession(businessId)?.token) setOrdersOpen(true);
+    else setAuthOpen(true);
+  };
+
+  useEffect(() => {
+    if (isPreview || !businessId) return;
+    const m = window.location.hash.match(/orders-token=([^&]+)/);
+    if (m) {
+      setCustomerSession(businessId, { token: decodeURIComponent(m[1]) });
+      // borra el token de la URL para que no quede a la vista ni en el historial
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      setOrdersOpen(true);
+    }
+  }, [businessId, isPreview]);
 
   const categories = useMemo(() => {
     if (usingDummy) return DUMMY_CATEGORIES;
@@ -116,8 +142,37 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
         <ProductModal
           product={selectedProduct}
           business={businessData}
+          customerSession={getCustomerSession(businessId)}
           onClose={() => setSelectedProduct(null)}
         />
+      )}
+
+      {!isPreview && businessId && (
+        <>
+          <button className={portal.fab} onClick={openOrders}>Mis órdenes</button>
+
+          {authOpen && (
+            <CustomerAuthModal
+              businessId={businessId}
+              businessName={businessData?.business_name || businessData?.name}
+              onClose={() => setAuthOpen(false)}
+              onSuccess={() => {
+                setAuthOpen(false);
+                setOrdersOpen(true);   // 👈 esto es lo que monta CustomerOrders y dispara fetchMyOrders
+              }}
+            />
+          )}
+          {ordersOpen && (
+            <CustomerOrders
+              businessId={businessId}
+              onClose={() => setOrdersOpen(false)}
+              onSessionExpired={() => {
+                setOrdersOpen(false);
+                setAuthOpen(true);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );

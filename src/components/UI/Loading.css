@@ -10,7 +10,7 @@
   justify-content: center;
   z-index: 9999;
   backdrop-filter: blur(4px);
-  padding-top: 10rem;
+  align-items: center;
 }
 
 .loading-container {
@@ -97,12 +97,23 @@
 }
 
 .progress-fill {
+  position: absolute;
+  left: 0;
   height: 100%;
+  width: 40%;
   background: linear-gradient(90deg, #58A0C8, #FDF5AA);
   border-radius: 2px;
-  width: 0%;
-  animation: progressFill 4.5s ease-out forwards;
-  position: relative;
+  animation: progressIndeterminate 1.3s ease-in-out infinite;
+}
+
+@keyframes progressIndeterminate {
+  0% {
+    left: -40%;
+  }
+
+  100% {
+    left: 100%;
+  }
 }
 
 .progress-fill::after {
@@ -229,5 +240,20 @@
   .pulse-ring {
     width: 120px;
     height: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .logo,
+  .pulse-ring,
+  .loading-text h2,
+  .progress-fill {
+    animation: none;
+  }
+
+  .progress-fill {
+    width: 100%;
+    left: 0;
   }
 }

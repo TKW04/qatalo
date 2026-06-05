@@ -1,38 +1,28 @@
 import { useCallback, useMemo } from "react";
 import { usePaddle } from "../hooks/usePaddle";
-import { Button } from "primereact/button";
+import styles from "./PaddleCheckoutButton.module.css";
 
 export default function PaddleCheckoutButton(props) {
   const { paddle, ready } = usePaddle();
 
-  const label = useMemo(() => {
-    return props.mode === "price" ? "Comprar ahora" : "Pagar transacción";
-  }, [props.mode]);
+  const label = useMemo(
+    () => (props.mode === "price" ? "Comprar ahora" : "Pagar transacción"),
+    [props.mode]
+  );
 
   const openCheckout = useCallback(async () => {
     if (!ready || !paddle) return;
-
     try {
       if (props.mode === "price") {
         const {
-          priceId,
-          quantity = 1,
-          customerId,
-          email,
-          customData,
-          successUrl = window.location.origin + "/gracias",
-          locale = "es",
-          onOpened,
-          onClosed,
+          priceId, quantity = 1, customerId, email, customData,
+          successUrl = window.location.origin + "/thanks",
+          locale = "es", onOpened, onClosed,
         } = props;
 
         await paddle.Checkout.open({
           items: [{ priceId, quantity }],
-          customer: customerId
-            ? { id: customerId }
-            : email
-            ? { email }
-            : undefined,
+          customer: customerId ? { id: customerId } : email ? { email } : undefined,
           customData,
           settings: {
             displayMode: "overlay",
@@ -47,36 +37,27 @@ export default function PaddleCheckoutButton(props) {
       } else {
         const {
           transactionId,
-          successUrl = window.location.origin + "/gracias",
-          locale = "es",
-          onOpened,
-          onClosed,
+          successUrl = window.location.origin + "/thanks",
+          locale = "es", onOpened, onClosed,
         } = props;
 
         await paddle.Checkout.open({
           transactionId,
           settings: {
             displayMode: "overlay",
-            locale,
-            theme: "light",
-            successUrl,
-            opened: onOpened,
-            closed: onClosed,
+            locale, theme: "light", successUrl,
+            opened: onOpened, closed: onClosed,
           },
         });
       }
     } catch (err) {
       console.error("Paddle Checkout error:", err);
-      // Pista útil: muchas veces aquí verás "domain not allowed" o "invalid token"
     }
   }, [ready, paddle, props]);
 
   return (
-    <Button
-      className="plan-button secondary"
-      onClick={openCheckout}
-      disabled={!ready}
-      label={ready ? label : "Cargando pago..."}
-    />
+    <button className={styles.btn} onClick={openCheckout} disabled={!ready}>
+      {ready ? label : "Cargando pago..."}
+    </button>
   );
 }

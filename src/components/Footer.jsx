@@ -1,39 +1,44 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { GiCancel } from "react-icons/gi";
 import { BsFillSendFill } from "react-icons/bs";
 
 import DialogModal from "./DialogModal";
-import { useDispatch } from "react-redux";
-import { ContactTeam } from "../store/qatalo-store/qatalo-actions";
+import { contactTeam } from "../services/qataloApi";
 import { useNotification } from "./UI/NotificationProvider";
 import Loading from "./UI/Loading";
 import styles from "./Footer.module.css";
-
-// 1. Importamos nuestro botón estandarizado
-import PrimaryButton from "./PrimaryButton"; 
+import PrimaryButton from "./PrimaryButton";
 
 const Footer = () => {
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const dispatch = useDispatch();
   const { showError, showSuccess } = useNotification();
+
+  const contact = useMutation({
+    mutationFn: () => contactTeam({ name, email, message }),
+    onSuccess: () => {
+      showSuccess("Mensaje enviado", "Gracias por contactarnos, te responderemos pronto.");
+      setShowContactDialog(false);
+      setName("");
+      setEmail("");
+      setMessage("");
+    },
+    onError: (e) => showError("Error", e.message || "No se pudo enviar el mensaje"),
+  });
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
-    setShowContactDialog(false);
-    setIsLoading(true);
-    dispatch(ContactTeam(name, email, message, showError, showSuccess));
-    setTimeout(() => setIsLoading(false), 4500);
+    contact.mutate();
   };
 
   return (
     <>
-      {isLoading && <Loading message="Enviando mensaje" />}
-      
+      {contact.isPending && <Loading message="Enviando mensaje" />}
+
       {showContactDialog && (
         <DialogModal
           title="Contacta el equipo de Qatalo"
@@ -53,21 +58,13 @@ const Footer = () => {
               <label className="form-label">Mensaje:</label>
               <textarea className={styles.inputField} rows="5" value={message} onChange={(e) => setMessage(e.target.value)} required />
             </div>
-            
-            {/* 2. Reemplazamos los botones HTML por PrimaryButton */}
+
             <div className={styles.actions}>
-              <PrimaryButton 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowContactDialog(false)}
-              >
+              <PrimaryButton type="button" variant="outline" onClick={() => setShowContactDialog(false)}>
                 <GiCancel style={{ marginRight: "8px" }} /> Cancelar
               </PrimaryButton>
-              
-              <PrimaryButton 
-                type="submit" 
-                variant="primary"
-              >
+
+              <PrimaryButton type="submit" variant="primary" disabled={contact.isPending}>
                 <BsFillSendFill style={{ marginRight: "8px" }} /> Enviar
               </PrimaryButton>
             </div>

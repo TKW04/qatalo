@@ -1,6 +1,9 @@
-
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import Notification from "./Notification";
+
+const DEFAULT_DURATION = 4000;
+const ERROR_DURATION = 6000;
+const MAX_VISIBLE = 4;
 
 const NotificationContext = createContext({
   showSuccess: () => {},
@@ -12,77 +15,67 @@ const NotificationContext = createContext({
 
 export const useNotification = () => {
   const context = useContext(NotificationContext);
-
   if (!context || !context.showSuccess) {
-    throw new Error(
-      "useNotification must be used within a NotificationProvider"
-    );
+    throw new Error("useNotification must be used within a NotificationProvider");
   }
-
   return context;
 };
 
 export const NotificationProvider = ({ children }) => {
-  const [notification, setNotification] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const timers = useRef(new Map());
+  const idRef = useRef(0);
 
-  const showNotification = useCallback((status, title, message) => {
-    const notificationData = { status, title, message, timestamp: Date.now() };
-    setNotification(notificationData);
+  const dismiss = useCallback((id) => {
+    // 1) marca el toast como "saliendo" para disparar la animación
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+    // corta el timer de auto-cierre si seguía vivo
+    const tm = timers.current.get(id);
+    if (tm) { clearTimeout(tm); timers.current.delete(id); }
+    // 2) lo remueve cuando termina la animación (debe coincidir con el CSS: 0.3s)
+    const rm = setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+      timers.current.delete(`rm-${id}`);
+    }, 300);
+    timers.current.set(`rm-${id}`, rm);
   }, []);
 
-  const showSuccess = useCallback(
-    (title, message) => {
-      showNotification("success", title, message);
-    },
-    [showNotification]
-  );
+  const push = useCallback((status, title, message, duration) => {
+    const ms = duration ?? (status === "error" ? ERROR_DURATION : DEFAULT_DURATION);
+    const id = ++idRef.current;
+    setToasts((prev) => {
+      // evita duplicar un aviso idéntico que ya esté en pantalla
+      if (prev.some((t) => t.status === status && t.title === title && t.message === message)) {
+        return prev;
+      }
+      return [...prev, { id, status, title, message, duration: ms }].slice(-MAX_VISIBLE);
+    });
+    timers.current.set(id, setTimeout(() => dismiss(id), ms));
+  }, [dismiss]);
 
-  const showError = useCallback(
-    (title, message) => {
-      showNotification("error", title, message);
-    },
-    [showNotification]
-  );
-
-  const showWarning = useCallback(
-    (title, message) => {
-      showNotification("warning", title, message);
-    },
-    [showNotification]
-  );
-
-  const showInfo = useCallback(
-    (title, message) => {
-      showNotification("info", title, message);
-    },
-    [showNotification]
-  );
+  const showSuccess = useCallback((t, m, d) => push("success", t, m, d), [push]);
+  const showError = useCallback((t, m, d) => push("error", t, m, d), [push]);
+  const showWarning = useCallback((t, m, d) => push("warning", t, m, d), [push]);
+  const showInfo = useCallback((t, m, d) => push("info", t, m, d), [push]);
 
   const clearNotification = useCallback(() => {
-    setNotification(null);
+    timers.current.forEach((tm) => clearTimeout(tm));
+    timers.current.clear();
+    setToasts([]);
   }, []);
 
-  const value = {
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo,
-    clearNotification,
-  };
+  // limpia todos los timers al desmontar
+  useEffect(() => () => {
+    timers.current.forEach((tm) => clearTimeout(tm));
+    timers.current.clear();
+  }, []);
+
+  const value = { showSuccess, showError, showWarning, showInfo, clearNotification };
 
   return (
     <NotificationContext.Provider value={value}>
       {children}
-      {notification && (
-        <div style={{ position: "relative", zIndex: 9999 }}>
-          <Notification
-            status={notification.status}
-            title={notification.title}
-            message={notification.message}
-            onClose={clearNotification}
-          />
-        </div>
-      )}
+      <Notification toasts={toasts} onDismiss={dismiss} />
     </NotificationContext.Provider>
   );
 };

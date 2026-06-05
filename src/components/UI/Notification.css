@@ -185,11 +185,6 @@
   }
 }
 
-/* Hover Effects */
-.notification:hover .notification-progress-bar {
-  animation-play-state: paused;
-}
-
 .notification:hover {
   transform: translateX(8px);
   box-shadow: 0 12px 32px rgba(0, 128, 157, 0.2);
@@ -332,4 +327,13 @@
 /* Smooth transitions */
 .notification-container > * {
   transition: all 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification,
+  .notification.removing,
+  .notification-progress-bar {
+    animation: none;
+  }
+  .notification { transform: none; opacity: 1; }
 }

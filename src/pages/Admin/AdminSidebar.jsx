@@ -51,6 +51,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   }, [activeTab, subscribed, onTabChange]);
 
   const setEnabled = (itemId) => {
+    
     // Sin suscripción activa: solo Suscripción
     if (!subscribed) return itemId === "subscription";
 

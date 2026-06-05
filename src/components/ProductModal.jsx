@@ -8,6 +8,7 @@ import { useNotification } from "./UI/NotificationProvider";
 import Loading from "./UI/Loading";
 import { fetchPaymentMethodsByBusinessId } from "../services/paymentMethodsApi";
 import { createCatalogOrder } from "../services/customersApi";
+import { addOrderWithToken } from "../services/customerAuthApi";
 import { formatted, formatTextDate, getAges } from "../helpers/utils";
 import styles from "./ProductModal.module.css";
 
@@ -28,8 +29,9 @@ const emptyForm = {
   quantity: 1, delivery_day: "", paymentMethodId: "", acceptTerms: false, locality: "",
 };
 
-const ProductModal = ({ product, business, onClose }) => {
+const ProductModal = ({ product, business, customerSession, onClose }) => {
   const { showWarning, showError } = useNotification();
+  const isLoggedIn = !!customerSession?.token;
 
   const { data: paymentMethods = [] } = useQuery({
     queryKey: ["public-payment-methods", business?.business_id],
@@ -62,6 +64,22 @@ const ProductModal = ({ product, business, onClose }) => {
   const order = useMutation({
     mutationFn: () => {
       const pm = paymentMethods.find((p) => p.payment_method_id === form.paymentMethodId);
+      const transaction = {
+        product_id: product.product_id,
+        product_name: product.name,
+        quantity: Number(form.quantity) || 1,
+        price: Number(product.price) || 0,
+        delivery_day: form.delivery_day,
+        accept_terms: form.acceptTerms,
+        locality: form.locality,
+        payment_method: { payment_method_id: pm?.payment_method_id },
+      };
+
+      // Con sesión: el backend toma nombre/correo/teléfono del token.
+      if (isLoggedIn) {
+        return addOrderWithToken(business.business_id, transaction);
+      }
+
       return createCatalogOrder({
         business_id: business.business_id,
         given_name: form.given_name,
@@ -69,23 +87,19 @@ const ProductModal = ({ product, business, onClose }) => {
         email: form.email,
         phone: form.phone,
         age: Number(form.age) || 0,
-        transaction: {
-          product_id: product.product_id,
-          product_name: product.name,
-          quantity: Number(form.quantity) || 1,
-          price: Number(product.price) || 0,
-          delivery_day: form.delivery_day,
-          accept_terms: form.acceptTerms,
-          locality: form.locality,
-          payment_method: { payment_method_id: pm?.payment_method_id },
-        },
+        transaction,
       });
     },
     onSuccess: () => setStep("success"),
     onError: (e) => showError("Error", e.message || "No se pudo crear la orden"),
   });
 
-  const startFlow = (act) => { setAction(act); setStep("customer"); };
+  const startFlow = (act) => {
+    setAction(act);
+    // Comprar logueado: salta "Tus datos" y va directo al detalle de la orden.
+    if (act === "buy" && isLoggedIn) setStep("buy");
+    else setStep("customer");
+  };
 
   const handleWhatsApp = () => {
     const msg = `Hola, soy ${form.given_name} ${form.family_name}, estoy interesad@ en "${product.name}". Lo vi en tu catálogo: ${window.location.href}`;
@@ -200,6 +214,11 @@ const ProductModal = ({ product, business, onClose }) => {
         <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
           <div className={styles.subModal}>
             <h3>Detalles de la orden</h3>
+            {isLoggedIn && (
+              <p style={{ fontSize: ".85rem", color: "#475467", background: "#f0f7ff", padding: ".6rem .8rem", borderRadius: "8px", margin: "0 0 1rem" }}>
+                Comprando con tu cuenta{customerSession?.email ? ` (${customerSession.email})` : ""}.
+              </p>
+            )}
             {productLocalities.length > 0 && (
               <div className={styles.field}>
                 <label>Localidad</label>

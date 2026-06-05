@@ -7,7 +7,7 @@
   --border-radius: 8px;
   --shadow: 0 2px 8px rgba(17, 63, 103, 0.1);
   --shadow-hover: 0 4px 16px rgba(17, 63, 103, 0.15);
-  
+
   /* Modern CSS variables */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -148,6 +148,12 @@ body {
   margin: 0 auto;
   padding: 0 1rem;
 }
+html { scroll-behavior: smooth; }
+
+/* que el título no quede tapado por el navbar fijo al saltar a una sección */
+#home, #features, #howItWorks, #pricing {
+  scroll-margin-top: 80px;
+}
 
 /* Base UI Elements - Temporales hasta migrarlos a CSS Modules */
 .btn {
@@ -170,18 +176,61 @@ body {
   outline-offset: 2px;
 }
 
-.btn-primary { background-color: var(--color-blue); color: white; }
-.btn-primary:hover { background-color: var(--color-navy); }
-.btn-secondary { background-color: var(--color-sea); color: white; }
-.btn-secondary:hover { background-color: var(--color-blue); }
-.btn-outline { background-color: white; color: var(--color-navy); border: 2px solid var(--color-sea); }
-.btn-outline:hover { background-color: var(--color-blue); color: white; }
-.btn-yellow { background-color: var(--color-yellow); color: var(--color-navy); }
-.btn-yellow:hover { background-color: #f5e97d; }
-.btn-whatsapp { background-color: #25d366; color: white; }
-.btn-whatsapp:hover { background-color: #1ebe5b; }
-.btn-success { background-color: #28a745; color: white; }
-.btn-success:hover { background-color: #218838; }
+.btn-primary {
+  background-color: var(--color-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-navy);
+}
+
+.btn-secondary {
+  background-color: var(--color-sea);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-blue);
+}
+
+.btn-outline {
+  background-color: white;
+  color: var(--color-navy);
+  border: 2px solid var(--color-sea);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-blue);
+  color: white;
+}
+
+.btn-yellow {
+  background-color: var(--color-yellow);
+  color: var(--color-navy);
+}
+
+.btn-yellow:hover {
+  background-color: #f5e97d;
+}
+
+.btn-whatsapp {
+  background-color: #25d366;
+  color: white;
+}
+
+.btn-whatsapp:hover {
+  background-color: #1ebe5b;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+}
 
 .input {
   width: 100%;
@@ -203,7 +252,10 @@ body {
   border-color: #e74c3c;
 }
 
-.form-group { margin-bottom: 1rem; }
+.form-group {
+  margin-bottom: 1rem;
+}
+
 .form-label {
   display: block;
   margin-bottom: 0.5rem;
@@ -238,8 +290,15 @@ body {
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .modal-overlay {
@@ -268,8 +327,14 @@ body {
 }
 
 @media (max-width: 760px) {
-  .container { padding: 0 0.5rem; }
-  .btn { padding: 0.625rem 1.25rem; font-size: 0.875rem; }
+  .container {
+    padding: 0 0.5rem;
+  }
+
+  .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
 }
 
 @media (max-width: 761px) {
@@ -279,5 +344,9 @@ body {
     align-items: center !important;
     justify-content: center !important;
   }
-  .btn { padding: 0.625rem 1.25rem; font-size: 0.875rem; }
+
+  .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
 }

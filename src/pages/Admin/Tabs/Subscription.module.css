@@ -1,0 +1,59 @@
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.empty {
+    color: #667085;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border: 1px solid #eef0f3;
+    border-radius: 10px;
+}
+
+.label {
+    font-size: 0.8rem;
+    color: #667085;
+    font-weight: 600;
+}
+
+.value {
+    font-size: 1.05rem;
+    color: var(--color-navy, #113f67);
+    font-weight: 700;
+}
+
+.manageBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.7rem 1.4rem;
+    border-radius: 8px;
+    border: 2px solid var(--color-navy, #113f67);
+    color: var(--color-navy, #113f67);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.manageBtn:hover {
+    background: var(--color-navy, #113f67);
+    color: #fff;
+}

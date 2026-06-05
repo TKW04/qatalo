@@ -1,33 +1,23 @@
-import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { LuBuilding2, LuFolderOpen, LuPackage } from "react-icons/lu";
 import { IoQrCodeOutline } from "react-icons/io5";
 import { FaWhatsapp, FaUsers } from "react-icons/fa";
 
-// 1. Importamos el CSS Module
 import styles from "./Landing.module.css";
-
-import { GetPlans } from "../store/payment-store/plan-actions";
-import { useNotification } from "../components/UI/NotificationProvider";
+import { fetchPlans } from "../services/subscriptionApi";
 import PlanCard from "../components/PlanCard";
 import Navbar from "./Navbar";
 import Footer from "../components/Footer";
 import Button from "../components/PrimaryButton";
 
-// PrimeReact eliminado de aquí
-
 const Landing = () => {
-  const plans = useSelector((state) => state.plan.plans);
-  const dispatch = useDispatch();
-  const { showError } = useNotification();
-
-  useEffect(() => {
-    if (plans.length === 0) {
-      dispatch(GetPlans(showError));
-    }
-  }, [dispatch, plans, showError]);
+  const { data: plans = [] } = useQuery({
+    queryKey: ["plans"],
+    queryFn: fetchPlans,
+    retry: false,
+  });
 
   return (
     <>

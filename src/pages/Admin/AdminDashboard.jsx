@@ -8,8 +8,8 @@ import Products from "./Tabs/Products";
 import PaymentMethods from "./Tabs/PaymentMethods";
 import Customers from "./Tabs//Customers";
 import QrTab from "./Tabs/QrTab";
-// import Subscription from "../../components/Admin/Tabs/Subscription";
-// import Password from "../../components/Admin/Tabs/Password";
+import Subscription from "./Tabs/Subscription";
+import Password from "./Tabs/Password";
 
 import { isNotValidToken, removeToken, setToken } from "../../helpers/token";
 import { getCurrentSession } from "../../services/authenticate";
@@ -64,13 +64,8 @@ const AdminDashboard = () => {
           {activeTab === "paymentMethods" && <PaymentMethods setActiveTab={setActiveTab} />}
           {activeTab === "customers" && <Customers setActiveTab={setActiveTab} />}
           {activeTab === "qr" && <QrTab setActiveTab={setActiveTab} />}
-          {/* 
-          
-          
-          
-          
           {activeTab === "subscription" && <Subscription setActiveTab={setActiveTab} />}
-          {activeTab === "changepassword" && <Password setActiveTab={setActiveTab} />} */}
+          {activeTab === "changepassword" && <Password setActiveTab={setActiveTab} />}
         </main>
       </div>
       <Footer />
