@@ -1,7 +1,33 @@
+import { useState } from "react";
 import styles from "./PlanCard.module.css";
 import PrimaryButton from "./PrimaryButton";
 
 const PlanCard = ({ plan, button }) => {
+
+  const FEATURES = [
+    "1 catálogo online con enlace propio y código QR personalizado",
+    "Categorías y productos ilimitados",
+    "Carrito de compras (varios productos en un solo pedido)",
+    "Pedidos directos por WhatsApp",
+    "Portal de clientes con inicio de sesión por correo y \"Mis órdenes\"",
+    "Seguimiento de pedidos: pago, validación, aprobado y entregado",
+    "Subida de comprobante de pago",
+    "Reportes de ventas y exportación a Excel",
+    // --- ocultas hasta "Ver más" ---
+    "Diseño personalizable (21 temas de color)",
+    "Múltiples métodos de pago (transferencia y link de pago)",
+    "Entregas por localidad o zona",
+    "Control de inventario automático",
+    "Notificaciones por correo en cada etapa del pedido",
+    "Base de clientes con historial de compras",
+  ];
+
+  const VISIBLE = 8;
+
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? FEATURES : FEATURES.slice(0, VISIBLE);
+  const hidden = FEATURES.length - VISIBLE;
+
   return (
     <div className={styles.card}>
       <h3 className={styles.name}>{plan.name}</h3>
@@ -14,12 +40,21 @@ const PlanCard = ({ plan, button }) => {
       <div className={styles.period}>{plan.product_name}</div>
 
       <ul className={styles.features}>
-        <li>1 catálogo</li>
-        <li>Categorías ilimitadas</li>
-        <li>Productos ilimitados</li>
-        <li>Manejo de clientes</li>
-        <li>Integración con WhatsApp</li>
+        {visible.map((f, i) => (
+          <li key={i}>{f}</li>
+        ))}
       </ul>
+
+      {FEATURES.length > VISIBLE && (
+        <button
+          type="button"
+          className={styles.moreBtn}
+          onClick={() => setShowAll((v) => !v)}
+          aria-expanded={showAll}
+        >
+          {showAll ? "Ver menos" : "Ver más"}
+        </button>
+      )}
 
       {button ? (
         button

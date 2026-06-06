@@ -75,3 +75,16 @@
   font-weight: bold;
   margin-right: 10px;
 }
+
+.moreBtn {
+  background: none;
+  border: none;
+  color: var(--color-navy, #113f67);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  margin-top: 0.25rem;
+  text-decoration: underline;
+}
+.moreBtn:hover { opacity: 0.8; }
