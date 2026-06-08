@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_APP_API_URL;
 
 export const contactTeam = async ({ name, email, message }) => {
-  const res = await fetch(`${API_URL}contact`, {
+  const res = await fetch(`${API_URL}/team/contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, message }),
