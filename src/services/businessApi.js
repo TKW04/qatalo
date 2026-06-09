@@ -13,7 +13,9 @@ export const fetchBusinessData = async () => {
     },
   });
 
-  if (!response.ok) {
+  if (response.status === 404) {
+    return null;
+  } else if (!response.ok) {
     throw new Error("No se pudo obtener la información del negocio");
   }
 
