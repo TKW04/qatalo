@@ -415,6 +415,138 @@
   text-align: right;
 }
 
+/* ---- Variantes ---- */
+.variantSection {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+}
+
+.variantTitle {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #344054;
+  margin: 0 0 1rem;
+}
+
+.variantForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.variantField {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  flex: 1;
+  min-width: 110px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #475467;
+}
+
+.variantBtns {
+  display: flex;
+  gap: .4rem;
+  align-items: flex-end;
+}
+
+.btnSmall {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .5rem 1rem;
+  background: var(--color-navy, #113f67);
+  color: #fdf5aa;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: .85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnSmall:hover {
+  opacity: .88;
+}
+
+.variantTableWrap {
+  overflow-x: auto;
+}
+
+.variantTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+
+.variantTable th {
+  text-align: left;
+  padding: .45rem .6rem;
+  color: #667085;
+  border-bottom: 2px solid #eef0f3;
+  font-weight: 600;
+}
+
+.variantTable td {
+  padding: .45rem .6rem;
+  border-bottom: 1px solid #f4f6f8;
+}
+
+.variantEditing {
+  background: #f0f7ff;
+}
+
+.variantActions {
+  display: flex;
+  gap: .3rem;
+}
+
+.stockOk {
+  color: #067647;
+  font-weight: 700;
+}
+
+.stockOut {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.variantSummary {
+  font-size: .82rem;
+  color: #667085;
+  margin: .5rem 0 0;
+}
+
+.variantEmpty {
+  font-size: .85rem;
+  color: #667085;
+  font-style: italic;
+}
+
+.customBadge {
+  position: absolute;
+  top: .4rem;
+  left: .4rem;
+  background: #113f67;
+  color: #fdf5aa;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: .15rem .45rem;
+  border-radius: 4px;
+}
+
+.variantCount {
+  font-size: .78rem;
+  color: #475467;
+  margin-top: .15rem;
+}
+
 @media (max-width:600px) {
   .formRow {
     grid-template-columns: 1fr;

@@ -97,6 +97,9 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
                       {it.image ? <img src={it.image} alt="" className={styles.cartThumb} /> : <div className={styles.cartThumb} />}
                       <div className={styles.cartInfo}>
                         <div className={styles.productName}>{it.product_name}</div>
+                        {it.variant_label && (               // ← nuevo
+                          <div className={styles.variantTag}>{it.variant_label}</div>
+                        )}
                         <div className={styles.meta}>
                           {it.locality ? `${it.locality} · ` : ""}{cur} {formatted(it.price)} c/u
                         </div>

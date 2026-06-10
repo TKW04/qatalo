@@ -18,7 +18,6 @@ import {
   addTransaction, updateTransaction, deleteTransaction,
   approveTransaction, deliveredTransaction, cancelTransaction,
 } from "../../../services/customersApi";
-import SellReport from "../../../components/SellReport";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Customers.module.css";
 
@@ -46,7 +45,6 @@ const Customers = () => {
   const { data: products = [] } = useQuery({ queryKey: ["products", tenantId], queryFn: fetchProducts, enabled: !!tenantId, retry: false });
   const { data: paymentMethods = [] } = useQuery({ queryKey: ["paymentMethods", tenantId], queryFn: fetchPaymentMethods, enabled: !!tenantId, retry: false });
 
-  const [view, setView] = useState("customers");
   const [cForm, setCForm] = useState(emptyCustomer);
   const [cErrors, setCErrors] = useState({});
   const [expanded, setExpanded] = useState({});
@@ -188,129 +186,118 @@ const Customers = () => {
         <h1>Gestión de Clientes</h1>
       </div>
 
-      <div className={styles.tabs}>
-        <button className={`${styles.tab} ${view === "customers" ? styles.tabActive : ""}`} onClick={() => setView("customers")}>Clientes</button>
-        <button className={`${styles.tab} ${view === "report" ? styles.tabActive : ""}`} onClick={() => setView("report")}>Reporte de Ventas</button>
+      {/* Formulario cliente */}
+      <div className={styles.card}>
+        <h2>{editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}</h2>
+        <form onSubmit={submitCustomer}>
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>Nombre *</label>
+              <input className="input" value={cForm.given_name} onChange={(e) => setCForm({ ...cForm, given_name: e.target.value })} placeholder="Juan" />
+              {cErrors.given_name && <span className={styles.err}>{cErrors.given_name}</span>}
+            </div>
+            <div className={styles.formGroup}>
+              <label>Apellido *</label>
+              <input className="input" value={cForm.family_name} onChange={(e) => setCForm({ ...cForm, family_name: e.target.value })} placeholder="Pérez" />
+              {cErrors.family_name && <span className={styles.err}>{cErrors.family_name}</span>}
+            </div>
+          </div>
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>Email *</label>
+              <input className="input" value={cForm.email} onChange={(e) => setCForm({ ...cForm, email: e.target.value })} placeholder="juan@ejemplo.com" />
+              {cErrors.email && <span className={styles.err}>{cErrors.email}</span>}
+            </div>
+            <div className={styles.formGroup}>
+              <label>Teléfono</label>
+              <input className="input" value={cForm.phone} onChange={(e) => setCForm({ ...cForm, phone: e.target.value })} placeholder="18095551212" />
+            </div>
+          </div>
+          <div className={styles.formActions}>
+            <PrimaryButton type="submit" disabled={saveCustomer.isPending}>
+              {saveCustomer.isPending ? "Guardando..." : editingCustomer ? "Actualizar cliente" : "Crear cliente"}
+            </PrimaryButton>
+            {editingCustomer && <button type="button" className={styles.btnOutline} onClick={() => { setCForm(emptyCustomer); setCErrors({}); }}>Cancelar</button>}
+          </div>
+        </form>
       </div>
 
-      {view === "report" ? (
-        <SellReport customers={customers} />
+      {/* Listado */}
+      <div className={styles.listHeader}>
+        <h2>Clientes existentes</h2>
+        <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
+      </div>
+
+      <div className={styles.filters}>
+        <div className={styles.searchBar}>
+          <FaMagnifyingGlass />
+          <input
+            className={styles.searchInput}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o email..."
+          />
+        </div>
+        <select className={`input ${styles.statusSelect}`} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">Todos los estados</option>
+          {Object.keys(STATUS_LABEL).map((s) => (<option key={s} value={s}>{STATUS_LABEL[s]}</option>))}
+        </select>
+      </div>
+
+      {filteredCustomers.length === 0 ? (
+        <div className={styles.empty}>
+          {customers.length === 0 ? "Aún no tienes clientes." : "No hay clientes que coincidan con la búsqueda."}
+        </div>
       ) : (
-        <>
-          {/* Formulario cliente */}
-          <div className={styles.card}>
-            <h2>{editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}</h2>
-            <form onSubmit={submitCustomer}>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Nombre *</label>
-                  <input className="input" value={cForm.given_name} onChange={(e) => setCForm({ ...cForm, given_name: e.target.value })} placeholder="Juan" />
-                  {cErrors.given_name && <span className={styles.err}>{cErrors.given_name}</span>}
+        <div className={styles.list}>
+          {filteredCustomers.map((c) => {
+            const txs = c._txs;
+            const open = !!expanded[c.customer_id] || statusFilter !== "all";
+            const wa = `https://wa.me/${(c.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${c.full_name}, te escribo de "${business?.name || ""}".`)}`;
+            return (
+              <div key={c.customer_id} className={styles.customerCard}>
+                <div className={styles.customerHead}>
+                  <div className={styles.customerInfo}>
+                    <span className={styles.customerName}>{c.full_name}</span>
+                    <span className={styles.customerMeta}>{c.email}</span>
+                    {c.phone && <a className={styles.waLink} href={wa} target="_blank" rel="noreferrer">{c.phone} <FaWhatsapp color="#25D366" /></a>}
+                  </div>
+                  <div className={styles.customerActions}>
+                    <button className={styles.iconBtn} onClick={() => openAddTx(c)} aria-label="Agregar transacción"><FaPlus /></button>
+                    <button className={styles.iconBtn} onClick={() => { setCForm({ customer_id: c.customer_id, given_name: c.given_name, family_name: c.family_name, email: c.email, phone: c.phone }); window.scrollTo({ top: 0, behavior: "smooth" }); }} aria-label="Editar"><FaPen /></button>
+                    <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => setDelCustomer(c)} aria-label="Eliminar"><FaTrashCan /></button>
+                    <button className={styles.expandBtn} onClick={() => toggle(c.customer_id)}>
+                      {txs.length} {txs.length === 1 ? "orden" : "órdenes"} {open ? <FaChevronUp /> : <FaChevronDown />}
+                    </button>
+                  </div>
                 </div>
-                <div className={styles.formGroup}>
-                  <label>Apellido *</label>
-                  <input className="input" value={cForm.family_name} onChange={(e) => setCForm({ ...cForm, family_name: e.target.value })} placeholder="Pérez" />
-                  {cErrors.family_name && <span className={styles.err}>{cErrors.family_name}</span>}
-                </div>
-              </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Email *</label>
-                  <input className="input" value={cForm.email} onChange={(e) => setCForm({ ...cForm, email: e.target.value })} placeholder="juan@ejemplo.com" />
-                  {cErrors.email && <span className={styles.err}>{cErrors.email}</span>}
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Teléfono</label>
-                  <input className="input" value={cForm.phone} onChange={(e) => setCForm({ ...cForm, phone: e.target.value })} placeholder="18095551212" />
-                </div>
-              </div>
-              <div className={styles.formActions}>
-                <PrimaryButton type="submit" disabled={saveCustomer.isPending}>
-                  {saveCustomer.isPending ? "Guardando..." : editingCustomer ? "Actualizar cliente" : "Crear cliente"}
-                </PrimaryButton>
-                {editingCustomer && <button type="button" className={styles.btnOutline} onClick={() => { setCForm(emptyCustomer); setCErrors({}); }}>Cancelar</button>}
-              </div>
-            </form>
-          </div>
 
-          {/* Listado */}
-          <div className={styles.listHeader}>
-            <h2>Clientes existentes</h2>
-            <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
-          </div>
-
-          <div className={styles.filters}>
-            <div className={styles.searchBar}>
-              <FaMagnifyingGlass />
-              <input
-                className={styles.searchInput}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre o email..."
-              />
-            </div>
-            <select className={`input ${styles.statusSelect}`} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="all">Todos los estados</option>
-              {Object.keys(STATUS_LABEL).map((s) => (<option key={s} value={s}>{STATUS_LABEL[s]}</option>))}
-            </select>
-          </div>
-
-          {filteredCustomers.length === 0 ? (
-            <div className={styles.empty}>
-              {customers.length === 0 ? "Aún no tienes clientes." : "No hay clientes que coincidan con la búsqueda."}
-            </div>
-          ) : (
-            <div className={styles.list}>
-              {filteredCustomers.map((c) => {
-                const txs = c._txs;
-                const open = !!expanded[c.customer_id] || statusFilter !== "all";
-                const wa = `https://wa.me/${(c.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${c.full_name}, te escribo de "${business?.name || ""}".`)}`;
-                return (
-                  <div key={c.customer_id} className={styles.customerCard}>
-                    <div className={styles.customerHead}>
-                      <div className={styles.customerInfo}>
-                        <span className={styles.customerName}>{c.full_name}</span>
-                        <span className={styles.customerMeta}>{c.email}</span>
-                        {c.phone && <a className={styles.waLink} href={wa} target="_blank" rel="noreferrer">{c.phone} <FaWhatsapp color="#25D366" /></a>}
-                      </div>
-                      <div className={styles.customerActions}>
-                        <button className={styles.iconBtn} onClick={() => openAddTx(c)} aria-label="Agregar transacción"><FaPlus /></button>
-                        <button className={styles.iconBtn} onClick={() => { setCForm({ customer_id: c.customer_id, given_name: c.given_name, family_name: c.family_name, email: c.email, phone: c.phone }); window.scrollTo({ top: 0, behavior: "smooth" }); }} aria-label="Editar"><FaPen /></button>
-                        <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => setDelCustomer(c)} aria-label="Eliminar"><FaTrashCan /></button>
-                        <button className={styles.expandBtn} onClick={() => toggle(c.customer_id)}>
-                          {txs.length} {txs.length === 1 ? "orden" : "órdenes"} {open ? <FaChevronUp /> : <FaChevronDown />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {open && (
-                      <div className={styles.txWrap}>
-                        {txs.length === 0 ? (
-                          <div className={styles.txEmpty}>Sin transacciones.</div>
-                        ) : (
-                          txs.map((t) => (
-                            <div key={t.transaction_id} className={styles.txRow}>
-                              <span className={styles.txProduct}>{t.product_name}</span>
-                              <span>x{t.quantity}</span>
-                              <span>{txCurrency(t)} {formatted(t.price)}</span>
-                              <span className={styles.txTotal}>{txCurrency(t)} {formatted(t.price * t.quantity)}</span>
-                              <span style={getStatusStyle(t.status)}>{STATUS_LABEL[t.status] || t.status}</span>
-                              <span className={styles.txActions}>
-                                <button className={styles.iconBtn} onClick={() => setViewTx({ customer: c, tx: t })} aria-label="Ver"><FaEye /></button>
-                                {EDITABLE(t.status) && <button className={styles.iconBtn} onClick={() => openEditTx(c, t)} aria-label="Editar"><FaPen /></button>}
-                                {t.status === "Pendiente de pago" && <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => setDelTx({ customer: c, tx: t })} aria-label="Eliminar"><FaTrashCan /></button>}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                {open && (
+                  <div className={styles.txWrap}>
+                    {txs.length === 0 ? (
+                      <div className={styles.txEmpty}>Sin transacciones.</div>
+                    ) : (
+                      txs.map((t) => (
+                        <div key={t.transaction_id} className={styles.txRow}>
+                          <span className={styles.txProduct}>{t.product_name}</span>
+                          <span>x{t.quantity}</span>
+                          <span>{txCurrency(t)} {formatted(t.price)}</span>
+                          <span className={styles.txTotal}>{txCurrency(t)} {formatted(t.price * t.quantity)}</span>
+                          <span style={getStatusStyle(t.status)}>{STATUS_LABEL[t.status] || t.status}</span>
+                          <span className={styles.txActions}>
+                            <button className={styles.iconBtn} onClick={() => setViewTx({ customer: c, tx: t })} aria-label="Ver"><FaEye /></button>
+                            {EDITABLE(t.status) && <button className={styles.iconBtn} onClick={() => openEditTx(c, t)} aria-label="Editar"><FaPen /></button>}
+                            {t.status === "Pendiente de pago" && <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => setDelTx({ customer: c, tx: t })} aria-label="Eliminar"><FaTrashCan /></button>}
+                          </span>
+                        </div>
+                      ))
                     )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Modal transacción (crear/editar) */}

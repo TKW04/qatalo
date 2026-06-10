@@ -128,6 +128,9 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                         </li>
                       ))}
                       <li><span>Método</span><strong>{isBank ? "Transferencia" : "Link de pago"}</strong></li>
+                      {t.variant && (t.variant.color || t.variant.size) && (
+                        <li><span>Variante</span><strong>{[t.variant.color, t.variant.size].filter(Boolean).join(" / ")}</strong></li>
+                      )}
                       <li><span>Total</span><strong>{cur} {formatted(g.total)}</strong></li>
                       {g.status === "Cancelada" && g.ref.cancellation_reason && (
                         <li><span>Motivo</span><strong>{g.ref.cancellation_reason}</strong></li>

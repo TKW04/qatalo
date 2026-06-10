@@ -23,8 +23,9 @@ const flatten = (customers) => {
   customers.forEach((c) =>
     (c.transactions || []).forEach((t) =>
       rows.push({
+        product_id: t.product_id,
         full_name: c.full_name || `${c.given_name} ${c.family_name}`,
-        product_name: t.product_name || "—",
+        product_name: t.product_name.trim() || "—",
         quantity: Number(t.quantity) || 0,
         price: Number(t.price) || 0,
         total: (Number(t.price) || 0) * (Number(t.quantity) || 0),
@@ -78,9 +79,14 @@ const SellReport = ({ customers = [] }) => {
 
     const prodMap = {};
     paid.forEach((r) => {
-      if (!prodMap[r.product_name]) prodMap[r.product_name] = { name: r.product_name, units: 0, revenue: 0 };
-      prodMap[r.product_name].units += r.quantity;
-      prodMap[r.product_name].revenue += r.total;
+      if (!prodMap[r.product_id]) prodMap[r.product_id] = { name: r.product_name.trim(), units: 0, revenue: 0 };
+    
+      if (r.product_id===""){
+          console.log(r);
+      }
+      
+      prodMap[r.product_id].units += r.quantity;
+      prodMap[r.product_id].revenue += r.total;
     });
     const topProducts = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
 

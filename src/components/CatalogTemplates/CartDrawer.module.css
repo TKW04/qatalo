@@ -1,0 +1,9 @@
+.variantTag {
+    font-size: .75rem;
+    color: #344054;
+    background: #f2f4f7;
+    border-radius: 6px;
+    padding: .1rem .5rem;
+    display: inline-block;
+    margin: .1rem 0 .15rem;
+}
