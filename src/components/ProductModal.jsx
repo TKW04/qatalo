@@ -17,7 +17,7 @@ const toISO = (s) => {
   return "";
 };
 
-const ProductModal = ({ product, business, onClose, onAdded }) => {
+const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality = "" }) => {
   const { showWarning } = useNotification();
   const productLocalities = product.localities || [];
   const noTerms = !product.terms;
@@ -25,7 +25,13 @@ const ProductModal = ({ product, business, onClose, onAdded }) => {
 
   const [form, setForm] = useState({
     quantity: 1, delivery_day: "", acceptTerms: noTerms,
-    locality: productLocalities.length === 1 ? productLocalities[0] : "",
+    locality: (() => {
+      // Si hay un filtro activo Y el producto lo incluye → pre-llenar
+      if (preselectedLocality && productLocalities.includes(preselectedLocality)) return preselectedLocality;
+      // Si el producto solo tiene una localidad → pre-llenar
+      if (productLocalities.length === 1) return productLocalities[0];
+      return "";
+    })(),
   });
   const [step, setStep] = useState(null); // null | "cart"
   const [showTerms, setShowTerms] = useState(false);

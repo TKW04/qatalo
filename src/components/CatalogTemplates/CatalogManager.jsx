@@ -104,7 +104,7 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
       const matchesSearch = p.name?.toLowerCase().includes(term);
       const matchesCat = selectedCategory === "all" || p.category_id === selectedCategory;
       const locs = p.localities || [];
-      const matchesLoc = selectedLocality === "all" || locs.length === 0 || locs.includes(selectedLocality);
+      const matchesLoc = selectedLocality === "all" || locs.includes(selectedLocality);
       return matchesSearch && matchesCat && matchesLoc;
     });
   }, [sourceProducts, searchTerm, selectedCategory, selectedLocality]);
@@ -149,9 +149,9 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
         <ProductModal
           product={selectedProduct}
           business={businessData}
-          customerSession={getValidCustomerSession(businessId)}
           onClose={() => setSelectedProduct(null)}
           onAdded={() => { refreshCart(); setCartOpen(true); }}
+          preselectedLocality={selectedLocality !== "all" ? selectedLocality : ""}  // ← nuevo
         />
       )}
       {cartOpen && (

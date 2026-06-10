@@ -32,7 +32,7 @@ const EDITABLE = (s) => !["Aprobada", "Entregada", "Cancelada"].includes(s);
 const APPROVABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 
 const emptyCustomer = { customer_id: "", given_name: "", family_name: "", email: "", phone: "" };
-const emptyTx = { transaction_id: "", product_id: "", product_name: "", price: "", quantity: 1, delivery_day: "", payment_method_id: "" };
+const emptyTx = { transaction_id: "", product_id: "", product_name: "", price: "", quantity: 1, delivery_day: "", payment_method_id: "", locality: "", };
 
 const Customers = () => {
   const auth = getTokenInfo();
@@ -105,6 +105,7 @@ const Customers = () => {
         product_id: txForm.product_id, product_name: txForm.product_name,
         price: Number(txForm.price) || 0, quantity: Number(txForm.quantity) || 1,
         delivery_day: txForm.delivery_day, payment_method: pm,
+        locality: txForm.locality || "",
       };
       return txForm.transaction_id ? updateTransaction(txCustomer.customer_id, t) : addTransaction(txCustomer.customer_id, t);
     },
@@ -156,6 +157,7 @@ const Customers = () => {
       transaction_id: t.transaction_id, product_id: t.product_id, product_name: t.product_name,
       price: t.price ?? "", quantity: t.quantity ?? 1, delivery_day: t.delivery_day || "",
       payment_method_id: t.payment_method?.payment_method_id || "",
+      locality: t.locality || "",
     });
     setTxErrors({});
   };
@@ -163,7 +165,7 @@ const Customers = () => {
 
   const pickProduct = (id) => {
     const p = products.find((x) => x.product_id === id);
-    setTxForm((f) => ({ ...f, product_id: id, product_name: p?.name || "", price: p ? p.price : f.price }));
+    setTxForm((f) => ({ ...f, product_id: id, product_name: p?.name || "", price: p ? p.price : f.price, locality: "", }));
   };
 
   const submitTx = (e) => {
@@ -340,6 +342,26 @@ const Customers = () => {
                 <label>Fecha de entrega</label>
                 <input type="date" className="input" value={txForm.delivery_day} onChange={(e) => setTxForm({ ...txForm, delivery_day: e.target.value })} />
               </div>
+              {(() => {
+                const selectedProd = products.find((p) => p.product_id === txForm.product_id);
+                const locs = selectedProd?.localities?.length
+                  ? selectedProd.localities
+                  : (business?.localities || []);
+                if (!locs.length) return null;
+                return (
+                  <div className={styles.formGroup}>
+                    <label>Localidad</label>
+                    <select
+                      className="input"
+                      value={txForm.locality}
+                      onChange={(e) => setTxForm({ ...txForm, locality: e.target.value })}
+                    >
+                      <option value="">Sin especificar</option>
+                      {locs.map((l) => (<option key={l} value={l}>{l}</option>))}
+                    </select>
+                  </div>
+                );
+              })()}
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnOutline} onClick={closeTxModal}>Cancelar</button>
                 <PrimaryButton type="submit" disabled={saveTx.isPending}>{saveTx.isPending ? "Guardando..." : txForm.transaction_id ? "Actualizar" : "Crear"}</PrimaryButton>
