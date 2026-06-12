@@ -384,6 +384,9 @@ const Customers = () => {
                 <li><span>Precio</span><strong>{cur} {formatted(tx.price)}</strong></li>
                 <li><span>Total</span><strong>{cur} {formatted(tx.price * tx.quantity)}</strong></li>
                 {tx.delivery_day && <li><span>Entrega</span><strong>{tx.delivery_day}</strong></li>}
+                {tx.delivery_address && (
+                  <li><span>Dirección de entrega</span><strong>{tx.delivery_address}</strong></li>
+                )}
                 <li><span>Método</span><strong>{tx.payment_method?.payment_type === "bank_transfer" ? "Transferencia" : "Link de pago"}</strong></li>
                 <li><span>Estado</span><strong style={getStatusStyle(tx.status)}>{STATUS_LABEL[tx.status] || tx.status}</strong></li>
                 {tx.status === "Cancelada" && <li><span>Razón</span><strong>{tx.cancellation_reason}</strong></li>}

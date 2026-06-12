@@ -547,6 +547,93 @@
   margin-top: .15rem;
 }
 
+/* ---- Locality Config ---- */
+.localityConfigSection {
+  margin-top: .75rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+}
+
+.localityConfigTitle {
+  font-weight: 700;
+  font-size: .9rem;
+  color: #344054;
+  display: block;
+  margin-bottom: .25rem;
+}
+
+.localityConfigGrid {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.localityConfigCard {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  padding: .9rem 1rem;
+}
+
+.localityConfigName {
+  font-weight: 700;
+  color: var(--color-navy, #113f67);
+  font-size: .92rem;
+  margin-bottom: .6rem;
+}
+
+.localityConfigOptions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+}
+
+.localityOption {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.localityOption input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.deliveryPriceRow {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-left: .5rem;
+}
+
+.deliveryPriceLabel {
+  font-size: .78rem;
+  color: #667085;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.freeTag {
+  font-size: .72rem;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 4px;
+  padding: .1rem .4rem;
+  font-weight: 700;
+}
+
+.deliveryBadge {
+  font-size: .82rem;
+  margin-top: .1rem;
+}
+
 @media (max-width:600px) {
   .formRow {
     grid-template-columns: 1fr;

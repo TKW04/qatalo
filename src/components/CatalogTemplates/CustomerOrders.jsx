@@ -24,7 +24,8 @@ const buildGroups = (txs) => {
   });
   return Array.from(map.entries()).map(([key, items]) => {
     const ref = items[0];
-    const total = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+    const total = items.reduce((s, it) =>
+      s + (Number(it.price) || 0) * (Number(it.quantity) || 1) + (Number(it.delivery_price) || 0), 0);
     return { key, items, ref, total, status: ref.status, pm: ref.payment_method || {} };
   });
 };
@@ -128,8 +129,20 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                         </li>
                       ))}
                       <li><span>Método</span><strong>{isBank ? "Transferencia" : "Link de pago"}</strong></li>
-                      {t.variant && (t.variant.color || t.variant.size) && (
-                        <li><span>Variante</span><strong>{[t.variant.color, t.variant.size].filter(Boolean).join(" / ")}</strong></li>
+                      {t.fulfillment_type && (
+                        <li>
+                          <span>Entrega</span>
+                          <strong>{t.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}</strong>
+                        </li>
+                      )}
+                      {t.delivery_price > 0 && (
+                        <li><span>Costo delivery</span><strong>{cur} {formatted(t.delivery_price)}</strong></li>
+                      )}
+                      {t.delivery_address && (
+                        <li>
+                          <span>Dirección de entrega</span>
+                          <strong>{t.delivery_address}</strong>
+                        </li>
                       )}
                       <li><span>Total</span><strong>{cur} {formatted(g.total)}</strong></li>
                       {g.status === "Cancelada" && g.ref.cancellation_reason && (

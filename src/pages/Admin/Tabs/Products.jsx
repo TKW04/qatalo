@@ -24,6 +24,7 @@ const emptyForm = {
   show_quantity: false, just_one: false, min_age_allow: false, min_age: 0,
   required_delivery_day: false, delivery_start_day: "", terms: "", imagesUrl: [],
   localities: [], is_customizable: false, variants: [],
+  locality_config: [],
 };
 
 const Toggle = ({ checked, onChange, label }) => (
@@ -58,12 +59,34 @@ const Products = () => {
   const categoryName = useMemo(() => (id) => categories.find((c) => c.category_id === id)?.name || "Sin categoría", [categories]);
 
   const setField = (id, value) => setForm((p) => ({ ...p, [id]: value }));
-  const resetForm = () => { setForm(emptyForm); setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null); };
+  const resetForm = () => {
+    setForm(emptyForm); setNewFiles([]); setErrors({});
+    setVariantForm(emptyVariant); setEditingVariantId(null);
+  };
+
+  // ---- Locality config helpers ----
+  const getLocalityConfig = (loc) =>
+    (form.locality_config || []).find((c) => c.locality === loc) ||
+    { locality: loc, delivery: false, takeout: true, delivery_price: 0 };
+
+  const updateLocalityConfig = (loc, field, value) => {
+    setForm((p) => {
+      const cfg = p.locality_config || [];
+      const idx = cfg.findIndex((c) => c.locality === loc);
+      if (idx >= 0) return { ...p, locality_config: cfg.map((c, i) => i === idx ? { ...c, [field]: value } : c) };
+      return { ...p, locality_config: [...cfg, { locality: loc, delivery: false, takeout: true, delivery_price: 0, [field]: value }] };
+    });
+  };
 
   const toggleLocality = (loc) =>
     setForm((p) => {
       const list = p.localities || [];
-      return { ...p, localities: list.includes(loc) ? list.filter((l) => l !== loc) : [...list, loc] };
+      const included = list.includes(loc);
+      return {
+        ...p,
+        localities: included ? list.filter((l) => l !== loc) : [...list, loc],
+        locality_config: included ? (p.locality_config || []).filter((c) => c.locality !== loc) : p.locality_config || [],
+      };
     });
 
   const existingUrls = (form.imagesUrl || []).map((i) => (typeof i === "string" ? i : i.image));
@@ -96,8 +119,7 @@ const Products = () => {
     } else {
       setForm((p) => ({ ...p, variants: [...(p.variants || []), { ...variantForm, variant_id: crypto.randomUUID() }] }));
     }
-    setVariantForm(emptyVariant);
-    setEditingVariantId(null);
+    setVariantForm(emptyVariant); setEditingVariantId(null);
   };
   const removeVariant = (vid) => setForm((p) => ({ ...p, variants: p.variants.filter((v) => v.variant_id !== vid) }));
   const startEditVariant = (v) => { setVariantForm({ color: v.color, size: v.size || "", quantity: v.quantity, extra_price: v.extra_price || 0 }); setEditingVariantId(v.variant_id); };
@@ -113,6 +135,13 @@ const Products = () => {
     if (totalImages < 1) err.images = "Selecciona al menos 1 imagen";
     if (totalImages > MAX_IMAGES) err.images = `Máximo ${MAX_IMAGES} imágenes`;
     if (form.is_customizable && (!form.variants || form.variants.length === 0)) err.variants = "Agrega al menos una variante";
+    for (const loc of (form.localities || [])) {
+      const cfg = getLocalityConfig(loc);
+      if (!cfg.delivery && !cfg.takeout) {
+        err.locality_config = `"${loc}" debe tener al menos Delivery o Take out activado.`;
+        break;
+      }
+    }
     return err;
   };
 
@@ -138,6 +167,7 @@ const Products = () => {
         terms: form.terms, imagesUrl: [...existingUrls, ...uploaded], localities: form.localities || [],
         is_customizable: form.is_customizable,
         variants: form.is_customizable ? (form.variants || []) : [],
+        locality_config: (form.localities || []).map((loc) => getLocalityConfig(loc)),
       };
       return form.product_id ? updateProduct(payload) : createProduct(payload);
     },
@@ -166,6 +196,7 @@ const Products = () => {
       min_age: p.min_age ?? 0, required_delivery_day: !!p.required_delivery_day,
       delivery_start_day: p.delivery_start_day || "", terms: p.terms || "", imagesUrl: p.imagesUrl || [],
       localities: p.localities || [], is_customizable: !!p.is_customizable, variants: p.variants || [],
+      locality_config: p.locality_config || [],
     });
     setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -180,7 +211,6 @@ const Products = () => {
         <h1>Gestión de Productos</h1>
         <p>Administra tu catálogo de productos</p>
       </div>
-
       {busy && <Loading message={editingId ? "Actualizando producto..." : "Creando producto..."} />}
 
       <div className={styles.card}>
@@ -193,7 +223,7 @@ const Products = () => {
           </div>
           <div className={styles.formGroup}>
             <label>Descripción</label>
-            <input className="input" value={form.description} onChange={(e) => setField("description", e.target.value)} placeholder="Camisa fresca 100% lino" />
+            <input className="input" value={form.description} onChange={(e) => setField("description", e.target.value)} />
           </div>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
@@ -242,36 +272,82 @@ const Products = () => {
             )}
           </div>
 
+          {/* Localidades + config de entrega */}
           {businessLocalities.length > 0 && (
-            <div className={styles.formGroup}>
-              <label>Localidades disponibles</label>
-              <p style={{ color: "#667085", fontSize: ".82rem", margin: "-.2rem 0 .5rem" }}>Sin selección = disponible en todas.</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-                {businessLocalities.map((loc) => {
-                  const active = (form.localities || []).includes(loc);
-                  return (
-                    <button type="button" key={loc} onClick={() => toggleLocality(loc)} style={{ border: active ? "1px solid #113f67" : "1px solid #d0d5dd", background: active ? "#113f67" : "#fff", color: active ? "#fff" : "#344054", borderRadius: "999px", padding: ".4rem .9rem", fontSize: ".85rem", fontWeight: 600, cursor: "pointer" }}>
-                      {loc}
-                    </button>
-                  );
-                })}
+            <>
+              <div className={styles.formGroup}>
+                <label>Localidades disponibles</label>
+                <p style={{ color: "#667085", fontSize: ".82rem", margin: "-.2rem 0 .5rem" }}>Sin selección = disponible en todas.</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                  {businessLocalities.map((loc) => {
+                    const active = (form.localities || []).includes(loc);
+                    return (
+                      <button type="button" key={loc} onClick={() => toggleLocality(loc)} style={{ border: active ? "1px solid #113f67" : "1px solid #d0d5dd", background: active ? "#113f67" : "#fff", color: active ? "#fff" : "#344054", borderRadius: "999px", padding: ".4rem .9rem", fontSize: ".85rem", fontWeight: 600, cursor: "pointer" }}>
+                        {loc}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+
+              {(form.localities || []).length > 0 && (
+                <div className={styles.localityConfigSection}>
+                  <label className={styles.localityConfigTitle}>Opciones de entrega por localidad</label>
+                  <p style={{ color: "#667085", fontSize: ".82rem", margin: "-.2rem 0 .75rem" }}>
+                    Configura si cada localidad tiene delivery y/o take out. El precio de delivery puede ser 0 (gratis).
+                  </p>
+                  {errors.locality_config && <span className={styles.err}>{errors.locality_config}</span>}
+                  <div className={styles.localityConfigGrid}>
+                    {(form.localities || []).map((loc) => {
+                      const cfg = getLocalityConfig(loc);
+                      return (
+                        <div key={loc} className={styles.localityConfigCard}>
+                          <div className={styles.localityConfigName}>{loc}</div>
+                          <div className={styles.localityConfigOptions}>
+                            <label className={styles.localityOption}>
+                              <input type="checkbox" checked={!!cfg.delivery}
+                                onChange={(e) => updateLocalityConfig(loc, "delivery", e.target.checked)} />
+                              🛵 Delivery
+                            </label>
+                            {cfg.delivery && (
+                              <div className={styles.deliveryPriceRow}>
+                                <span className={styles.deliveryPriceLabel}>Precio {form.currency}</span>
+                                <input type="number" min="0" step="0.01" className="input"
+                                  style={{ width: "110px" }} placeholder="0"
+                                  value={cfg.delivery_price}
+                                  onChange={(e) => updateLocalityConfig(loc, "delivery_price", Number(e.target.value))} />
+                                {Number(cfg.delivery_price) === 0 && <span className={styles.freeTag}>Gratis</span>}
+                              </div>
+                            )}
+                            <label className={styles.localityOption}>
+                              <input type="checkbox" checked={!!cfg.takeout}
+                                onChange={(e) => updateLocalityConfig(loc, "takeout", e.target.checked)} />
+                              🏪 Take out
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
+          {/* Imágenes */}
           <div className={styles.formGroup}>
             <label>Imágenes * (máx. {MAX_IMAGES})</label>
             <div className={styles.imageRow}>
               {existingUrls.map((url) => (
                 <div key={url} className={styles.thumbBox}>
                   <img src={url} alt="" className={styles.thumbImg} />
-                  <button type="button" className={styles.thumbRemove} onClick={() => imageDeleteMutation.mutate({ productId: editingId, url })} aria-label="Eliminar">×</button>
+                  <button type="button" className={styles.thumbRemove} onClick={() => imageDeleteMutation.mutate({ productId: editingId, url })}>×</button>
                 </div>
               ))}
               {newFiles.map((file, idx) => (
                 <div key={idx} className={styles.thumbBox}>
                   <img src={URL.createObjectURL(file)} alt="" className={styles.thumbImg} />
-                  <button type="button" className={styles.thumbRemove} onClick={() => removeNewFile(idx)} aria-label="Quitar">×</button>
+                  <button type="button" className={styles.thumbRemove} onClick={() => removeNewFile(idx)}>×</button>
                 </div>
               ))}
               {totalImages < MAX_IMAGES && (
@@ -289,44 +365,24 @@ const Products = () => {
             <Toggle checked={form.just_one} onChange={(v) => setField("just_one", v)} label="Solo uno" />
           </div>
 
-          {/* ---- VARIANTES ---- */}
+          {/* Variantes */}
           <div className={styles.toggleRow}>
-            <Toggle
-              checked={form.is_customizable}
-              onChange={(v) => { setField("is_customizable", v); if (!v) { setVariantForm(emptyVariant); setEditingVariantId(null); } }}
-              label="Producto personalizable (colores / tallas)"
-            />
+            <Toggle checked={form.is_customizable} onChange={(v) => { setField("is_customizable", v); if (!v) { setVariantForm(emptyVariant); setEditingVariantId(null); } }} label="Producto personalizable (colores / tallas)" />
           </div>
-
           {form.is_customizable && (
             <div className={styles.variantSection}>
               <h4 className={styles.variantTitle}>Variantes</h4>
               <div className={styles.variantForm}>
-                <div className={styles.variantField}>
-                  <label>Color *</label>
-                  <input className="input" placeholder="Rojo, Azul…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} />
-                </div>
-                <div className={styles.variantField}>
-                  <label>Talla</label>
-                  <input className="input" placeholder="S, M, L, XL…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} />
-                </div>
-                <div className={styles.variantField}>
-                  <label>Stock</label>
-                  <input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} />
-                </div>
-                <div className={styles.variantField}>
-                  <label>Precio extra {form.currency}</label>
-                  <input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} />
-                </div>
+                <div className={styles.variantField}><label>Color *</label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
+                <div className={styles.variantField}><label>Talla</label><input className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
+                <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
+                <div className={styles.variantField}><label>Precio extra {form.currency}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
                 <div className={styles.variantBtns}>
-                  <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}>
-                    <FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}
-                  </button>
+                  <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
                   {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
                 </div>
               </div>
               {errors.variants && <span className={styles.err}>{errors.variants}</span>}
-
               {(form.variants || []).length > 0 ? (
                 <div className={styles.variantTableWrap}>
                   <table className={styles.variantTable}>
@@ -334,8 +390,7 @@ const Products = () => {
                     <tbody>
                       {(form.variants || []).map((v) => (
                         <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
-                          <td>{v.color}</td>
-                          <td>{v.size || "—"}</td>
+                          <td>{v.color}</td><td>{v.size || "—"}</td>
                           <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
                           <td>{v.extra_price ? `+ ${form.currency} ${formatted(v.extra_price)}` : "—"}</td>
                           <td className={styles.variantActions}>
@@ -346,34 +401,23 @@ const Products = () => {
                       ))}
                     </tbody>
                   </table>
-                  <p className={styles.variantSummary}>
-                    {(form.variants || []).length} variante(s) · Stock total: <strong>{(form.variants || []).reduce((s, v) => s + (Number(v.quantity) || 0), 0)}</strong>
-                  </p>
+                  <p className={styles.variantSummary}>{(form.variants || []).length} variante(s) · Stock total: <strong>{(form.variants || []).reduce((s, v) => s + (Number(v.quantity) || 0), 0)}</strong></p>
                 </div>
-              ) : (
-                <p className={styles.variantEmpty}>Aún no has agregado variantes.</p>
-              )}
+              ) : (<p className={styles.variantEmpty}>Aún no has agregado variantes.</p>)}
             </div>
           )}
-          {/* ---- FIN VARIANTES ---- */}
 
           <div className={styles.toggleRow}>
             <Toggle checked={form.min_age_allow} onChange={(v) => setField("min_age_allow", v)} label="Edad mínima" />
-            {form.min_age_allow && (
-              <select className="input" style={{ maxWidth: 160 }} value={form.min_age} onChange={(e) => setField("min_age", e.target.value)}>
-                {getAges().map((a) => (<option key={a.code} value={a.code}>{a.name}</option>))}
-              </select>
-            )}
+            {form.min_age_allow && (<select className="input" style={{ maxWidth: 160 }} value={form.min_age} onChange={(e) => setField("min_age", e.target.value)}>{getAges().map((a) => (<option key={a.code} value={a.code}>{a.name}</option>))}</select>)}
           </div>
           <div className={styles.toggleRow}>
             <Toggle checked={form.required_delivery_day} onChange={(v) => setField("required_delivery_day", v)} label="Requiere fecha de entrega" />
-            {form.required_delivery_day && (
-              <input type="date" className="input" style={{ maxWidth: 200 }} value={form.delivery_start_day} onChange={(e) => setField("delivery_start_day", e.target.value)} />
-            )}
+            {form.required_delivery_day && (<input type="date" className="input" style={{ maxWidth: 200 }} value={form.delivery_start_day} onChange={(e) => setField("delivery_start_day", e.target.value)} />)}
           </div>
           <div className={styles.formGroup}>
             <label>Términos y condiciones (opcional)</label>
-            <textarea className="input" rows={4} value={form.terms} onChange={(e) => setField("terms", e.target.value)} placeholder="Términos y condiciones del producto" />
+            <textarea className="input" rows={4} value={form.terms} onChange={(e) => setField("terms", e.target.value)} />
           </div>
           <div className={styles.formActions}>
             <PrimaryButton type="submit" disabled={busy}>{busy ? "Guardando..." : editingId ? "Actualizar producto" : "Crear producto"}</PrimaryButton>
@@ -386,10 +430,7 @@ const Products = () => {
         <h2>Productos existentes</h2>
         <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
       </div>
-
-      {products.length === 0 ? (
-        <div className={styles.empty}>Aún no tienes productos.</div>
-      ) : (
+      {products.length === 0 ? (<div className={styles.empty}>Aún no tienes productos.</div>) : (
         <div className={styles.grid}>
           {products.map((p) => {
             const img = p.imagesUrl?.[0]?.image || p.imagesUrl?.[0];
@@ -404,8 +445,11 @@ const Products = () => {
                   <h3>{p.name}</h3>
                   <span className={styles.productCat}>{categoryName(p.category_id)}</span>
                   <span className={styles.productPrice}>{p.currency}{formatted(p.price)}</span>
-                  {p.is_customizable && p.variants?.length > 0 && (
-                    <span className={styles.variantCount}>{p.variants.length} variante(s)</span>
+                  {p.is_customizable && p.variants?.length > 0 && <span className={styles.variantCount}>{p.variants.length} variante(s)</span>}
+                  {(p.locality_config || []).length > 0 && (
+                    <span className={styles.deliveryBadge}>
+                      {p.locality_config.some(c => c.delivery) ? "🛵" : ""}{p.locality_config.some(c => c.takeout) ? " 🏪" : ""}
+                    </span>
                   )}
                 </div>
                 <div className={styles.productActions}>
@@ -426,9 +470,7 @@ const Products = () => {
             <p>¿Seguro que deseas eliminar <strong>{toDelete.name}</strong>?</p>
             <div className={styles.modalActions}>
               <button className={styles.btnOutline} onClick={() => setToDelete(null)}>Cancelar</button>
-              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(toDelete.product_id)} disabled={deleteMutation.isPending}>
-                {deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}
-              </button>
+              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(toDelete.product_id)} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}</button>
             </div>
           </div>
         </div>
@@ -438,29 +480,31 @@ const Products = () => {
         <div className={styles.modalOverlay} onClick={() => setViewing(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3>{viewing.name}</h3>
-            <div className={styles.detailGallery}>
-              {(viewing.imagesUrl || []).map((i, idx) => <img key={idx} src={i.image || i} alt="" />)}
-            </div>
+            <div className={styles.detailGallery}>{(viewing.imagesUrl || []).map((i, idx) => <img key={idx} src={i.image || i} alt="" />)}</div>
             <ul className={styles.detailList}>
               <li><span>Precio base</span><strong>{viewing.currency}{formatted(viewing.price)}</strong></li>
               <li><span>Categoría</span><strong>{categoryName(viewing.category_id)}</strong></li>
               {!viewing.is_customizable && <li><span>Cantidad</span><strong>{viewing.quantity}</strong></li>}
               <li><span>Estado</span><strong>{viewing.is_available === "available" ? "Disponible" : "Agotado"}</strong></li>
               <li><span>Localidades</span><strong>{viewing.localities?.length ? viewing.localities.join(", ") : "Todas"}</strong></li>
-              {viewing.min_age_allow && <li><span>Edad mínima</span><strong>{viewing.min_age} años</strong></li>}
-              {viewing.terms && <li><span>Términos</span><strong>{viewing.terms}</strong></li>}
-              {viewing.is_customizable && (viewing.variants || []).length > 0 && (
+              {(viewing.locality_config || []).length > 0 && (
                 <li style={{ flexDirection: "column", alignItems: "flex-start" }}>
-                  <span>Variantes ({(viewing.variants || []).length})</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: ".4rem", marginTop: ".4rem" }}>
-                    {(viewing.variants || []).map((v) => (
-                      <span key={v.variant_id} style={{ background: "#f0f7ff", border: "1px solid #d0d5dd", borderRadius: "6px", padding: ".2rem .7rem", fontSize: ".82rem" }}>
-                        {v.color}{v.size ? ` / ${v.size}` : ""} · {v.quantity} uds{v.extra_price ? ` (+${viewing.currency}${formatted(v.extra_price)})` : ""}
+                  <span>Entrega por localidad</span>
+                  <div style={{ marginTop: ".4rem", display: "flex", flexDirection: "column", gap: ".3rem" }}>
+                    {viewing.locality_config.map((cfg) => (
+                      <span key={cfg.locality} style={{ fontSize: ".85rem", color: "#344054" }}>
+                        <strong>{cfg.locality}:</strong>{" "}
+                        {[
+                          cfg.delivery ? `🛵 Delivery${cfg.delivery_price > 0 ? ` (+${viewing.currency}${formatted(cfg.delivery_price)})` : " (gratis)"}` : null,
+                          cfg.takeout ? "🏪 Take out" : null,
+                        ].filter(Boolean).join(" · ")}
                       </span>
                     ))}
                   </div>
                 </li>
               )}
+              {viewing.min_age_allow && <li><span>Edad mínima</span><strong>{viewing.min_age} años</strong></li>}
+              {viewing.terms && <li><span>Términos</span><strong>{viewing.terms}</strong></li>}
             </ul>
             <div className={styles.modalActions}><button className={styles.btnOutline} onClick={() => setViewing(null)}>Cerrar</button></div>
           </div>

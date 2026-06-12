@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
 import { ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Check } from "lucide-react";
@@ -32,6 +32,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
       if (productLocalities.length === 1) return productLocalities[0];
       return "";
     })(),
+    fulfillment_type: "",
   });
   const [step, setStep] = useState(null); // null | "cart"
   const [showTerms, setShowTerms] = useState(false);
@@ -74,6 +75,24 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
 
   const variantMaxQty = selectedVariant ? selectedVariant.quantity : (!product.is_customizable && product.show_quantity ? product.quantity : 9999);
 
+  // Config de entrega para la localidad seleccionada
+  const localityConfig = useMemo(() => {
+    if (!form.locality || !product.locality_config?.length) return null;
+    return product.locality_config.find((c) => c.locality === form.locality) || null;
+  }, [form.locality, product]);
+
+  const hasDelivery = !!localityConfig?.delivery;
+  const hasTakeout = !!localityConfig?.takeout;
+  const deliveryPrice = form.fulfillment_type === "delivery" ? (Number(localityConfig?.delivery_price) || 0) : 0;
+
+
+  // Auto-selección cuando solo hay una opción
+  useEffect(() => {
+    if (!localityConfig) { set("fulfillment_type", ""); return; }
+    if (hasDelivery && !hasTakeout) set("fulfillment_type", "delivery");
+    else if (!hasDelivery && hasTakeout) set("fulfillment_type", "takeout");
+    else set("fulfillment_type", "");
+  }, [localityConfig]); // eslint-disable-line
   // WhatsApp
   const openWhatsApp = (who) => {
     const saludo = who ? `soy ${who}, ` : "";
@@ -130,6 +149,8 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
         delivery_day: form.delivery_day,
         accept_terms: !!form.acceptTerms,
         image: images[0] || "",
+        fulfillment_type: form.fulfillment_type || (hasDelivery ? "delivery" : hasTakeout ? "takeout" : ""), // ← nuevo
+        delivery_price: deliveryPrice,  // ← nuevo
         ...(product.is_customizable && selectedVariant ? {
           variant: { variant_id: selectedVariant.variant_id, color: selectedVariant.color, size: selectedVariant.size || "" },
           variant_label: variantLabel,
@@ -147,12 +168,13 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
       if (availableSizes.length > 0 && !selectedSize) return false;
       if (!selectedVariant || selectedVariant.quantity < 1) return false;
     }
+    if (localityConfig && hasDelivery && hasTakeout && !form.fulfillment_type) return false; // ← nuevo
     if (productLocalities.length > 0 && !form.locality) return false;
     if (product.required_delivery_day && !form.delivery_day) return false;
     if (product.terms && !form.acceptTerms) return false;
     if (!form.quantity || Number(form.quantity) < 1) return false;
     return true;
-  }, [form, product, productLocalities, selectedColor, selectedSize, selectedVariant, availableSizes, availableColors]);
+  }, [form, product, productLocalities, selectedColor, selectedSize, selectedVariant, availableSizes, availableColors, localityConfig, hasDelivery, hasTakeout]);
 
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
 
@@ -277,6 +299,34 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
                   <option value="">Selecciona tu localidad</option>
                   {productLocalities.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
                 </select>
+              </div>
+            )}
+            {/* Tipo de entrega */}
+            {localityConfig && (hasDelivery || hasTakeout) && (
+              <div className={styles.field}>
+                <label>Tipo de entrega</label>
+                {hasDelivery && hasTakeout ? (
+                  <div className={styles.fulfillmentGroup}>
+                    <label className={`${styles.fulfillmentOption} ${form.fulfillment_type === "delivery" ? styles.fulfillmentActive : ""}`}>
+                      <input type="radio" name="fulfillment" value="delivery"
+                        checked={form.fulfillment_type === "delivery"}
+                        onChange={() => set("fulfillment_type", "delivery")} />
+                      <span>🛵 Delivery {Number(localityConfig.delivery_price) > 0 ? `(+${product.currency} ${formatted(localityConfig.delivery_price)})` : "(gratis)"}</span>
+                    </label>
+                    <label className={`${styles.fulfillmentOption} ${form.fulfillment_type === "takeout" ? styles.fulfillmentActive : ""}`}>
+                      <input type="radio" name="fulfillment" value="takeout"
+                        checked={form.fulfillment_type === "takeout"}
+                        onChange={() => set("fulfillment_type", "takeout")} />
+                      <span>🏪 Recoger en tienda</span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className={styles.fulfillmentInfo}>
+                    {hasDelivery
+                      ? `🛵 Delivery ${Number(localityConfig.delivery_price) > 0 ? `(+${product.currency} ${formatted(localityConfig.delivery_price)})` : "(gratis)"}`
+                      : "🏪 Recoger en tienda"}
+                  </div>
+                )}
               </div>
             )}
 

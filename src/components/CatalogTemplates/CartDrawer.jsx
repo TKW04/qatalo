@@ -22,6 +22,7 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
   const [step, setStep] = useState("cart"); // cart | identity | auth | guest | pay | success
   const [session, setSession] = useState(() => getValidCustomerSession(businessId));
   const [selectedPm, setSelectedPm] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const savedGuest = getGuestInfo(businessId) || {};
   const [guest, setGuest] = useState({
     given_name: savedGuest.given_name || "", family_name: savedGuest.family_name || "",
@@ -29,7 +30,11 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
   });
 
   const cur = symbol(items[0]?.currency);
-  const total = cartTotal(items);
+  // const total = cartTotal(items);
+  const productsSubtotal = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+  const hasDeliveryItems = items.some((it) => it.fulfillment_type === "delivery");
+  const deliverySubtotal = items.reduce((s, it) => s + (Number(it.delivery_price) || 0), 0);
+  const total = productsSubtotal + deliverySubtotal;
 
   const { data: paymentMethods = [] } = useQuery({
     queryKey: ["public-payment-methods", businessId],
@@ -67,12 +72,22 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
   const checkout = useMutation({
     mutationFn: () => {
       if (!selectedPm) throw new Error("Selecciona un método de pago");
-      if (session?.token) return checkoutCartWithToken(businessId, selectedPm, items);
+      if (hasDeliveryItems && !deliveryAddress.trim())
+        throw new Error("La dirección de entrega es requerida para el delivery");
+
+      // añade delivery_address a cada ítem de delivery
+      const itemsWithAddress = items.map((it) => ({
+        ...it,
+        delivery_address: it.fulfillment_type === "delivery" ? deliveryAddress.trim() : "",
+      }));
+
+      if (session?.token) return checkoutCartWithToken(businessId, selectedPm, itemsWithAddress);
       return createCatalogCart({
         business_id: businessId,
         given_name: guest.given_name, family_name: guest.family_name,
         email: guest.email, phone: guest.phone, age: Number(guest.age) || 0,
-        payment_method: { payment_method_id: selectedPm }, items,
+        payment_method: { payment_method_id: selectedPm },
+        items: itemsWithAddress,
       });
     },
     onSuccess: () => { clearCart(businessId); onChanged?.(); setStep("success"); },
@@ -97,8 +112,12 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
                       {it.image ? <img src={it.image} alt="" className={styles.cartThumb} /> : <div className={styles.cartThumb} />}
                       <div className={styles.cartInfo}>
                         <div className={styles.productName}>{it.product_name}</div>
-                        {it.variant_label && (               // ← nuevo
-                          <div className={styles.variantTag}>{it.variant_label}</div>
+                        {it.variant_label && <div className={styles.variantTag}>{it.variant_label}</div>}
+                        {it.fulfillment_type && (
+                          <div className={styles.fulfillmentTag}>
+                            {it.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}
+                            {it.delivery_price > 0 && ` (+${cur} ${formatted(it.delivery_price)})`}
+                          </div>
                         )}
                         <div className={styles.meta}>
                           {it.locality ? `${it.locality} · ` : ""}{cur} {formatted(it.price)} c/u
@@ -114,7 +133,13 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
                     </div>
                   ))}
                 </div>
-                <div className={styles.cartTotal}><span>Total</span><strong>{cur} {formatted(total)}</strong></div>
+                <div className={styles.cartTotal}><span>Subtotal</span><strong>{cur} {formatted(productsSubtotal)}</strong></div>
+                {deliverySubtotal > 0 && (
+                  <div className={styles.cartTotal}><span>🛵 Delivery</span><strong>{cur} {formatted(deliverySubtotal)}</strong></div>
+                )}
+                <div className={styles.cartTotal} style={{ borderTop: "2px solid #eef0f3", paddingTop: ".75rem", marginTop: ".25rem" }}>
+                  <span><strong>Total</strong></span><strong>{cur} {formatted(total)}</strong>
+                </div>
                 <button className={styles.primaryBtn} onClick={goCheckout}>Proceder al pago</button>
               </>
             )}
@@ -145,9 +170,34 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
             <button className={styles.linkBtn} onClick={() => setStep("cart")}>Volver al carrito</button>
           </>
         )}
+        {step === "pay" && (
+          <>
+            <h2 className={styles.title}>Método de pago</h2>
+            <p className={styles.lead}>
+              Total: <strong>{cur} {formatted(total)}</strong>
+            </p>
+
+            {/* Dirección de entrega — solo si hay ítems con delivery */}
+            {hasDeliveryItems && (
+              <div style={{ marginBottom: "1rem" }}>
+                <label className={styles.label}>📍 Dirección de entrega *</label>
+                <textarea
+                  className={styles.input}
+                  rows={3}
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="Calle, número, sector, ciudad…"
+                />
+              </div>
+            )}
+
+            {/* ... el resto del paso (métodos de pago, botón confirmar) ... */}
+          </>
+        )}
 
         {step === "pay" && (
           <>
+
             <h2 className={styles.title}>Método de pago</h2>
             <p className={styles.lead}>Se usará el mismo método para toda la orden. Total: <strong>{cur} {formatted(total)}</strong></p>
             <div className={styles.list}>

@@ -7,3 +7,13 @@
     display: inline-block;
     margin: .1rem 0 .15rem;
 }
+
+.fulfillmentTag {
+    font-size: .75rem;
+    color: #344054;
+    background: #f0f7ff;
+    border-radius: 6px;
+    padding: .1rem .5rem;
+    display: inline-block;
+    margin: .1rem 0 .15rem;
+}

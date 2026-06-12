@@ -67,7 +67,9 @@ const cartKey = (b) => `qatalo_cart_${b}`;
 export const getCart = (b) => { try { return JSON.parse(sessionStorage.getItem(cartKey(b)) || "[]"); } catch { return []; } };
 export const setCart = (b, items) => { try { sessionStorage.setItem(cartKey(b), JSON.stringify(items)); } catch { } };
 export const clearCart = (b) => { try { sessionStorage.removeItem(cartKey(b)); } catch { } };
-export const cartTotal = (items) => (items || []).reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+export const cartTotal = (items) =>
+  (items || []).reduce((s, it) =>
+    s + (Number(it.price) || 0) * (Number(it.quantity) || 1) + (Number(it.delivery_price) || 0), 0);
 export const cartCount = (items) => (items || []).reduce((s, it) => s + (Number(it.quantity) || 1), 0);
 
 export const checkoutCartWithToken = async (businessId, paymentMethodId, items) => {
