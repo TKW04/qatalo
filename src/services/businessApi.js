@@ -47,6 +47,8 @@ export const saveBusinessData = async (tenantId, businessData) => {
     themeType: businessData.themeType || "predefined",
     themePalette: businessData.themePalette || null,
     localities: businessData.localities || [],
+    ga_tracking_id: businessData.ga_tracking_id.trim(),
+    meta_pixel_id: businessData.meta_pixel_id.trim(),
   };
 
   const isUpdating = businessData.business_id && businessData.business_id !== "";
