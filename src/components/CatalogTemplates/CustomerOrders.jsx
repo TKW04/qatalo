@@ -141,7 +141,7 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                       {g.delivery_address && (
                         <li>
                           <span>Dirección de entrega</span>
-                          <strong>{t.delivery_address}</strong>
+                          <strong>{g.delivery_address}</strong>
                         </li>
                       )}
                       <li><span>Total</span><strong>{cur} {formatted(g.total)}</strong></li>
