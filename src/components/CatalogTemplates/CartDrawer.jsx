@@ -70,7 +70,8 @@ const distributeDiscount = (offer, items, totalDiscount) => {
 };
 
 // ── Componente ────────────────────────────────────────────────
-const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
+const CartDrawer = ({
+  businessId, businessName, onClose, onChanged, onCheckoutStart, onPurchase, }) => {
   const { showWarning, showError } = useNotification();
   const [items, setItems] = useState(() => getCart(businessId));
   const [step, setStep] = useState("cart");
@@ -179,6 +180,7 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
 
   const goCheckout = () => {
     if (!items.length) return showWarning("Aviso", "Tu carrito está vacío");
+    onCheckoutStart?.();   // ← nuevo
     const s = getValidCustomerSession(businessId);
     if (s?.token) { setSession(s); setStep("pay"); }
     else if (getCustomerMode(businessId) === "guest") setStep("guest");
@@ -222,7 +224,12 @@ const CartDrawer = ({ businessId, businessName, onClose, onChanged }) => {
         ...offerInfo,
       });
     },
-    onSuccess: () => { clearCart(businessId); onChanged?.(); setStep("success"); },
+    onSuccess: () => {
+      onPurchase?.({                              // ← nuevo
+        total,
+        currency: items[0]?.payment_method?.currency || "",
+      }); clearCart(businessId); onChanged?.(); setStep("success");
+    },
     onError: (e) => showError("Error", e.message || "No se pudo crear la orden"),
   });
 

@@ -70,6 +70,42 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     }
   }, [businessId, isPreview]);
 
+  // ── Inyección de scripts GA4 y Meta Pixel ──────────────────────────────────
+  useEffect(() => {
+    if (isPreview || !businessData) return;
+    const { ga_tracking_id, meta_pixel_id } = businessData;
+
+    // GA4
+    if (ga_tracking_id && !document.getElementById("qa-ga4")) {
+      const s1 = document.createElement("script");
+      s1.id = "qa-ga4";
+      s1.async = true;
+      s1.src = `https://www.googletagmanager.com/gtag/js?id=${ga_tracking_id}`;
+      document.head.appendChild(s1);
+
+      const s2 = document.createElement("script");
+      s2.id = "qa-ga4-init";
+      s2.innerHTML = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${ga_tracking_id}');`;
+      document.head.appendChild(s2);
+    }
+
+    // Meta Pixel
+    if (meta_pixel_id && !document.getElementById("qa-meta")) {
+      const s = document.createElement("script");
+      s.id = "qa-meta";
+      s.innerHTML = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${meta_pixel_id}');fbq('track','PageView');`;
+      document.head.appendChild(s);
+    }
+  }, [businessData?.ga_tracking_id, businessData?.meta_pixel_id, isPreview]);
+
+
+  // ── Helper de tracking ─────────────────────────────────────────────────────
+  const track = (gaEvent, fbEvent, params = {}) => {
+    if (isPreview) return;
+    if (window.gtag && businessData?.ga_tracking_id) window.gtag("event", gaEvent, params);
+    if (window.fbq && businessData?.meta_pixel_id) window.fbq("track", fbEvent, params);
+  };
+
   const categories = useMemo(() => {
     if (usingDummy) return DUMMY_CATEGORIES;
     if (categoriesProp && categoriesProp.length) return categoriesProp;
@@ -110,7 +146,16 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   }, [sourceProducts, searchTerm, selectedCategory, selectedLocality]);
 
   const SelectedTemplate = Templates[businessData?.templateId] || TemplateDefault;
-  const handleProductClick = isPreview ? noop : setSelectedProduct;
+  const handleProductClick = isPreview
+    ? noop
+    : (product) => {
+      setSelectedProduct(product);
+      track("view_item", "ViewContent", {
+        item_name: product.name,
+        value: Number(product.price) || 0,
+        currency: product.currency || "",
+      });
+    };
 
   return (
     <div style={{ ...themeStyles, width: "100%", minHeight: "100%" }}>
@@ -160,6 +205,12 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
           businessName={businessData?.business_name || businessData?.name}
           onClose={() => { setCartOpen(false); refreshCart(); }}
           onChanged={refreshCart}
+          onCheckoutStart={() =>
+            track("begin_checkout", "InitiateCheckout", {})
+          }
+          onPurchase={({ total, currency }) =>
+            track("purchase", "Purchase", { value: total, currency })
+          }
         />
       )}
 

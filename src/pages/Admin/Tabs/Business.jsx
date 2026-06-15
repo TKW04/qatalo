@@ -21,6 +21,8 @@ const Business = () => {
     business_id: "", name: "", slug: "", phone: "", description: "",
     logo_url: "", templateId: "default", themeType: "predefined",
     themePalette: PREDEFINED_PALETTES[0].colors, localities: [],
+    ga_tracking_id: "",
+    meta_pixel_id: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -284,6 +286,64 @@ const Business = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+        {/* ── Marketing & Analytics ── */}
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>📊 Marketing & Analytics</h3>
+          <p className={styles.sectionDesc}>
+            Conecta tu catálogo con tus herramientas de análisis para medir visitas,
+            productos vistos y ventas. Las IDs son visibles públicamente en el código de tu catálogo.
+          </p>
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>
+                Google Analytics 4 (GA4)
+              </label>
+              <input
+                className="input"
+                value={formData.ga_tracking_id}
+                onChange={(e) => setFormData({ ...formData, ga_tracking_id: e.target.value.trim() })}
+                placeholder="G-XXXXXXXXXX"
+                maxLength={20}
+              />
+              <span className={styles.hint}>
+                Encuéntrala en{" "}
+                <a href="https://analytics.google.com" target="_blank" rel="noreferrer">
+                  analytics.google.com
+                </a>{" "}
+                → Administrar → Flujos de datos
+              </span>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>
+                Meta Pixel (Facebook / Instagram)
+              </label>
+              <input
+                className="input"
+                value={formData.meta_pixel_id}
+                onChange={(e) => setFormData({ ...formData, meta_pixel_id: e.target.value.trim() })}
+                placeholder="123456789012345"
+                maxLength={20}
+              />
+              <span className={styles.hint}>
+                Encuéntrala en{" "}
+                <a href="https://business.facebook.com/events_manager" target="_blank" rel="noreferrer">
+                  Meta Events Manager
+                </a>{" "}
+                → Fuentes de datos
+              </span>
+            </div>
+          </div>
+
+          {(formData.ga_tracking_id || formData.meta_pixel_id) && (
+            <div className={styles.trackingActive}>
+              ✅ Tracking activo:
+              {formData.ga_tracking_id && <span>GA4 ({formData.ga_tracking_id})</span>}
+              {formData.meta_pixel_id && <span>Meta Pixel ({formData.meta_pixel_id})</span>}
             </div>
           )}
         </div>
