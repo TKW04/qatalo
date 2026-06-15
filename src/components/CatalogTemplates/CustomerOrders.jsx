@@ -129,16 +129,16 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                         </li>
                       ))}
                       <li><span>Método</span><strong>{isBank ? "Transferencia" : "Link de pago"}</strong></li>
-                      {t.fulfillment_type && (
+                      {g.fulfillment_type && (
                         <li>
                           <span>Entrega</span>
                           <strong>{t.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}</strong>
                         </li>
                       )}
-                      {t.delivery_price > 0 && (
+                      {g.delivery_price > 0 && (
                         <li><span>Costo delivery</span><strong>{cur} {formatted(t.delivery_price)}</strong></li>
                       )}
-                      {t.delivery_address && (
+                      {g.delivery_address && (
                         <li>
                           <span>Dirección de entrega</span>
                           <strong>{t.delivery_address}</strong>

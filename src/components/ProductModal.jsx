@@ -155,6 +155,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
           variant: { variant_id: selectedVariant.variant_id, color: selectedVariant.color, size: selectedVariant.size || "" },
           variant_label: variantLabel,
         } : {}),
+        category_id: product.category_id || "",
       });
     }
     setCart(business.business_id, items);

@@ -72,11 +72,17 @@ export const cartTotal = (items) =>
     s + (Number(it.price) || 0) * (Number(it.quantity) || 1) + (Number(it.delivery_price) || 0), 0);
 export const cartCount = (items) => (items || []).reduce((s, it) => s + (Number(it.quantity) || 1), 0);
 
-export const checkoutCartWithToken = async (businessId, paymentMethodId, items) => {
+export const checkoutCartWithToken = async (businessId, paymentMethodId, items, offerInfo = {}) => {
   const res = await fetch(`${API_URL}customers/orders/cart`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders(businessId) },
-    body: JSON.stringify({ payment_method: { payment_method_id: paymentMethodId }, items }),
+    body: JSON.stringify({
+      payment_method: { payment_method_id: paymentMethodId },
+      items,
+      offer_id:   offerInfo.offer_id   || "",
+      offer_name: offerInfo.offer_name || "",
+      offer_code: offerInfo.offer_code || "",
+    }),
   });
   if (!res.ok) throw new Error("No se pudo crear la orden");
   return res.json();

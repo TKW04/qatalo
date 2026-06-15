@@ -1,0 +1,541 @@
+/* ── Layout ── */
+.card {
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    font-size: 1.1rem;
+    color: #1d2939;
+    margin: 0 0 1.25rem;
+}
+
+.formRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.formGroup label {
+    font-size: .82rem;
+    font-weight: 600;
+    color: #475467;
+}
+
+.err {
+    font-size: .78rem;
+    color: #b42318;
+    margin-top: .15rem;
+}
+
+/* ── Sections ── */
+.section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #f4f6f8;
+}
+
+.sectionLabel {
+    font-size: .88rem;
+    font-weight: 700;
+    color: #344054;
+    display: block;
+    margin-bottom: .75rem;
+}
+
+/* ── Option cards (trigger / scope) ── */
+.optionGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+.optionCard {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .55rem 1rem;
+    border: 1.5px solid #d0d5dd;
+    background: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: .88rem;
+    font-weight: 500;
+    transition: all .15s;
+}
+
+.optionCard input {
+    display: none;
+}
+
+.optionCard:hover {
+    border-color: #34699a;
+}
+
+.optionActive {
+    border-color: #113f67;
+    background: #f0f7ff;
+    font-weight: 700;
+    color: #113f67;
+}
+
+/* ── Pills ── */
+.pillSection {
+    margin-top: .75rem;
+    padding: .9rem 1rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px solid #eef0f3;
+}
+
+.pillHint {
+    font-size: .8rem;
+    color: #667085;
+    margin: 0 0 .6rem;
+}
+
+.pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.pill {
+    padding: .3rem .8rem;
+    border: 1.5px solid #d0d5dd;
+    background: #fff;
+    border-radius: 20px;
+    font-size: .83rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all .15s;
+}
+
+.pill:hover {
+    border-color: #113f67;
+}
+
+.pillActive {
+    border-color: #113f67;
+    background: #113f67;
+    color: #fff;
+}
+
+/* ── Conditions ── */
+.conditionRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
+/* ── Toggle (same pattern as Products) ── */
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    cursor: pointer;
+}
+
+.toggle input {
+    display: none;
+}
+
+.track {
+    width: 40px;
+    height: 22px;
+    background: #d0d5dd;
+    border-radius: 11px;
+    position: relative;
+    transition: background .2s;
+    flex-shrink: 0;
+}
+
+.toggle input:checked~.track {
+    background: var(--color-navy, #113f67);
+}
+
+.thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+}
+
+.toggle input:checked~.track .thumb {
+    transform: translateX(18px);
+}
+
+.toggleLabel {
+    font-size: .88rem;
+    font-weight: 500;
+    color: #344054;
+}
+
+/* ── Form actions ── */
+.formActions {
+    display: flex;
+    gap: .75rem;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #f4f6f8;
+}
+
+.btnOutline {
+    padding: .7rem 1.2rem;
+    border: 1.5px solid #d0d5dd;
+    background: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.btnOutline:hover {
+    border-color: #113f67;
+    color: #113f67;
+}
+
+/* ── List header ── */
+.listHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-bottom: 1rem;
+}
+
+.listHeader h2 {
+    font-size: 1.1rem;
+    color: #1d2939;
+    margin: 0;
+}
+
+.listHeaderRight {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.filterTabs {
+    display: flex;
+    gap: .25rem;
+    background: #f4f6f8;
+    border-radius: 8px;
+    padding: .25rem;
+}
+
+.filterTab {
+    background: none;
+    border: none;
+    padding: .35rem .8rem;
+    border-radius: 6px;
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #667085;
+}
+
+.filterTab:hover {
+    color: #344054;
+}
+
+.filterTabActive {
+    background: #fff;
+    color: #113f67;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+}
+
+.refreshBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem .9rem;
+    background: none;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: .82rem;
+    cursor: pointer;
+    color: #475467;
+}
+
+.refreshBtn:hover {
+    background: #f9fafb;
+}
+
+/* ── Offer cards ── */
+.offerList {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+}
+
+.offerCard {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    transition: box-shadow .15s;
+}
+
+.offerCard:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+}
+
+.offerCardDim {
+    opacity: .75;
+}
+
+.offerCardLeft {
+    flex: 1;
+    min-width: 0;
+}
+
+.offerCardHeader {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: .35rem;
+}
+
+.offerName {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1d2939;
+}
+
+.statusBadge {
+    font-size: .72rem;
+    font-weight: 700;
+    padding: .2rem .6rem;
+    border-radius: 20px;
+}
+
+.offerDesc {
+    font-size: .85rem;
+    color: #667085;
+    margin-bottom: .5rem;
+}
+
+/* ── Offer meta ── */
+.offerMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-bottom: .6rem;
+}
+
+.discountBadge {
+    font-size: .8rem;
+    font-weight: 700;
+    background: #f0f7ff;
+    color: #113f67;
+    border-radius: 6px;
+    padding: .2rem .6rem;
+}
+
+.codeBadge {
+    font-size: .8rem;
+    font-weight: 700;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 6px;
+    padding: .2rem .6rem;
+    letter-spacing: .03em;
+}
+
+.autoBadge {
+    font-size: .8rem;
+    font-weight: 700;
+    background: #ede9fe;
+    color: #5b21b6;
+    border-radius: 6px;
+    padding: .2rem .6rem;
+}
+
+.metaChip {
+    font-size: .78rem;
+    color: #667085;
+    background: #f4f6f8;
+    border-radius: 6px;
+    padding: .2rem .55rem;
+}
+
+/* ── Usage bar ── */
+.offerFooter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+}
+
+.usageWrap {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.usageText {
+    font-size: .78rem;
+    color: #667085;
+    white-space: nowrap;
+}
+
+.usageTrack {
+    width: 100px;
+    height: 6px;
+    background: #eef0f3;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.usageFill {
+    height: 100%;
+    background: #113f67;
+    border-radius: 3px;
+    transition: width .3s;
+}
+
+/* ── Card actions ── */
+.offerCardActions {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    flex-shrink: 0;
+}
+
+.iconBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #eef0f3;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #475467;
+    transition: all .15s;
+}
+
+.iconBtn:hover {
+    background: #f4f6f8;
+    border-color: #d0d5dd;
+}
+
+.danger {
+    color: #b42318;
+}
+
+.danger:hover {
+    background: #fff1f2;
+    border-color: #fecaca;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 63, 103, .45);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    padding: 1rem;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.75rem;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .15);
+}
+
+.modal h3 {
+    margin: 0 0 .75rem;
+    font-size: 1.1rem;
+    color: #1d2939;
+}
+
+.modal p {
+    color: #475467;
+    font-size: .95rem;
+    margin: 0 0 1.25rem;
+}
+
+.modalActions {
+    display: flex;
+    gap: .6rem;
+    justify-content: flex-end;
+}
+
+.btnDanger {
+    padding: .65rem 1.2rem;
+    background: #b42318;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btnDanger:hover {
+    background: #991b1b;
+}
+
+.btnDanger:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* ── Empty ── */
+.empty {
+    text-align: center;
+    color: #667085;
+    padding: 2.5rem 1rem;
+    background: #f9fafb;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+}
+
+@media (max-width:640px) {
+    .offerCard {
+        flex-direction: column;
+    }
+
+    .offerCardActions {
+        flex-direction: row;
+    }
+
+    .filterTabs {
+        display: none;
+    }
+}

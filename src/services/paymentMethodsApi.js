@@ -16,9 +16,16 @@ export const fetchPaymentMethods = async () => {
 };
 
 export const fetchPaymentMethodsByBusinessId = async (businessId) => {
-  const response = await fetch(`${API_URL}payment_methods/${businessId}`, { method: "GET" });
-  if (!response.ok) throw new Error("No se pudieron cargar los métodos de pago");
-  return await response.json();
+  try {
+    const res = await fetch(
+      `${API_URL}payment_methods/public/${businessId}`,
+      { method: "GET" }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
 };
 
 export const createPaymentMethod = async (pm) => {

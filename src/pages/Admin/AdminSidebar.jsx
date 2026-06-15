@@ -5,7 +5,7 @@ import { IoIosCog } from "react-icons/io";
 import { FiPackage } from "react-icons/fi";
 import { IoQrCode } from "react-icons/io5";
 import { LuCalendarSync, LuKeyRound, LuCirclePower } from "react-icons/lu";
-import { FaFolderOpen, FaDollarSign, FaUsers, FaChartBar } from "react-icons/fa";
+import { FaFolderOpen, FaDollarSign, FaUsers, FaChartBar, FaTag } from "react-icons/fa";
 
 
 import { logout } from "../../services/authenticate";
@@ -35,6 +35,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     { id: "products", label: "Productos", icon: <FiPackage size={20} className={styles.menuIcon} /> },
     { id: "paymentMethods", label: "Métodos de Pago", icon: <FaDollarSign size={20} className={styles.menuIcon} /> },
     { id: "customers", label: "Clientes", icon: <FaUsers size={20} className={styles.menuIcon} /> },
+    { id: "offers",  label: "Ofertas",  icon: <FaTag    size={20} className={styles.menuIcon} /> },
     { id: "reports",   label: "Reportes", icon: <FaChartBar size={20} className={styles.menuIcon} /> },
     { id: "qr", label: "Código QR", icon: <IoQrCode size={20} className={styles.menuIcon} /> },
     { id: "subscription", label: "Suscripción", icon: <LuCalendarSync size={20} className={styles.menuIcon} /> },

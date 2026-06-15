@@ -34,6 +34,10 @@ const flatten = (customers) => {
         date: (t.create_date || "").slice(0, 10),
         delivery_day: t.delivery_day || "",
         locality: t.locality || "",
+        original_price: Number(t.original_price) || Number(t.price) || 0,
+        discount_amount: Number(t.discount_amount) || 0,
+        offer_name: t.offer_name || "",
+        offer_code: t.offer_code || "",
       })
     )
   );
@@ -50,6 +54,7 @@ const SellReport = ({ customers = [] }) => {
   const [locality, setLocality] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [offerFilter, setOfferFilter] = useState("all");
 
   const symbol = currencies.find((c) => c.code === currency)?.symbol || currency || "";
 
@@ -58,9 +63,10 @@ const SellReport = ({ customers = [] }) => {
       (!currency || r.currency === currency) &&
       (locality === "all" || (r.locality || NO_LOC) === locality) &&
       (!from || r.date >= from) &&
-      (!to || r.date <= to)
+      (!to || r.date <= to) &&
+      (offerFilter === "all" || r.offer_name === offerFilter || r.offer_code === offerFilter)
     ),
-    [allRows, currency, locality, from, to]
+    [allRows, currency, locality, from, to, offerFilter]
   );
 
   const stats = useMemo(() => {
@@ -80,11 +86,11 @@ const SellReport = ({ customers = [] }) => {
     const prodMap = {};
     paid.forEach((r) => {
       if (!prodMap[r.product_id]) prodMap[r.product_id] = { name: r.product_name.trim(), units: 0, revenue: 0 };
-    
-      if (r.product_id===""){
-          console.log(r);
+
+      if (r.product_id === "") {
+        console.log(r);
       }
-      
+
       prodMap[r.product_id].units += r.quantity;
       prodMap[r.product_id].revenue += r.total;
     });
@@ -105,17 +111,26 @@ const SellReport = ({ customers = [] }) => {
       conversion: rows.length ? Math.round((delivered / rows.length) * 100) : 0,
       cancellation: rows.length ? Math.round((cancelled / rows.length) * 100) : 0,
       byStatus, byDay, topProducts, byLocality,
+      totalDiscounted: paid.reduce((s, r) => s + (r.discount_amount || 0), 0),
+      txsWithOffer: paid.filter(r => (r.discount_amount || 0) > 0 || r.offer_code).length,
     };
   }, [rows]);
+
+  const offerOptions = useMemo(() =>
+    [...new Set(allRows.filter(r => r.offer_name || r.offer_code).map(r => r.offer_name || r.offer_code))],
+    [allRows]);
 
   const exportToExcel = async () => {
     const XLSX = await import("xlsx-js-style");
     const header = ["Cliente", "Producto", "Cantidad", "Precio", "Total", "Estado", "Fecha"];
+    header.push("Oferta", "Descuento");
+     
     if (hasLocalities) header.splice(6, 0, "Localidad");
     const wsData = [
       header,
       ...rows.map((r) => {
         const base = [r.full_name, r.product_name, r.quantity, r.price, r.total, r.status, r.date];
+         base.push(r.offer_code || r.offer_name || "", r.discount_amount || 0);
         if (hasLocalities) base.splice(6, 0, r.locality || NO_LOC);
         return base;
       }),
@@ -149,6 +164,15 @@ const SellReport = ({ customers = [] }) => {
             </select>
           </label>
         )}
+        {offerOptions.length > 0 && (
+          <label className={styles.filter}>
+            Oferta
+            <select className="input" value={offerFilter} onChange={e => setOfferFilter(e.target.value)}>
+              <option value="all">Todas</option>
+              {offerOptions.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+        )}
         <label className={styles.filter}>Desde<input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className={styles.filter}>Hasta<input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
@@ -161,6 +185,12 @@ const SellReport = ({ customers = [] }) => {
         <div className={styles.kpi}><span>Conversión (entregadas)</span><strong>{stats.conversion}%</strong></div>
         <div className={styles.kpi}><span>Cancelación</span><strong>{stats.cancellation}%</strong></div>
       </div>
+      {stats.totalDiscounted > 0 && (
+        <div className={styles.kpi}><span>Total descontado</span><strong style={{ color: "#067647" }}>- {symbol} {formatted(stats.totalDiscounted)}</strong></div>
+      )}
+      {stats.txsWithOffer > 0 && (
+        <div className={styles.kpi}><span>Ventas con oferta</span><strong>{stats.txsWithOffer}</strong></div>
+      )}
 
       <div className={styles.chartsGrid}>
         <div className={styles.chartCard}>
@@ -231,6 +261,7 @@ const SellReport = ({ customers = [] }) => {
               <tr>
                 <th>Cliente</th><th>Producto</th><th>Cant</th><th>Precio</th><th>Total</th>
                 <th>Estado</th>{hasLocalities && <th>Localidad</th>}<th>Fecha</th>
+                <th>Oferta</th><th>Descuento</th>
               </tr>
             </thead>
             <tbody>
@@ -239,6 +270,10 @@ const SellReport = ({ customers = [] }) => {
                   <td>{r.full_name}</td><td>{r.product_name}</td><td>{r.quantity}</td>
                   <td>{symbol} {formatted(r.price)}</td><td>{symbol} {formatted(r.total)}</td>
                   <td><span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>{r.status}</span></td>
+                  <td>{r.offer_code || r.offer_name || "—"}</td>
+                  <td style={{color: (r.discount_amount||0)>0?"#067647":"inherit"}}>
+                    {(r.discount_amount||0)>0 ? `− ${symbol} ${formatted(r.discount_amount)}` : "—"}
+                  </td>
                   {hasLocalities && <td>{r.locality || NO_LOC}</td>}
                   <td>{r.date}</td>
                 </tr>
