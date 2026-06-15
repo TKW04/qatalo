@@ -8,6 +8,7 @@ import { fetchBusinessBySlug } from "../services/businessApi";
 import { fetchProductsByBusinessId } from "../services/productsApi";
 import { fetchCategoriesByBusinessId } from "../services/categoryApi";
 import { PREDEFINED_PALETTES } from "../constants/themePalettes";
+import NotFoundPage from "../pages/NotFoundPage";
 import "../styles/catalog.css";
 
 const DEFAULT_PALETTE =
@@ -72,12 +73,12 @@ const CatalogPublic = () => {
 
   if (isError || !business || !isAvailable(business.status)) {
     return (
-      <div className="catalog">
-        <div className="container" style={{ padding: "4rem 1rem", textAlign: "center" }}>
-          <h1>Catálogo no disponible</h1>
-          <p>El catálogo que buscas no existe o no está disponible en este momento.</p>
-        </div>
-      </div>
+      <NotFoundPage
+        title="Catálogo no encontrado"
+        message="Este catálogo no existe o no está disponible en este momento. Si eres el dueño, verifica que tu tienda esté activa."
+        homeLabel="Ir a Qatalo"
+        showBack={false}
+      />
     );
   }
 

@@ -179,6 +179,9 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
 
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
 
+
+  
+
   return (
     <div className={styles.overlay} onClick={overlay}>
       <div className={styles.modal}>
@@ -349,7 +352,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
             {/* Delivery day */}
             {product.required_delivery_day && (
               <div className={styles.field}>
-                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {formatTextDate(product.delivery_start_day)})</span>}</label>
+                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })})</span>}</label>
                 <input type="date" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(e) => set("delivery_day", e.target.value)} />
               </div>
             )}

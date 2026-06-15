@@ -148,10 +148,16 @@ body {
   margin: 0 auto;
   padding: 0 1rem;
 }
-html { scroll-behavior: smooth; }
+
+html {
+  scroll-behavior: smooth;
+}
 
 /* que el título no quede tapado por el navbar fijo al saltar a una sección */
-#home, #features, #howItWorks, #pricing {
+#home,
+#features,
+#howItWorks,
+#pricing {
   scroll-margin-top: 80px;
 }
 
@@ -287,6 +293,18 @@ html { scroll-behavior: smooth; }
   box-shadow: var(--shadow);
   z-index: 1000;
   animation: slideIn 0.3s ease;
+}
+
+.required {
+  color: #b42318;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.requiredNote {
+  font-size: .8rem;
+  color: #667085;
+  margin-bottom: 1rem;
 }
 
 @keyframes slideIn {

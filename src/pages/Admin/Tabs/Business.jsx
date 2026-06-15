@@ -143,19 +143,22 @@ const Business = () => {
       <form onSubmit={handleSubmit}>
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Información General</h2>
+          <p className={styles.requiredNote}>
+            Los campos marcados con <span className={styles.required}>*</span> son obligatorios.
+          </p>
 
           <div className={styles.formGroup}>
-            <label>Nombre del Negocio</label>
+            <label>Nombre del Negocio<span className={styles.required}>*</span></label>
             <input className="input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ej. Mi Tienda Increíble" />
           </div>
 
           <div className={styles.formGroup}>
-            <label>Slug (URL de tu tienda)</label>
+            <label>Slug (URL de tu tienda)<span className={styles.required}>*</span></label>
             <input className="input" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="mi-tienda" />
           </div>
 
           <div className={styles.formGroup}>
-            <label>Teléfono de Contacto</label>
+            <label>Teléfono de Contacto<span className={styles.required}>*</span></label>
             <input className="input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 234 567 8900" />
           </div>
 

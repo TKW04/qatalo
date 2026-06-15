@@ -191,27 +191,30 @@ const Customers = () => {
       {/* Formulario cliente */}
       <div className={styles.card}>
         <h2>{editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}</h2>
+        <p className={styles.requiredNote}>
+          Los campos marcados con <span className={styles.required}>*</span> son obligatorios.
+        </p>
         <form onSubmit={submitCustomer}>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Nombre *</label>
+              <label>Nombre <span className={styles.required}>*</span></label>
               <input className="input" value={cForm.given_name} onChange={(e) => setCForm({ ...cForm, given_name: e.target.value })} placeholder="Juan" />
               {cErrors.given_name && <span className={styles.err}>{cErrors.given_name}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label>Apellido *</label>
+              <label>Apellido <span className={styles.required}>*</span></label>
               <input className="input" value={cForm.family_name} onChange={(e) => setCForm({ ...cForm, family_name: e.target.value })} placeholder="Pérez" />
               {cErrors.family_name && <span className={styles.err}>{cErrors.family_name}</span>}
             </div>
           </div>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Email *</label>
+              <label>Email <span className={styles.required}>*</span></label>
               <input className="input" value={cForm.email} onChange={(e) => setCForm({ ...cForm, email: e.target.value })} placeholder="juan@ejemplo.com" />
               {cErrors.email && <span className={styles.err}>{cErrors.email}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label>Teléfono</label>
+              <label>Teléfono <span className={styles.required}>*</span></label>
               <input className="input" value={cForm.phone} onChange={(e) => setCForm({ ...cForm, phone: e.target.value })} placeholder="18095551212" />
             </div>
           </div>

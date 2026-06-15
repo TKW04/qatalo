@@ -215,9 +215,12 @@ const Products = () => {
 
       <div className={styles.card}>
         <h2>{editingId ? "Editar Producto" : "Nuevo Producto"}</h2>
+        <p className={styles.requiredNote}>
+          Los campos marcados con <span className={styles.required}>*</span> son obligatorios.
+        </p>
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label>Nombre *</label>
+            <label>Nombre <span className={styles.required}>*</span></label>
             <input className="input" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Camisa de lino" />
             {errors.name && <span className={styles.err}>{errors.name}</span>}
           </div>
@@ -227,7 +230,7 @@ const Products = () => {
           </div>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Moneda *</label>
+              <label>Moneda <span className={styles.required}>*</span></label>
               <select className="input" value={form.currency} onChange={(e) => setField("currency", e.target.value)}>
                 <option value="">Seleccionar moneda</option>
                 {currencies.map((c) => (<option key={c.code} value={c.symbol}>{c.name} ({c.symbol})</option>))}
@@ -235,14 +238,14 @@ const Products = () => {
               {errors.currency && <span className={styles.err}>{errors.currency}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label>Precio base * {form.currency}</label>
+              <label>Precio base <span className={styles.required}>*</span> {form.currency}</label>
               <input type="number" step="0.01" min="0" className="input" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="1850.00" />
               {errors.price && <span className={styles.err}>{errors.price}</span>}
             </div>
           </div>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Categoría *</label>
+              <label>Categoría <span className={styles.required}>*</span></label>
               <select className="input" value={form.category_id} onChange={(e) => setField("category_id", e.target.value)}>
                 <option value="">Seleccionar categoría</option>
                 {categories.map((c) => (<option key={c.category_id} value={c.category_id}>{c.name}</option>))}
@@ -334,9 +337,8 @@ const Products = () => {
             </>
           )}
 
-          {/* Imágenes */}
           <div className={styles.formGroup}>
-            <label>Imágenes * (máx. {MAX_IMAGES})</label>
+            <label>Imágenes <span className={styles.required}>*</span> (máx. {MAX_IMAGES})</label>
             <div className={styles.imageRow}>
               {existingUrls.map((url) => (
                 <div key={url} className={styles.thumbBox}>
@@ -373,7 +375,7 @@ const Products = () => {
             <div className={styles.variantSection}>
               <h4 className={styles.variantTitle}>Variantes</h4>
               <div className={styles.variantForm}>
-                <div className={styles.variantField}><label>Color *</label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
+                <div className={styles.variantField}><label>Color <span className={styles.required}>*</span></label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
                 <div className={styles.variantField}><label>Talla</label><input className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
                 <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
                 <div className={styles.variantField}><label>Precio extra {form.currency}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
