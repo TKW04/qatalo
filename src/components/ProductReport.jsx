@@ -84,21 +84,7 @@ const ProductReport = ({ customers = [] }) => {
       ),
     [allRows, selectedProduct, currency, locality, from, to]
   );
-
   const paidRows = useMemo(() => rows.filter((r) => PAID.includes(r.status)), [rows]);
-  const hasVariants = useMemo(() => paidRows.some((r) => r.variant_label), [paidRows]);
-  const hasDiscounts = useMemo(() => grouped.some(g => g.totalDiscount > 0), [grouped]);
-  // KPIs
-  const stats = useMemo(() => {
-    const revenue = paidRows.reduce((s, r) => s + r.total, 0);
-    const units = paidRows.reduce((s, r) => s + r.quantity, 0);
-    const distinctProducts = new Set(paidRows.map((r) => r.product_name.trim())).size;
-    return {
-      revenue, units, orders: rows.length, paidOrders: paidRows.length,
-      distinctProducts, avgPrice: units ? revenue / units : 0,
-    };
-  }, [rows, paidRows]);
-
   // Tabla agrupada por producto + variante
   const grouped = useMemo(() => {
     const map = {};
@@ -112,6 +98,22 @@ const ProductReport = ({ customers = [] }) => {
     });
     return Object.values(map).sort((a, b) => b.revenue - a.revenue);
   }, [paidRows]);
+
+
+  const hasVariants = useMemo(() => paidRows.some((r) => r.variant_label), [paidRows]);
+  const hasDiscounts = useMemo(() => grouped.some(g => g.totalDiscount > 0), [grouped]);
+  // KPIs
+  const stats = useMemo(() => {
+    const revenue = paidRows.reduce((s, r) => s + r.total, 0);
+    const units = paidRows.reduce((s, r) => s + r.quantity, 0);
+    const distinctProducts = new Set(paidRows.map((r) => r.product_name.trim())).size;
+    return {
+      revenue, units, orders: rows.length, paidOrders: paidRows.length,
+      distinctProducts, avgPrice: units ? revenue / units : 0,
+    };
+  }, [rows, paidRows]);
+
+
 
   // Datos del gráfico según selección
   const { chartData, chartTitle, chartKey } = useMemo(() => {
@@ -150,8 +152,8 @@ const ProductReport = ({ customers = [] }) => {
     const applyHeader = (ws, headers) => headers.forEach((_, c) => { const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]; if (cell) cell.s = hStyle; });
 
     // Hoja 1: Resumen por producto (+ variante si hay)
-    const sumH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Unidades", "Precio prom.", "Ingresos",(hasDiscounts ? ["Descuento"] : [])];
-    const sumRows = grouped.map((g) => [g.product_name.trim(), ...(hasVariants ? [g.variant] : []), g.units, g.units ? g.revenue / g.units : 0, g.revenue,(hasDiscounts ? [g.totalDiscount || 0]:[])]);
+    const sumH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Unidades", "Precio prom.", "Ingresos", (hasDiscounts ? ["Descuento"] : [])];
+    const sumRows = grouped.map((g) => [g.product_name.trim(), ...(hasVariants ? [g.variant] : []), g.units, g.units ? g.revenue / g.units : 0, g.revenue, (hasDiscounts ? [g.totalDiscount || 0] : [])]);
     const wsSummary = XLSX.utils.aoa_to_sheet([sumH, ...sumRows]);
     applyHeader(wsSummary, sumH);
 
@@ -257,8 +259,8 @@ const ProductReport = ({ customers = [] }) => {
                   <td>{symbol} {formatted(g.units ? g.revenue / g.units : 0)}</td>
                   <td><strong>{symbol} {formatted(g.revenue)}</strong></td>
                   {hasDiscounts && (
-                    <td style={{color: g.totalDiscount>0?"#067647":"inherit"}}>
-                      {g.totalDiscount>0 ? `− ${symbol} ${formatted(g.totalDiscount)}` : "—"}
+                    <td style={{ color: g.totalDiscount > 0 ? "#067647" : "inherit" }}>
+                      {g.totalDiscount > 0 ? `− ${symbol} ${formatted(g.totalDiscount)}` : "—"}
                     </td>
                   )}
                 </tr>

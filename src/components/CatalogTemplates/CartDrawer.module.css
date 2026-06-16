@@ -17,3 +17,14 @@
     display: inline-block;
     margin: .1rem 0 .15rem;
 }
+
+.stockErrorBanner {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: .875rem;
+    font-weight: 500;
+    margin-bottom: 12px;
+}

@@ -23,6 +23,7 @@ const Business = () => {
     themePalette: PREDEFINED_PALETTES[0].colors, localities: [],
     ga_tracking_id: "",
     meta_pixel_id: "",
+    low_stock_threshold: 5,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -289,6 +290,30 @@ const Business = () => {
             </div>
           )}
         </div>
+
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>🔔 Alertas de inventario</h3>
+          <p className={styles.sectionDesc}>
+            Recibirás un correo de Qatalo cuando el stock de cualquier producto caiga por debajo de este número.
+            Puedes ajustarlo individualmente por producto. Pon <strong>0</strong> para desactivar las alertas.
+          </p>
+          <div className={styles.formGroup} style={{ maxWidth: 260 }}>
+            <label>Umbral global de stock bajo (unidades)</label>
+            <input
+              type="number"
+              min="0"
+              className="input"
+              value={formData.low_stock_threshold}
+              onChange={e => setFormData({ ...formData, low_stock_threshold: e.target.value.trim() })}
+              placeholder="5"
+            />
+            <span className={styles.hint}>
+              {Number(formData.low_stock_threshold) === 0
+                ? "⚠️ Alertas desactivadas para todos los productos"
+                : `Recibirás alerta cuando queden ≤ ${formData.low_stock_threshold} unidades`}
+            </span>
+          </div>
+        </div>
         {/* ── Marketing & Analytics ── */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>📊 Marketing & Analytics</h3>
@@ -338,6 +363,7 @@ const Business = () => {
               </span>
             </div>
           </div>
+
 
           {(formData.ga_tracking_id || formData.meta_pixel_id) && (
             <div className={styles.trackingActive}>

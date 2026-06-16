@@ -408,6 +408,18 @@
     padding: .65rem .9rem;
 }
 
+.stockLow {
+    font-size: .8rem;
+    color: #d97706;
+    font-weight: 600;
+}
+
+.stockOut {
+    font-size: .8rem;
+    color: #ef4444;
+    font-weight: 700;
+}
+
 @media (max-width: 760px) {
     .overlay {
         padding: 0;

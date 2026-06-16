@@ -73,7 +73,9 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
     return Math.min(...product.variants.map((v) => Number(product.price) + Number(v.extra_price || 0)));
   }, [product]);
 
-  const variantMaxQty = selectedVariant ? selectedVariant.quantity : (!product.is_customizable && product.show_quantity ? product.quantity : 9999);
+  const variantMaxQty = selectedVariant
+    ? selectedVariant.quantity
+    : (!product.is_customizable ? (product.quantity ?? 9999) : 9999);
 
   // Config de entrega para la localidad seleccionada
   const localityConfig = useMemo(() => {
@@ -124,7 +126,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
     if (productLocalities.length > 0 && !form.locality) return showWarning("Aviso", "Selecciona tu localidad");
     if (product.required_delivery_day && !form.delivery_day) return showWarning("Aviso", "Selecciona la fecha de entrega");
     if (product.terms && !form.acceptTerms) return showWarning("Aviso", "Debes aceptar los términos");
-    if (!product.is_customizable && product.show_quantity && Number(form.quantity) > product.quantity)
+    if (!product.is_customizable && product.quantity != null && Number(form.quantity) > product.quantity)
       return showWarning("Aviso", "Excede el inventario disponible");
 
     const items = getCart(business.business_id);
@@ -180,7 +182,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
 
 
-  
+
 
   return (
     <div className={styles.overlay} onClick={overlay}>
@@ -352,7 +354,11 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
             {/* Delivery day */}
             {product.required_delivery_day && (
               <div className={styles.field}>
-                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })})</span>}</label>
+                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleDateString("es-ES", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })})</span>}</label>
                 <input type="date" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(e) => set("delivery_day", e.target.value)} />
               </div>
             )}

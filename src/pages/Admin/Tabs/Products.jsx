@@ -26,6 +26,8 @@ const emptyForm = {
   required_delivery_day: false, delivery_start_day: "", terms: "", imagesUrl: [],
   localities: [], is_customizable: false, variants: [],
   locality_config: [],
+  low_stock_threshold: "",
+
 };
 
 const Toggle = ({ checked, onChange, label }) => (
@@ -184,6 +186,7 @@ const Products = () => {
         is_customizable: form.is_customizable,
         variants: form.is_customizable ? (form.variants || []) : [],
         locality_config: (form.localities || []).map((loc) => getLocalityConfig(loc)),
+        low_stock_threshold: form.low_stock_threshold !== "" ? Number(form.low_stock_threshold) : null,
       };
       return form.product_id ? updateProduct(payload) : createProduct(payload);
     },
@@ -241,6 +244,7 @@ const Products = () => {
       delivery_start_day: p.delivery_start_day || "", terms: p.terms || "", imagesUrl: p.imagesUrl || [],
       localities: p.localities || [], is_customizable: !!p.is_customizable, variants: p.variants || [],
       locality_config: p.locality_config || [],
+      low_stock_threshold: p.low_stock_threshold ?? "",
     });
     setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -362,10 +366,30 @@ const Products = () => {
               <input type="number" min="0" className="input" value={form.orden} onChange={(e) => setField("orden", e.target.value)} />
             </div>
             {!form.is_customizable && (
-              <div className={styles.formGroup}>
-                <label>Cantidad</label>
-                <input type="number" min="0" className="input" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} />
-              </div>
+              <>
+                <div className={styles.formGroup}>
+                  <label>Cantidad</label>
+                  <input type="number" min="0" className="input" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Umbral de stock bajo</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="input"
+                    value={form.low_stock_threshold}
+                    onChange={e => setField("low_stock_threshold", e.target.value)}
+                    placeholder="Usa el umbral global"
+                  />
+                  <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
+                    {form.low_stock_threshold === ""
+                      ? "Vacío = usa el umbral configurado en tu negocio"
+                      : form.low_stock_threshold === "0" || Number(form.low_stock_threshold) === 0
+                        ? "⚠️ Alertas desactivadas para este producto"
+                        : `Alerta cuando queden ≤ ${form.low_stock_threshold} unidades`}
+                  </span>
+                </div>
+              </>
             )}
           </div>
 

@@ -45,6 +45,7 @@ const calcDiscount = (offer, items) => {
     : Math.min(Number(offer.discount_value) || 0, sub);
 };
 
+
 // Distribuye el descuento proporcionalmente por ítem aplicable
 const distributeDiscount = (offer, items, totalDiscount) => {
   if (totalDiscount <= 0 || !offer)
@@ -92,6 +93,8 @@ const CartDrawer = ({
   const [appliedOffer, setAppliedOffer] = useState(null);
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
+
+  const [stockError, setStockError] = useState(null);
 
   const cur = symbol(items[0]?.currency);
 
@@ -179,6 +182,7 @@ const CartDrawer = ({
   };
 
   const goCheckout = () => {
+    setStockError(null);
     if (!items.length) return showWarning("Aviso", "Tu carrito está vacío");
     onCheckoutStart?.();   // ← nuevo
     const s = getValidCustomerSession(businessId);
@@ -230,11 +234,21 @@ const CartDrawer = ({
         currency: items[0]?.payment_method?.currency || "",
       }); clearCart(businessId); onChanged?.(); setStep("success");
     },
-    onError: (e) => showError("Error", e.message || "No se pudo crear la orden"),
+    onError: (e) => {
+      const body = e?.response?.data || {};
+      if (body.error === "stock_insuficiente") {
+        setStockError(
+          `"${body.product_name}" solo tiene ${body.available} unidad${body.available !== 1 ? "es" : ""} disponible${body.available !== 1 ? "s" : ""}.`
+        );
+        setStep("cart");   // regresa al carrito para que vea el error
+      } else if (body.error === "producto_no_disponible") {
+        setStockError(`"${body.product_name}" ya no está disponible.`);
+        setStep("cart");
+      } else {
+        showError("Error", e.message || "No se pudo crear la orden");
+      }
+    },
   });
-
-  console.log(paymentMethods);
-
 
   // ── Render ──
   return (
@@ -323,6 +337,12 @@ const CartDrawer = ({
                 </div>
 
                 <button className={styles.primaryBtn} onClick={goCheckout}>Proceder al pago</button>
+                {/* Muestra el error sobre el botón de pagar */}
+                {stockError && (
+                  <div className={styles.stockErrorBanner}>
+                    ⚠️ {stockError}
+                  </div>
+                )}
               </>
             )}
           </>
