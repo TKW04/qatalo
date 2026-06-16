@@ -124,13 +124,13 @@ const SellReport = ({ customers = [] }) => {
     const XLSX = await import("xlsx-js-style");
     const header = ["Cliente", "Producto", "Cantidad", "Precio", "Total", "Estado", "Fecha"];
     header.push("Oferta", "Descuento");
-     
+
     if (hasLocalities) header.splice(6, 0, "Localidad");
     const wsData = [
       header,
       ...rows.map((r) => {
         const base = [r.full_name, r.product_name, r.quantity, r.price, r.total, r.status, r.date];
-         base.push(r.offer_code || r.offer_name || "", r.discount_amount || 0);
+        base.push(r.offer_code || r.offer_name || "", r.discount_amount || 0);
         if (hasLocalities) base.splice(6, 0, r.locality || NO_LOC);
         return base;
       }),
@@ -270,12 +270,15 @@ const SellReport = ({ customers = [] }) => {
                   <td>{r.full_name}</td><td>{r.product_name}</td><td>{r.quantity}</td>
                   <td>{symbol} {formatted(r.price)}</td><td>{symbol} {formatted(r.total)}</td>
                   <td><span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>{r.status}</span></td>
-                  <td>{r.offer_code || r.offer_name || "—"}</td>
-                  <td style={{color: (r.discount_amount||0)>0?"#067647":"inherit"}}>
-                    {(r.discount_amount||0)>0 ? `− ${symbol} ${formatted(r.discount_amount)}` : "—"}
-                  </td>
                   {hasLocalities && <td>{r.locality || NO_LOC}</td>}
-                  <td>{r.date}</td>
+                  <td>{new Date(r.date).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
+
+                  <td>{r.offer_code || r.offer_name || "—"}</td>
+                  <td style={{ color: (r.discount_amount || 0) > 0 ? "#067647" : "inherit" }}>
+                    {(r.discount_amount || 0) > 0 ? `− ${symbol} ${formatted(r.discount_amount)}` : "—"}
+                  </td>
+
+
                 </tr>
               ))}
               {rows.length === 0 && <tr><td colSpan={colSpan} className={styles.tableEmpty}>Sin ventas en el rango seleccionado.</td></tr>}
