@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FaPen, FaTrashCan, FaEye, FaArrowsRotate, FaRegImage, FaPlus } from "react-icons/fa6";
+import { saveAs } from "file-saver";
+import { FaPen, FaTrashCan, FaEye, FaArrowsRotate, FaRegImage, FaPlus, FaFileExcel, FaCloudArrowUp } from "react-icons/fa6";
 
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
@@ -11,7 +12,7 @@ import { fetchBusinessData } from "../../../services/businessApi";
 import { fetchCategories } from "../../../services/categoryApi";
 import {
   fetchProducts, createProduct, updateProduct, deleteProduct,
-  deleteProductImage, uploadProductImages,
+  deleteProductImage, uploadProductImages, importProducts
 } from "../../../services/productsApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Products.module.css";
@@ -54,6 +55,13 @@ const Products = () => {
   const [viewing, setViewing] = useState(null);
   const [variantForm, setVariantForm] = useState(emptyVariant);
   const [editingVariantId, setEditingVariantId] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importStep, setImportStep] = useState("upload");   // upload | preview | importing | done
+  const [importRows, setImportRows] = useState([]);
+  const [importHeaders, setImportHeaders] = useState([]);
+  const [importMapping, setImportMapping] = useState({});
+  const [importResult, setImportResult] = useState(null);
+  const [defCurrency, setDefCurrency] = useState("");
 
   const editingId = form.product_id;
   const categoryName = useMemo(() => (id) => categories.find((c) => c.category_id === id)?.name || "Sin categoría", [categories]);
@@ -62,6 +70,14 @@ const Products = () => {
   const resetForm = () => {
     setForm(emptyForm); setNewFiles([]); setErrors({});
     setVariantForm(emptyVariant); setEditingVariantId(null);
+  };
+  const resetImport = () => {
+    setImportOpen(false);
+    setImportStep("upload");
+    setImportRows([]);
+    setImportHeaders([]);
+    setImportMapping({});
+    setImportResult(null);
   };
 
   // ---- Locality config helpers ----
@@ -185,6 +201,34 @@ const Products = () => {
     onError: (e) => showError("Error", e.message),
   });
 
+  const importMutation = useMutation({
+    mutationFn: async () => {
+      setImportStep("importing");
+      const mapped = importRows
+        .map((row, i) => {
+          const catName = importMapping.category ? String(row[importMapping.category] || "").trim() : "";
+          const cat = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+          return {
+            name: String(row[importMapping.name] || "").trim(),
+            description: String(row[importMapping.description] || "").trim(),
+            price: Number(row[importMapping.price]) || 0,
+            currency: String(row[importMapping.currency] || defCurrency).trim(),
+            quantity: Number(row[importMapping.quantity]) || 0,
+            category_id: cat?.category_id || "",
+          };
+        })
+        .filter(r => r.name); // ignorar filas sin nombre
+
+      return importProducts({ business_id: business?.business_id, products: mapped });
+    },
+    onSuccess: (result) => {
+      setImportResult(result);
+      setImportStep("done");
+      queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
+    },
+    onError: (e) => { showError("Error", e.message); setImportStep("preview"); },
+  });
+
   const handleSubmit = (e) => { e.preventDefault(); const err = validate(); setErrors(err); if (Object.keys(err).length) return; saveMutation.mutate(); };
 
   const handleEdit = (p) => {
@@ -200,6 +244,56 @@ const Products = () => {
     });
     setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleImportFile = async (file) => {
+    if (!file) return;
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (!["xlsx", "xls", "csv"].includes(ext)) {
+      showWarning("Formato inválido", "Solo se aceptan .xlsx, .xls y .csv");
+      return;
+    }
+    try {
+      const XLSX = await import("xlsx-js-style");;
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      if (!rows.length) { showWarning("Aviso", "El archivo está vacío"); return; }
+
+      const headers = Object.keys(rows[0]);
+      setImportHeaders(headers);
+      setImportRows(rows);
+
+      // Auto-detectar columnas
+      const find = (keys) => headers.find(h => keys.includes(h.toLowerCase().trim())) || "";
+      setImportMapping({
+        name: find(["nombre", "name", "producto", "product"]),
+        description: find(["descripcion", "description", "descripción", "desc", "detalle"]),
+        price: find(["precio", "price", "valor", "costo", "monto"]),
+        currency: find(["moneda", "currency", "divisa"]),
+        quantity: find(["cantidad", "quantity", "stock", "existencias"]),
+        category: find(["categoria", "category", "categoría", "tipo"]),
+      });
+      setImportStep("preview");
+    } catch {
+      showError("Error", "No se pudo leer el archivo. Verifica que sea un Excel válido.");
+    }
+  };
+
+  const downloadTemplate = async () => {
+    const XLSX = await import("xlsx-js-style");
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["nombre", "descripcion", "precio", "moneda", "cantidad", "categoria"],
+      ["Camiseta azul", "100% algodón", 1500, "DOP", 20, "Ropa"],
+      ["Zapatos cuero", "Talla 38-44", 3500, "DOP", 10, "Calzado"],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    saveAs(
+      new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/octet-stream" }),
+      "plantilla_qatalo.xlsx"
+    );
   };
 
   if (isLoading) return <Loading message="Cargando productos..." />;
@@ -430,7 +524,14 @@ const Products = () => {
 
       <div className={styles.listHeader}>
         <h2>Productos existentes</h2>
-        <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
+        <div style={{ display: "flex", gap: ".6rem" }}>
+          <button className={styles.importBtn} onClick={() => setImportOpen(true)}>
+            <FaFileExcel /> Importar Excel
+          </button>
+          <button className={styles.refreshBtn} onClick={() => refetch()}>
+            <FaArrowsRotate /> Actualizar
+          </button>
+        </div>
       </div>
       {products.length === 0 ? (<div className={styles.empty}>Aún no tienes productos.</div>) : (
         <div className={styles.grid}>
@@ -509,6 +610,162 @@ const Products = () => {
               {viewing.terms && <li><span>Términos</span><strong>{viewing.terms}</strong></li>}
             </ul>
             <div className={styles.modalActions}><button className={styles.btnOutline} onClick={() => setViewing(null)}>Cerrar</button></div>
+          </div>
+        </div>
+      )}
+      {importOpen && (
+        <div className={styles.modalOverlay} onClick={importStep !== "importing" ? resetImport : undefined}>
+          <div className={`${styles.modal} ${styles.modalWide}`} onClick={e => e.stopPropagation()}>
+
+            {/* ── Step: upload ── */}
+            {importStep === "upload" && (
+              <>
+                <h3>Importar productos desde Excel</h3>
+                <p className={styles.importNote}>
+                  Sube un archivo <strong>.xlsx</strong>, <strong>.xls</strong> o <strong>.csv</strong>.
+                  Todos los productos se importarán como <strong>inactivos</strong> hasta que les agregues imágenes.
+                </p>
+
+                <label className={styles.dropZone}>
+                  <FaCloudArrowUp size={32} color="#113f67" />
+                  <span className={styles.dropTitle}>Arrastra tu archivo aquí</span>
+                  <span className={styles.dropSub}>o haz clic para seleccionar</span>
+                  <input
+                    type="file" hidden
+                    accept=".xlsx,.xls,.csv"
+                    onChange={e => handleImportFile(e.target.files?.[0])}
+                  />
+                </label>
+
+                <div className={styles.importActions}>
+                  <button className={styles.btnOutline} onClick={resetImport}>Cancelar</button>
+                  <button className={styles.templateBtn} onClick={downloadTemplate}>
+                    <FaFileExcel /> Descargar plantilla
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ── Step: preview ── */}
+            {importStep === "preview" && (
+              <>
+                <h3>Vista previa — {importRows.length} filas detectadas</h3>
+
+                {/* Mapeo de columnas */}
+                <div className={styles.mappingGrid}>
+                  {[
+                    { key: "name", label: "Nombre *" },
+                    { key: "price", label: "Precio *" },
+                    { key: "currency", label: "Moneda" },
+                    { key: "quantity", label: "Cantidad" },
+                    { key: "description", label: "Descripción" },
+                    { key: "category", label: "Categoría" },
+                  ].map(({ key, label }) => (
+                    <div key={key} className={styles.mappingRow}>
+                      <span className={styles.mappingLabel}>{label}</span>
+                      <select
+                        className="input"
+                        value={importMapping[key] || ""}
+                        onChange={e => setImportMapping(m => ({ ...m, [key]: e.target.value }))}
+                      >
+                        <option value="">— sin mapear —</option>
+                        {importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                  <div className={styles.mappingRow}>
+                    <span className={styles.mappingLabel}>Moneda por defecto</span>
+                    <select className="input" value={defCurrency} onChange={e => setDefCurrency(e.target.value)}>
+                      <option value="">— seleccionar —</option>
+                      {currencies.map(c => <option key={c.code} value={c.symbol}>{c.name} ({c.symbol})</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Preview tabla */}
+                <div className={styles.previewWrap}>
+                  <table className={styles.previewTable}>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        {importHeaders.map(h => <th key={h}>{h}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importRows.slice(0, 8).map((row, i) => (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          {importHeaders.map(h => <td key={h}>{String(row[h] ?? "")}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {importRows.length > 8 && (
+                    <p className={styles.previewMore}>... y {importRows.length - 8} filas más</p>
+                  )}
+                </div>
+
+                <div className={styles.importActions}>
+                  <button className={styles.btnOutline} onClick={() => setImportStep("upload")}>Volver</button>
+                  <button
+                    className={styles.btnImport}
+                    disabled={!importMapping.name}
+                    onClick={() => importMutation.mutate()}
+                  >
+                    <FaFileExcel /> Importar {importRows.length} productos
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ── Step: importing ── */}
+            {importStep === "importing" && (
+              <div className={styles.importingState}>
+                <div className={styles.importSpinner} />
+                <p>Importando productos...</p>
+                <span className={styles.importNote}>No cierres esta ventana.</span>
+              </div>
+            )}
+
+            {/* ── Step: done ── */}
+            {importStep === "done" && importResult && (
+              <>
+                <h3>Importación completada</h3>
+
+                <div className={styles.importSummary}>
+                  <div className={styles.summaryItem} style={{ color: "#065f46", background: "#d1fae5" }}>
+                    <strong>{importResult.created}</strong>
+                    <span>Importados</span>
+                  </div>
+                  <div className={styles.summaryItem} style={{ color: importResult.error_count > 0 ? "#b42318" : "#667085", background: importResult.error_count > 0 ? "#fee2e2" : "#f4f6f8" }}>
+                    <strong>{importResult.error_count}</strong>
+                    <span>Errores</span>
+                  </div>
+                </div>
+
+                <div className={styles.importAlert}>
+                  📷 <strong>Todos los productos fueron importados como inactivos.</strong><br />
+                  Ve a <strong>Productos</strong>, edita cada uno, agrega una foto y actívalo para que aparezca en tu catálogo.
+                </div>
+
+                {importResult.errors?.length > 0 && (
+                  <div className={styles.errorList}>
+                    <p className={styles.errorListTitle}>Filas con error:</p>
+                    {importResult.errors.map((e, i) => (
+                      <div key={i} className={styles.errorItem}>
+                        <span>Fila {e.row} — {e.name}</span>
+                        <span>{e.error}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className={styles.importActions}>
+                  <button className={styles.btnPrimary} onClick={resetImport}>Cerrar</button>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       )}

@@ -59,3 +59,13 @@ export const uploadProductImages = async (files) => {
   }
   return urls;
 };
+
+export const importProducts = async (payload) => {
+  const res = await fetch(`${API_URL}products/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Error al importar productos");
+  return res.json();
+};
