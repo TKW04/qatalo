@@ -50,8 +50,9 @@ export const saveBusinessData = async (tenantId, businessData) => {
     ga_tracking_id: businessData.ga_tracking_id.trim(),
     meta_pixel_id: businessData.meta_pixel_id.trim(),
     low_stock_threshold: businessData.low_stock_threshold ?? 5,
+    delivery_reminder_enabled: businessData.delivery_reminder_enabled ?? false,
   };
-  
+
   const isUpdating = businessData.business_id && businessData.business_id !== "";
   const endpoint = isUpdating
     ? `${API_URL}businesses/${businessData.business_id}`

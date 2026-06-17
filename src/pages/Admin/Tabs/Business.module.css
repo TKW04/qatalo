@@ -342,3 +342,169 @@
   font-weight: 600;
   color: #065f46;
 }
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 600;
+  color: #113f67;
+  margin-top: .5rem;
+}
+
+.toggleLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #34699a;
+  cursor: pointer;
+}
+
+/* ── Navegación de tabs ── */
+.tabNav {
+  display: flex;
+  gap: .25rem;
+  border-bottom: 2px solid #eef0f3;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .7rem 1.1rem;
+  border: none;
+  background: transparent;
+  color: #667085;
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+}
+
+.tabBtn:hover {
+  color: #34699a;
+}
+
+.tabBtn svg {
+  font-size: 1.15rem;
+}
+
+.tabBtnActive {
+  color: #113f67;
+  border-bottom-color: #34699a;
+}
+
+/* ── Panel de cada tab ── */
+.tabPanel {
+  animation: fadeIn .2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Barra de guardar ── */
+.saveBar {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #eef0f3;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Preview con dispositivos ── */
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.deviceToggle {
+  display: inline-flex;
+  gap: .25rem;
+  background: #f4f7fa;
+  border: 1px solid #e8ecf0;
+  border-radius: 10px;
+  padding: .25rem;
+}
+
+.deviceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border: none;
+  background: transparent;
+  color: #667085;
+  font-size: .85rem;
+  font-weight: 600;
+  padding: .45rem .7rem;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.deviceBtn svg { font-size: 1.1rem; }
+.deviceBtn:hover { color: #34699a; }
+
+.deviceBtnActive {
+  background: #fff;
+  color: #113f67;
+  box-shadow: 0 1px 3px rgba(17, 63, 103, .12);
+}
+
+/* Oculta el texto del botón en pantallas chicas, deja solo el icono */
+@media (max-width: 520px) {
+  .deviceBtnLabel { display: none; }
+}
+
+/* Escenario del preview */
+.previewStage {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Cuando es móvil/tablet, centra el "dispositivo" sobre un fondo gris */
+.previewStageDevice {
+  background: #f0f2f5;
+  padding: 1.5rem 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Marco tipo dispositivo */
+.deviceFrame {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(17, 63, 103, .18);
+  border: 1px solid #d8dee5;
+  background: #fff;
+  max-width: 100%;
+  transition: width .25s ease;
+}
+.demoNotice {
+  font-size: .82rem;
+  color: #34699a;
+  background: rgba(88, 160, 200, .08);
+  border: 1px solid rgba(88, 160, 200, .2);
+  border-radius: 8px;
+  padding: .6rem .9rem;
+  margin-bottom: 1rem;
+}
