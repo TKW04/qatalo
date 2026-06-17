@@ -86,11 +86,6 @@ const SellReport = ({ customers = [] }) => {
     const prodMap = {};
     paid.forEach((r) => {
       if (!prodMap[r.product_id]) prodMap[r.product_id] = { name: r.product_name.trim(), units: 0, revenue: 0 };
-
-      if (r.product_id === "") {
-        console.log(r);
-      }
-
       prodMap[r.product_id].units += r.quantity;
       prodMap[r.product_id].revenue += r.total;
     });

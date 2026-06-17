@@ -37,9 +37,6 @@ const Subscription = () => {
 
   if (isLoading) return <Loading message="Cargando suscripción..." />;
 
-  console.log(subscription);
-  
-
   const hasSub = subscription && subscription.subscription_id;
 
   return (
@@ -109,8 +106,8 @@ const Subscription = () => {
             </div>
 
             {subscription.update_url && (
-              
-              <a  href={subscription.update_url}
+
+              <a href={subscription.update_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.manageBtn}

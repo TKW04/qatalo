@@ -51,7 +51,7 @@ export const saveBusinessData = async (tenantId, businessData) => {
     meta_pixel_id: businessData.meta_pixel_id.trim(),
     low_stock_threshold: businessData.low_stock_threshold ?? 5,
   };
-
+  
   const isUpdating = businessData.business_id && businessData.business_id !== "";
   const endpoint = isUpdating
     ? `${API_URL}businesses/${businessData.business_id}`
