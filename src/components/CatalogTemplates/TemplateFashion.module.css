@@ -1,11 +1,10 @@
 /* TemplateFashion.module.css
-   Estilo: editorial / revista. Imágenes grandes, serif elegante,
+   Estilo: editorial / revista. Imágenes proporcionadas, serif elegante,
    mucho aire. Colores vía variables; mobile-first. */
 
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap");
 
 .page {
-  /* Mapeo al Theme Manager */
   --bg-color: var(--theme-background, #ffffff);
   --primary-color: var(--theme-primary, #111111);
   --secondary-color: var(--theme-secondary, #333333);
@@ -41,108 +40,97 @@
   cursor: pointer;
   transition: color 0.3s ease;
 }
-
-.shareBtn:hover {
-  color: var(--accent-color);
-}
+.shareBtn:hover { color: var(--accent-color); }
 
 /* Header */
 .header {
   text-align: center;
   max-width: 640px;
-  margin: 0 auto 3.5rem;
+  margin: 0 auto 3rem;
 }
 
 .logo {
-  height: 250px;
+  height: 80px;
   width: auto;
-  max-width: 300px;
+  max-width: 220px;
   object-fit: contain;
-  margin-bottom: 1.5rem;
-  /* background: #fff; padding: 8px; */
+  margin-bottom: 1.25rem;
 }
 
 .businessName {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-weight: 500;
-  font-size: clamp(2.6rem, 9vw, 4.5rem);
+  font-size: clamp(2rem, 7vw, 3.5rem);
   line-height: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.04em;
   margin: 0;
   color: var(--primary-color);
   text-transform: uppercase;
 }
 
 .intro {
-  margin: 1.25rem auto 0;
-  font-size: 0.95rem;
+  margin: 1rem auto 0;
+  font-size: 0.88rem;
   font-weight: 300;
   line-height: 1.8;
-  color: color-mix(in srgb, var(--secondary-color) 75%, transparent);
+  max-width: 44ch;
+  color: color-mix(in srgb, var(--secondary-color) 70%, transparent);
 }
 
-/* Controles (Buscador y Categorías) */
+/* Controles */
 .controls {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
-  margin-bottom: 4rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 15%, transparent);
-  padding-bottom: 2rem;
+  gap: 1.5rem;
+  margin-bottom: 3.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 12%, transparent);
+  padding-bottom: 1.75rem;
 }
 
 .categoryNav {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.5rem 2.5rem;
+  gap: 1rem 2rem;
 }
 
 .catLink {
   background: transparent;
   border: none;
   font-family: "Jost", sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  color: color-mix(in srgb, var(--secondary-color) 55%, transparent);
   cursor: pointer;
   padding: 0 0 4px 0;
   position: relative;
   transition: color 0.3s ease;
 }
+.catLink:hover { color: var(--primary-color); }
 
-.catLink:hover {
-  color: var(--primary-color);
-}
-
-.activeCat {
-  color: var(--primary-color);
-}
-
+.activeCat { color: var(--primary-color); }
 .activeCat::after {
   content: "";
   position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
+  left: 0; bottom: 0;
+  width: 100%; height: 1px;
   background: var(--accent-color);
 }
 
 .searchBox {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 25%, transparent);
   padding-bottom: 0.4rem;
   width: 100%;
-  max-width: 300px;
+  max-width: 260px;
 }
 
 .searchIcon {
   color: var(--secondary-color);
-  margin-right: 0.8rem;
+  margin-right: 0.7rem;
 }
 
 .searchInput {
@@ -150,28 +138,28 @@
   background: transparent;
   width: 100%;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-style: italic;
   color: var(--primary-color);
   outline: none;
 }
-
 .searchInput::placeholder {
-  color: color-mix(in srgb, var(--secondary-color) 50%, transparent);
+  color: color-mix(in srgb, var(--secondary-color) 45%, transparent);
 }
 
 /* Colección Editorial */
 .collection {
   display: flex;
   flex-direction: column;
-  gap: 6rem;
+  gap: 4rem;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .editorial {
   display: flex;
-  width: auto;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.75rem;
   cursor: pointer;
 }
 
@@ -180,11 +168,13 @@
   overflow: hidden;
   background: color-mix(in srgb, var(--secondary-color) 5%, var(--bg-color));
   position: relative;
+  /* ← Limita el alto máximo para que no sean tan enormes */
+  max-height: 420px;
 }
 
 .image {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 2;      /* ← más ancho, menos alto (antes era 4/5) */
   object-fit: cover;
   display: block;
   transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -192,57 +182,55 @@
 
 .imagePlaceholder {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  background: color-mix(in srgb, var(--secondary-color) 10%, transparent);
+  aspect-ratio: 3 / 2;
+  background: color-mix(in srgb, var(--secondary-color) 8%, transparent);
 }
 
-.editorial:hover .image {
-  transform: scale(1.04);
-}
+.editorial:hover .image { transform: scale(1.03); }
 
 .soldOutBadge {
   position: absolute;
-  bottom: 1.5rem;
-  left: 1.5rem;
+  bottom: 1rem;
+  left: 1rem;
   background: var(--bg-color);
   color: var(--primary-color);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.85rem;
 }
 
 .copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 0 0.5rem;
+  padding: 0 0.25rem;
 }
 
 .label {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--accent-color);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .productName {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-weight: 500;
-  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-size: clamp(1.4rem, 4vw, 2rem);   /* ← más moderado */
   line-height: 1.1;
-  margin: 0 0 1rem;
+  margin: 0 0 0.75rem;
   color: var(--primary-color);
 }
 
 .productDesc {
   font-weight: 300;
-  font-size: 1rem;
+  font-size: 0.9rem;
   line-height: 1.8;
-  margin: 0 0 2rem;
-  max-width: 42ch;
-  color: color-mix(in srgb, var(--secondary-color) 75%, transparent);
+  margin: 0 0 1.5rem;
+  max-width: 44ch;
+  color: color-mix(in srgb, var(--secondary-color) 70%, transparent);
 }
 
 .footer {
@@ -254,7 +242,7 @@
 
 .price {
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   color: var(--primary-color);
 }
 
@@ -263,37 +251,31 @@
   border: none;
   cursor: pointer;
   font-family: "Jost", sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--secondary-color);
   padding: 0 0 4px 0;
   position: relative;
 }
-
 .cta::after {
   content: "";
   position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
+  left: 0; bottom: 0;
+  width: 100%; height: 1px;
   background: var(--accent-color);
   transform: scaleX(0.35);
   transform-origin: left;
   transition: transform 0.4s ease;
 }
-
-.editorial:hover .cta::after {
-  transform: scaleX(1);
-}
+.editorial:hover .cta::after { transform: scaleX(1); }
 
 .emptyState {
   text-align: center;
   padding: 5rem 1rem;
   color: color-mix(in srgb, var(--secondary-color) 50%, transparent);
   font-family: "Cormorant Garamond", serif;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-style: italic;
   display: flex;
   flex-direction: column;
@@ -312,19 +294,21 @@
   .editorial {
     flex-direction: row;
     align-items: center;
-    gap: 5rem;
+    gap: 4rem;
   }
-
-  .reverse {
-    flex-direction: row-reverse;
-  }
+  .reverse { flex-direction: row-reverse; }
 
   .figure {
-    flex: 1 1 50%;
+    flex: 0 0 44%;        /* ← antes 50%, ahora un poco más angosto */
+    max-height: 340px;
   }
 
   .copy {
-    flex: 1 1 50%;
-    padding: 0 2rem;
+    flex: 1 1 auto;
+    padding: 0 1.5rem;
+  }
+
+  .image {
+    aspect-ratio: 4 / 3;  /* ← en desktop más horizontal todavía */
   }
 }

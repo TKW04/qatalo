@@ -102,19 +102,12 @@ export default function TemplateCrafts({
                 ) : (
                   <div className={styles.imagePlaceholder}></div>
                 )}
-                
+
                 {product.is_available !== "available" && (
                   <span className={styles.soldOutBadge}>Agotado</span>
                 )}
 
-                <button 
-                  type="button" 
-                  className={styles.save}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Evita abrir el modal al clickear "Guardar" o vista rápida
-                    onProductClick(product);
-                  }}
-                >
+                <button type="button" className={styles.save}>
                   Ver
                 </button>
               </div>
