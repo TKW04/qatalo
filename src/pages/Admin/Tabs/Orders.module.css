@@ -472,6 +472,116 @@
     border-radius: 12px;
 }
 
+/* ── Botón emitir comprobante ── */
+.btnInvoice {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: #113f67;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: .6rem 1rem;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.btnInvoice:hover:not(:disabled) {
+    background: #0d3253;
+}
+
+.btnInvoice:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* ── Modal de emisión ── */
+.invoiceNotice {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    border-radius: 8px;
+    padding: .7rem .9rem;
+    font-size: .85rem;
+    margin-bottom: 1rem;
+}
+
+.invoiceWarning {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 8px;
+    padding: .7rem .9rem;
+    font-size: .85rem;
+    margin-bottom: 1rem;
+}
+
+.invoiceOptions {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    margin-bottom: 1rem;
+}
+
+.invoiceOption {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    border: 2px solid #eef0f3;
+    border-radius: 10px;
+    padding: .85rem 1rem;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.invoiceOption:hover {
+    border-color: #c7d6e5;
+}
+
+.invoiceOption input {
+    margin-top: .2rem;
+    accent-color: #34699a;
+}
+
+.invoiceOptionActive {
+    border-color: #34699a;
+    background: rgba(88, 160, 200, .06);
+}
+
+.invoiceOptionDisabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.invoiceOptionDisabled:hover {
+    border-color: #eef0f3;
+}
+
+.invoiceOptTitle {
+    font-weight: 700;
+    color: #113f67;
+    font-size: .92rem;
+}
+
+.invoiceOptDesc {
+    font-size: .8rem;
+    color: #667085;
+    margin-top: .15rem;
+}
+
+.actInvoice {
+    color: #113f67;
+    border-color: #c7d6e5;
+}
+
+.actInvoice:hover {
+    background: #113f67;
+    color: #fff;
+    border-color: #113f67;
+}
+
 /* ── Responsive ── */
 @media (max-width: 680px) {
     .orderMain {

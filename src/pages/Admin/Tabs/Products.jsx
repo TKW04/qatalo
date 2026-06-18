@@ -27,6 +27,7 @@ const emptyForm = {
   localities: [], is_customizable: false, variants: [],
   locality_config: [],
   low_stock_threshold: "",
+  itbis_mode: "included",
 
 };
 
@@ -187,6 +188,7 @@ const Products = () => {
         variants: form.is_customizable ? (form.variants || []) : [],
         locality_config: (form.localities || []).map((loc) => getLocalityConfig(loc)),
         low_stock_threshold: form.low_stock_threshold !== "" ? Number(form.low_stock_threshold) : null,
+        itbis_mode: form.itbis_mode || "included",
       };
       return form.product_id ? updateProduct(payload) : createProduct(payload);
     },
@@ -245,6 +247,7 @@ const Products = () => {
       localities: p.localities || [], is_customizable: !!p.is_customizable, variants: p.variants || [],
       locality_config: p.locality_config || [],
       low_stock_threshold: p.low_stock_threshold ?? "",
+      itbis_mode: p.itbis_mode || "included",
     });
     setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -339,6 +342,21 @@ const Products = () => {
               <label>Precio base <span className={styles.required}>*</span> {form.currency}</label>
               <input type="number" step="0.01" min="0" className="input" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="1850.00" />
               {errors.price && <span className={styles.err}>{errors.price}</span>}
+            </div>
+            <div className={styles.formGroup}>
+              <label>ITBIS del precio</label>
+              <select className="input" value={form.itbis_mode} onChange={(e) => setField("itbis_mode", e.target.value)}>
+                <option value="included">Precio incluye ITBIS (se desglosa)</option>
+                <option value="added">ITBIS se suma aparte</option>
+                <option value="exempt">Exento de ITBIS</option>
+              </select>
+              <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
+                {form.itbis_mode === "included"
+                  ? "El precio ya incluye el 18%. En la factura se mostrará desglosado."
+                  : form.itbis_mode === "added"
+                    ? "Se agregará el 18% al emitir factura con NCF."
+                    : "Este producto no paga ITBIS (alimentos, medicinas, etc.)."}
+              </span>
             </div>
           </div>
           <div className={styles.formRow}>

@@ -459,8 +459,13 @@
   transition: all .15s;
 }
 
-.deviceBtn svg { font-size: 1.1rem; }
-.deviceBtn:hover { color: #34699a; }
+.deviceBtn svg {
+  font-size: 1.1rem;
+}
+
+.deviceBtn:hover {
+  color: #34699a;
+}
 
 .deviceBtnActive {
   background: #fff;
@@ -470,7 +475,9 @@
 
 /* Oculta el texto del botón en pantallas chicas, deja solo el icono */
 @media (max-width: 520px) {
-  .deviceBtnLabel { display: none; }
+  .deviceBtnLabel {
+    display: none;
+  }
 }
 
 /* Escenario del preview */
@@ -499,6 +506,7 @@
   max-width: 100%;
   transition: width .25s ease;
 }
+
 .demoNotice {
   font-size: .82rem;
   color: #34699a;
@@ -507,4 +515,133 @@
   border-radius: 8px;
   padding: .6rem .9rem;
   margin-bottom: 1rem;
+}
+
+/* ── Facturación / NCF ── */
+.ncfSection {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+}
+
+.ncfStats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.ncfStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  padding: .9rem;
+}
+
+.ncfStat strong {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #113f67;
+  line-height: 1;
+}
+
+.ncfStat span {
+  font-size: .8rem;
+  color: #667085;
+  margin-top: .25rem;
+}
+
+.ncfWarning {
+  font-size: .85rem;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: .6rem .9rem;
+  margin-bottom: 1.25rem;
+}
+
+.ncfLoader {
+  margin-bottom: 1.25rem;
+}
+
+.ncfLoaderTitle {
+  display: block;
+  font-size: .85rem;
+  font-weight: 700;
+  color: #344054;
+  margin-bottom: .5rem;
+}
+
+.ncfRangeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  align-items: flex-end;
+}
+
+.ncfField {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  flex: 1;
+  min-width: 90px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: #475467;
+}
+
+.ncfList {
+  margin-top: 1rem;
+}
+
+.ncfChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ncfChip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: #eef2f7;
+  color: #113f67;
+  border-radius: 6px;
+  padding: .25rem .6rem;
+  font-size: .8rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.ncfChip button {
+  border: none;
+  background: transparent;
+  color: #d92d20;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.ncfChipUsed {
+  background: #fee2e2;
+  color: #991b1b;
+  opacity: .8;
+}
+
+.ncfUsedTag {
+  font-size: .65rem;
+  background: #991b1b;
+  color: #fff;
+  border-radius: 4px;
+  padding: .05rem .35rem;
+  font-family: sans-serif;
 }

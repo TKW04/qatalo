@@ -44,6 +44,19 @@ export const createCatalogCart = async (payload) => {
   return res.json();
 };
 
+export const emitInvoice = async (payload) => {
+  const res = await fetch(`${API_URL}customers/orders/invoice`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "No se pudo emitir el comprobante");
+  }
+  return res.json();
+};
+
 export const updateCustomer = async (customer) => {
   const res = await fetch(`${API_URL}customers/${customer.customer_id}`, {
     method: "PUT", headers: authHeaders(),

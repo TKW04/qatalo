@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowsRotate, FaCheck, FaTruck, FaBan,
   FaEye, FaMagnifyingGlass, FaReceipt,
+  FaFileInvoiceDollar, FaDownload, FaEnvelope,
 } from "react-icons/fa6";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
@@ -10,31 +11,33 @@ import Loading from "../../../components/UI/Loading";
 import { currencies, formatted, getStatusStyle } from "../../../helpers/utils";
 import {
   fetchCustomers, approveTransaction,
-  deliveredTransaction, cancelTransaction,
+  deliveredTransaction, cancelTransaction, emitInvoice,
 } from "../../../services/customersApi";
+import { fetchBusinessData } from "../../../services/businessApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Orders.module.css";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
-  "Pendiente de pago":        "Pend. de pago",
-  "Pendiente de validación":  "Por validar",
-  Aprobada:                   "Pago aprobado",
-  Entregada:                  "Entregada",
-  Cancelada:                  "Cancelada",
+  "Pendiente de pago": "Pend. de pago",
+  "Pendiente de validación": "Por validar",
+  Aprobada: "Pago aprobado",
+  Entregada: "Entregada",
+  Cancelada: "Cancelada",
 };
 
 const STATUS_BAR = [
-  { key: "Pendiente de pago",       label: "Pend. pago",  bg: "#FEF3C7", color: "#92400E" },
+  { key: "Pendiente de pago", label: "Pend. pago", bg: "#FEF3C7", color: "#92400E" },
   { key: "Pendiente de validación", label: "Por validar", bg: "#DBEAFE", color: "#1E40AF" },
-  { key: "Aprobada",                label: "Aprobadas",   bg: "#D1FAE5", color: "#065F46" },
-  { key: "Entregada",               label: "Entregadas",  bg: "#CFFAFE", color: "#0E7490" },
-  { key: "Cancelada",               label: "Canceladas",  bg: "#FEE2E2", color: "#991B1B" },
+  { key: "Aprobada", label: "Aprobadas", bg: "#D1FAE5", color: "#065F46" },
+  { key: "Entregada", label: "Entregadas", bg: "#CFFAFE", color: "#0E7490" },
+  { key: "Cancelada", label: "Canceladas", bg: "#FEE2E2", color: "#991B1B" },
 ];
 
-const APPROVABLE  = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
+const APPROVABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 const CANCELLABLE = (s) => ["Pendiente de pago", "Pendiente de validación", "Aprobada"].includes(s);
-const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const INVOICEABLE = (s) => ["Aprobada", "Entregada"].includes(s);
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const sym = (code) => currencies.find(c => c.code === code)?.symbol || code || "";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,19 +61,19 @@ const deliveryStatus = (deliveryDay, status) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const target = new Date(deliveryDay + "T00:00:00");
   const diff = Math.floor((today - target) / 86400000);
-  if (diff < 0)   return { type: "green",  label: `📅 En ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""}` };
-  if (diff === 0) return { type: "today",  label: "📅 Entrega hoy" };
-  if (diff <= 2)  return { type: "yellow", label: `⚠️ Retraso ${diff} día${diff !== 1 ? "s" : ""}` };
-  return           { type: "red",    label: `🚨 Retraso ${diff} días` };
+  if (diff < 0) return { type: "green", label: `📅 En ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""}` };
+  if (diff === 0) return { type: "today", label: "📅 Entrega hoy" };
+  if (diff <= 2) return { type: "yellow", label: `⚠️ Retraso ${diff} día${diff !== 1 ? "s" : ""}` };
+  return { type: "red", label: `🚨 Retraso ${diff} días` };
 };
 
 const formatDate = (s) => {
   if (!s) return "—";
   const d = new Date(s);
-  const tod = new Date(); tod.setHours(0,0,0,0);
+  const tod = new Date(); tod.setHours(0, 0, 0, 0);
   const yest = new Date(tod); yest.setDate(yest.getDate() - 1);
   const time = d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-  if (d >= tod)  return `Hoy · ${time}`;
+  if (d >= tod) return `Hoy · ${time}`;
   if (d >= yest) return `Ayer · ${time}`;
   return `${d.getDate()} ${MONTHS[d.getMonth()]} · ${time}`;
 };
@@ -95,12 +98,29 @@ const Orders = () => {
     retry: false,
   });
 
-  const [search, setSearch]             = useState("");
+  // Caché compartido con Configuración del negocio — sin fetch extra
+  const { data: business } = useQuery({
+    queryKey: ["business", tenantId],
+    queryFn: fetchBusinessData,
+    enabled: !!tenantId,
+    retry: false,
+  });
+
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [viewOrder, setViewOrder]       = useState(null);
+  const [viewOrder, setViewOrder] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
-  const [receiptUrl, setReceiptUrl]     = useState(null);
+  const [receiptUrl, setReceiptUrl] = useState(null);
+
+  // Facturación
+  const [invoiceTarget, setInvoiceTarget] = useState(null);
+  const [invoiceType, setInvoiceType] = useState("recibo"); // "recibo" | "factura"
+  const [ncfManual, setNcfManual] = useState("");
+
+  const ncfEnabled = !!business?.ncf_enabled;
+  const ncfPool = business?.ncf_pool || [];
+  const ncfAvailable = ncfPool.filter(n => !n.used).length;
 
   const orders = useMemo(() => buildOrders(customers), [customers]);
 
@@ -142,6 +162,48 @@ const Orders = () => {
     },
     onError: (e) => showError("Error", e.message),
   });
+
+  // Emisión de comprobante (factura / recibo)
+  const invoiceM = useMutation({
+    mutationFn: (payload) => emitInvoice(payload),
+    onSuccess: (res, vars) => {
+      if (vars.action === "download" && res?.url) {
+        window.open(res.url, "_blank", "noopener");
+        showSuccess("Comprobante generado", "Se abrió el PDF en una pestaña nueva.");
+      } else if (vars.action === "email") {
+        showSuccess("Enviado", res?.message || "Comprobante enviado al correo del cliente.");
+      }
+      invalidate(); // refleja el ncf_used recién persistido
+      closeInvoice();
+    },
+    onError: (e) => showError("Error", e.message),
+  });
+
+  const openInvoice = (order) => {
+    setViewOrder(null);
+    setInvoiceTarget(order);
+    // Si ya fue facturada con NCF, arranca en modo factura; si no, recibo
+    const existing = order.items.find(t => t.ncf_used)?.ncf_used;
+    setInvoiceType(existing ? "factura" : "recibo");
+    setNcfManual("");
+  };
+
+  const closeInvoice = () => {
+    setInvoiceTarget(null);
+    setNcfManual("");
+    setInvoiceType("recibo");
+  };
+
+  const submitInvoice = (action) => {
+    if (!invoiceTarget) return;
+    invoiceM.mutate({
+      order_group: invoiceTarget.order_id,
+      customer_id: invoiceTarget.customer.customer_id,
+      with_ncf: invoiceType === "factura",
+      ncf_manual: ncfManual.trim().toUpperCase(),
+      action,
+    });
+  };
 
   if (isLoading) return <Loading message="Cargando órdenes..." />;
 
@@ -193,15 +255,15 @@ const Orders = () => {
         <div className={styles.orderList}>
           {filtered.map(order => {
             const { customer, items, create_date, order_id } = order;
-            const firstTx  = items[0];
-            const status   = firstTx?.status || "";
-            const cur      = sym(firstTx?.payment_method?.currency || "");
-            const total    = orderTotal(items);
+            const firstTx = items[0];
+            const status = firstTx?.status || "";
+            const cur = sym(firstTx?.payment_method?.currency || "");
+            const total = orderTotal(items);
             const delivDay = items.map(t => t.delivery_day).filter(Boolean).sort()[0] || null;
-            const ds       = deliveryStatus(delivDay, status);
+            const ds = deliveryStatus(delivDay, status);
             const hasDelivery = items.some(t => t.fulfillment_type === "delivery");
-            const hasTakeout  = items.some(t => t.fulfillment_type === "takeout");
-            const locality    = items.find(t => t.locality)?.locality || "";
+            const hasTakeout = items.some(t => t.fulfillment_type === "takeout");
+            const locality = items.find(t => t.locality)?.locality || "";
             const names = [...new Set(items.map(t => t.product_name).filter(Boolean))];
             const preview = names.slice(0, 2).join(", ") +
               (names.length > 2 ? ` y ${names.length - 2} más` : "");
@@ -266,6 +328,14 @@ const Orders = () => {
                       <FaTruck /> Entregada
                     </button>
                   )}
+                  {INVOICEABLE(status) && (
+                    <button
+                      className={`${styles.actBtn} ${styles.actInvoice}`}
+                      onClick={() => openInvoice(order)}
+                    >
+                      <FaFileInvoiceDollar /> Factura
+                    </button>
+                  )}
                   {CANCELLABLE(status) && (
                     <button
                       className={`${styles.actBtn} ${styles.actCancel}`}
@@ -285,12 +355,13 @@ const Orders = () => {
       {viewOrder && (() => {
         const { customer, items } = viewOrder;
         const firstTx = items[0];
-        const status  = firstTx?.status || "";
-        const cur     = sym(firstTx?.payment_method?.currency || "");
-        const subtotal      = items.reduce((s, t) => s + (Number(t.price) || 0) * (Number(t.quantity) || 1), 0);
-        const deliveryAmt   = items.reduce((s, t) => s + (Number(t.delivery_price) || 0), 0);
-        const discountAmt   = items.reduce((s, t) => s + (Number(t.discount_amount) || 0), 0);
-        const total         = subtotal + deliveryAmt - discountAmt;
+        const status = firstTx?.status || "";
+        const cur = sym(firstTx?.payment_method?.currency || "");
+        const subtotal = items.reduce((s, t) => s + (Number(t.price) || 0) * (Number(t.quantity) || 1), 0);
+        const deliveryAmt = items.reduce((s, t) => s + (Number(t.delivery_price) || 0), 0);
+        const discountAmt = items.reduce((s, t) => s + (Number(t.discount_amount) || 0), 0);
+        const total = subtotal + deliveryAmt - discountAmt;
+        const existingNcf = items.find(t => t.ncf_used)?.ncf_used || "";
 
         return (
           <div className={styles.overlay} onClick={() => setViewOrder(null)}>
@@ -369,6 +440,11 @@ const Orders = () => {
                     {STATUS_LABEL[status] || status}
                   </span>
                 </div>
+                {existingNcf && (
+                  <div style={{ fontSize: ".82rem", color: "#065F46", marginTop: ".4rem", fontWeight: 600 }}>
+                    🧾 Facturada con NCF: <span style={{ fontFamily: "monospace" }}>{existingNcf}</span>
+                  </div>
+                )}
                 {status === "Cancelada" && firstTx?.cancellation_reason && (
                   <div style={{ fontSize: ".82rem", color: "#b42318", marginTop: ".3rem" }}>
                     Razón: {firstTx.cancellation_reason}
@@ -376,7 +452,7 @@ const Orders = () => {
                 )}
               </div>
 
-              {/* Comprobante */}
+              {/* Comprobante de pago (subido por el cliente) */}
               {firstTx?.receipt_url && (
                 <button className={styles.receiptBtn} onClick={() => setReceiptUrl(firstTx.receipt_url)}>
                   <FaReceipt /> Ver comprobante
@@ -385,6 +461,11 @@ const Orders = () => {
 
               <div className={styles.modalActions}>
                 <button className={styles.btnOutline} onClick={() => setViewOrder(null)}>Cerrar</button>
+                {INVOICEABLE(status) && (
+                  <button className={styles.btnInvoice} onClick={() => openInvoice(viewOrder)}>
+                    <FaFileInvoiceDollar /> Emitir factura
+                  </button>
+                )}
                 {APPROVABLE(status) && (
                   <button className={styles.btnApprove} disabled={approveM.isPending}
                     onClick={() => approveM.mutate({ customerId: customer.customer_id, transactionId: firstTx.transaction_id })}>
@@ -404,6 +485,99 @@ const Orders = () => {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Modal: emitir comprobante ── */}
+      {invoiceTarget && (() => {
+        const { customer, items } = invoiceTarget;
+        const existingNcf = items.find(t => t.ncf_used)?.ncf_used || "";
+        const custEmail = customer.email || "";
+        const isFactura = invoiceType === "factura";
+        // No se puede emitir factura nueva si no hay NCF y la orden no tiene uno ya asignado
+        const noNcfLeft = isFactura && !existingNcf && !ncfManual.trim() && ncfAvailable === 0;
+        const busy = invoiceM.isPending;
+
+        return (
+          <div className={styles.overlay} onClick={closeInvoice}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
+              <h3>Emitir comprobante</h3>
+              <p style={{ color: "#475467", marginBottom: "1rem", fontSize: ".9rem" }}>
+                Orden <strong style={{ fontFamily: "monospace" }}>#{String(invoiceTarget.order_id).slice(0, 8).toUpperCase()}</strong>
+                {" · "}{customer.full_name || `${customer.given_name} ${customer.family_name}`}
+              </p>
+
+              {existingNcf && (
+                <div className={styles.invoiceNotice}>
+                  🧾 Esta orden ya fue facturada con NCF <strong>{existingNcf}</strong>. Se reutilizará el mismo (no consume otro).
+                </div>
+              )}
+
+              {/* Tipo de comprobante */}
+              <div className={styles.invoiceOptions}>
+                <label className={`${styles.invoiceOption} ${!isFactura ? styles.invoiceOptionActive : ""}`}>
+                  <input type="radio" name="invtype" checked={!isFactura}
+                    onChange={() => setInvoiceType("recibo")} disabled={!!existingNcf} />
+                  <div>
+                    <div className={styles.invoiceOptTitle}>📄 Recibo de pago</div>
+                    <div className={styles.invoiceOptDesc}>Comprobante simple sin valor fiscal.</div>
+                  </div>
+                </label>
+
+                <label className={`${styles.invoiceOption} ${isFactura ? styles.invoiceOptionActive : ""} ${!ncfEnabled ? styles.invoiceOptionDisabled : ""}`}>
+                  <input type="radio" name="invtype" checked={isFactura}
+                    onChange={() => setInvoiceType("factura")} disabled={!ncfEnabled} />
+                  <div>
+                    <div className={styles.invoiceOptTitle}>🧾 Factura con NCF</div>
+                    <div className={styles.invoiceOptDesc}>
+                      {ncfEnabled
+                        ? `Comprobante fiscal. Disponibles: ${ncfAvailable}.`
+                        : "Activa los NCF en Configuración → Facturación."}
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* NCF manual (solo factura, sin NCF ya asignado) */}
+              {isFactura && !existingNcf && (
+                <div className={styles.formGroup} style={{ marginBottom: "1rem" }}>
+                  <label style={{ fontSize: ".82rem", fontWeight: 600, color: "#475467" }}>
+                    NCF manual (opcional)
+                  </label>
+                  <input
+                    className="input"
+                    value={ncfManual}
+                    onChange={e => setNcfManual(e.target.value.toUpperCase())}
+                    placeholder="Dejar vacío para tomar el siguiente disponible"
+                  />
+                </div>
+              )}
+
+              {noNcfLeft && (
+                <div className={styles.invoiceWarning}>
+                  ⚠️ No tienes NCF disponibles. Carga más en Configuración → Facturación o escribe uno manual.
+                </div>
+              )}
+
+              <div className={styles.modalActions} style={{ flexWrap: "wrap", gap: ".6rem" }}>
+                <button className={styles.btnOutline} onClick={closeInvoice} disabled={busy}>Cerrar</button>
+                <button className={styles.btnInvoice} disabled={busy || noNcfLeft}
+                  onClick={() => submitInvoice("download")}>
+                  <FaDownload /> {busy ? "Generando..." : "Descargar PDF"}
+                </button>
+                <button className={styles.btnApprove} disabled={busy || noNcfLeft || !custEmail}
+                  title={!custEmail ? "El cliente no tiene correo registrado" : ""}
+                  onClick={() => submitInvoice("email")}>
+                  <FaEnvelope /> {busy ? "Enviando..." : "Enviar al cliente"}
+                </button>
+              </div>
+              {!custEmail && (
+                <p style={{ fontSize: ".78rem", color: "#b42318", marginTop: ".5rem", textAlign: "right" }}>
+                  El cliente no tiene correo registrado.
+                </p>
+              )}
             </div>
           </div>
         );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop } from "react-icons/tb";
+import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop, TbFileInvoice } from "react-icons/tb";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
 import Loading from "../../../components/UI/Loading";
@@ -17,6 +17,7 @@ import { DEMO_PRODUCTS } from "../../../constants/dummyCatalog";
 const TABS = [
   { id: "general", label: "General", icon: TbBuildingStore },
   { id: "appearance", label: "Apariencia", icon: TbPalette },
+  { id: "billing", label: "Facturación", icon: TbFileInvoice },
   { id: "notifications", label: "Notificaciones", icon: TbBell },
 ];
 
@@ -25,6 +26,7 @@ const DEVICES = [
   { id: "tablet", label: "Tablet", icon: TbDeviceTablet, width: 768 },
   { id: "desktop", label: "Desktop", icon: TbDeviceDesktop, width: "100%" },
 ];
+const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
 const Business = () => {
   const auth = getTokenInfo();
@@ -43,12 +45,21 @@ const Business = () => {
     meta_pixel_id: "",
     low_stock_threshold: 5,
     delivery_reminder_enabled: false,
+    rnc: "",
+    ncf_enabled: false,
+    itbis_rate: 18,
+    ncf_pool: [],
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [localityInput, setLocalityInput] = useState("");
+  const [ncfPrefix, setNcfPrefix] = useState("B01");
+  const [ncfFrom, setNcfFrom] = useState("");
+  const [ncfTo, setNcfTo] = useState("");
+  const [ncfManual, setNcfManual] = useState("");
   const originalThemeRef = useRef(null);
+
 
   const { data: businessData, isLoading: isFetching } = useQuery({
     queryKey: ["business", tenantId],
@@ -139,9 +150,54 @@ const Business = () => {
   const removeLocality = (loc) =>
     setFormData((p) => ({ ...p, localities: (p.localities || []).filter((l) => l !== loc) }));
 
+  // --- Helpers de NCF ---
+  const ncfPool = formData.ncf_pool || [];
+  const ncfAvailable = ncfPool.filter((n) => !n.used).length;
+  const ncfUsed = ncfPool.filter((n) => n.used).length;
+
+  const addNcfEntries = (codes) => {
+    setFormData((p) => {
+      const pool = p.ncf_pool || [];
+      const existing = new Set(pool.map((n) => n.ncf));
+      const fresh = codes
+        .map((c) => c.trim().toUpperCase())
+        .filter((c) => c && !existing.has(c))
+        .map((ncf) => ({ ncf, used: false, used_in: "", used_date: "" }));
+      return { ...p, ncf_pool: [...pool, ...fresh] };
+    });
+  };
+
+  const addNcfRange = () => {
+    const from = parseInt(ncfFrom, 10);
+    const to = parseInt(ncfTo, 10);
+    const prefix = (ncfPrefix || "").trim().toUpperCase();
+    if (!prefix) return showError("Error", "El prefijo del NCF es requerido");
+    if (isNaN(from) || isNaN(to) || from > to) return showError("Error", "Rango inválido");
+    if (to - from > 1000) return showError("Error", "El rango no puede exceder 1000 NCF a la vez");
+    const codes = [];
+    for (let i = from; i <= to; i++) codes.push(`${prefix}${String(i).padStart(8, "0")}`);
+    addNcfEntries(codes);
+    setNcfFrom(""); setNcfTo("");
+  };
+
+  const addNcfManual = () => {
+    if (!ncfManual.trim()) return;
+    const codes = ncfManual.split(/[\n,;]+/);
+    addNcfEntries(codes);
+    setNcfManual("");
+  };
+
+  const removeNcf = (ncf) =>
+    setFormData((p) => ({ ...p, ncf_pool: (p.ncf_pool || []).filter((n) => n.ncf !== ncf || n.used) }));
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+      return showError("Formato no válido", "El logo debe ser PNG o JPG. Convierte tu imagen antes de subirla.");
+    }
+
     try {
       setIsLoading(true);
       setLoadingMessage("Subiendo logo...");
@@ -149,7 +205,7 @@ const Business = () => {
       const { uploadUrl, publicUrl } = await getPresignedUrl("logo", extension, file.type);
       await uploadToS3(uploadUrl, file);
       setFormData((prev) => ({ ...prev, logo_url: publicUrl }));
-      showSuccess("Logo actualizado", "Imagen subida a S3");
+      showSuccess("Logo actualizado", "Imagen subida correctamente");
     } catch {
       showError("Error", "Fallo al subir la imagen");
     } finally {
@@ -227,7 +283,7 @@ const Business = () => {
               <div className={styles.formGroup}>
                 <label>Logo del Negocio</label>
                 <div className={styles.fileUploadWrapper}>
-                  <input type="file" onChange={handleFileChange} accept="image/*" />
+                  <input type="file" onChange={handleFileChange} accept="image/png,image/jpeg" />
                 </div>
               </div>
             </div>
@@ -393,6 +449,139 @@ const Business = () => {
                   </DevicePreviewFrame>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================ TAB: FACTURACIÓN ============================ */}
+        {activeTab === "billing" && (
+          <div className={styles.tabPanel}>
+            {/* --- DATOS FISCALES --- */}
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>🧾 Datos fiscales</h3>
+              <p className={styles.sectionDesc}>
+                Estos datos aparecerán en las facturas y recibos que emitas a tus clientes.
+              </p>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>RNC del negocio (opcional)</label>
+                  <input
+                    className="input"
+                    value={formData.rnc}
+                    onChange={(e) => setFormData({ ...formData, rnc: e.target.value.trim() })}
+                    placeholder="1-31-XXXXX-X"
+                  />
+                  <span className={styles.hint}>Si lo configuras, aparecerá en el encabezado del comprobante.</span>
+                </div>
+                <div className={styles.formGroup} style={{ maxWidth: 200 }}>
+                  <label>Tasa de ITBIS (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="input"
+                    value={formData.itbis_rate}
+                    onChange={(e) => setFormData({ ...formData, itbis_rate: e.target.value })}
+                    placeholder="18"
+                  />
+                  <span className={styles.hint}>En RD el estándar es 18%.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* --- NCF --- */}
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>📄 Comprobantes Fiscales (NCF)</h3>
+              <p className={styles.sectionDesc}>
+                Activa los NCF para poder emitir <strong>facturas con valor fiscal</strong>. Si está desactivado,
+                solo podrás emitir <strong>recibos de pago</strong> simples.
+              </p>
+              <label className={styles.toggleLabel}>
+                <input
+                  type="checkbox"
+                  checked={formData.ncf_enabled}
+                  onChange={(e) => setFormData({ ...formData, ncf_enabled: e.target.checked })}
+                />
+                <span>Emitir facturas con NCF</span>
+              </label>
+
+              {formData.ncf_enabled && (
+                <div className={styles.ncfSection}>
+                  {/* Resumen del pool */}
+                  <div className={styles.ncfStats}>
+                    <div className={styles.ncfStat}>
+                      <strong>{ncfAvailable}</strong>
+                      <span>Disponibles</span>
+                    </div>
+                    <div className={styles.ncfStat} style={{ opacity: 0.7 }}>
+                      <strong>{ncfUsed}</strong>
+                      <span>Usados</span>
+                    </div>
+                  </div>
+                  {ncfAvailable === 0 && (
+                    <p className={styles.ncfWarning}>
+                      ⚠️ No tienes NCF disponibles. Carga una secuencia para poder emitir facturas.
+                    </p>
+                  )}
+
+                  {/* Cargar por rango */}
+                  <div className={styles.ncfLoader}>
+                    <span className={styles.ncfLoaderTitle}>Cargar secuencia por rango</span>
+                    <div className={styles.ncfRangeRow}>
+                      <div className={styles.ncfField}>
+                        <label>Prefijo</label>
+                        <input className="input" value={ncfPrefix} onChange={(e) => setNcfPrefix(e.target.value.toUpperCase())} placeholder="B01" />
+                      </div>
+                      <div className={styles.ncfField}>
+                        <label>Desde</label>
+                        <input type="number" min="1" className="input" value={ncfFrom} onChange={(e) => setNcfFrom(e.target.value)} placeholder="1" />
+                      </div>
+                      <div className={styles.ncfField}>
+                        <label>Hasta</label>
+                        <input type="number" min="1" className="input" value={ncfTo} onChange={(e) => setNcfTo(e.target.value)} placeholder="50" />
+                      </div>
+                      <button type="button" className={styles.resetBtn} onClick={addNcfRange}>Generar</button>
+                    </div>
+                    <span className={styles.hint}>
+                      Ej: prefijo <strong>B01</strong>, desde <strong>1</strong> hasta <strong>50</strong> → genera B0100000001 … B0100000050.
+                    </span>
+                  </div>
+
+                  {/* Cargar manual */}
+                  <div className={styles.ncfLoader}>
+                    <span className={styles.ncfLoaderTitle}>O pega una lista manual</span>
+                    <textarea
+                      className="input"
+                      rows={3}
+                      value={ncfManual}
+                      onChange={(e) => setNcfManual(e.target.value)}
+                      placeholder="Un NCF por línea o separados por coma&#10;B0100000001&#10;B0100000002"
+                    />
+                    <button type="button" className={styles.resetBtn} style={{ marginTop: ".5rem" }} onClick={addNcfManual}>
+                      Agregar lista
+                    </button>
+                  </div>
+
+                  {/* Lista del pool */}
+                  {ncfPool.length > 0 && (
+                    <div className={styles.ncfList}>
+                      <span className={styles.ncfLoaderTitle}>NCF cargados ({ncfPool.length})</span>
+                      <div className={styles.ncfChips}>
+                        {ncfPool.map((n) => (
+                          <span key={n.ncf} className={`${styles.ncfChip} ${n.used ? styles.ncfChipUsed : ""}`}>
+                            {n.ncf}
+                            {n.used ? (
+                              <span className={styles.ncfUsedTag}>usado</span>
+                            ) : (
+                              <button type="button" onClick={() => removeNcf(n.ncf)} aria-label={`Quitar ${n.ncf}`}>×</button>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
