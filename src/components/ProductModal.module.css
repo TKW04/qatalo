@@ -11,7 +11,7 @@
 }
 
 .modal {
-    background: #fff;
+    background: var(--theme-background, #fff);
     border-radius: 16px;
     width: 100%;
     max-width: 860px;
@@ -22,6 +22,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--theme-primary, #113f67) 12%, transparent);
 }
 
 .close {
@@ -41,7 +42,7 @@
 
 .gallery {
     position: relative;
-    background: #f3f4f6;
+    background: color-mix(in srgb, var(--theme-primary, #113f67) 6%, #fff);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,7 +79,8 @@
     height: 40px;
     border-radius: 50%;
     border: none;
-    background: rgba(255, 255, 255, .9);
+    /* background: rgba(255, 255, 255, .9); */
+    background: var(--theme-accent, #34699a);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,13 +90,8 @@
     z-index: 2;
 }
 
-.arrowLeft {
-    left: 10px;
-}
-
-.arrowRight {
-    right: 10px;
-}
+.arrowLeft { left: 10px; }
+.arrowRight { right: 10px; }
 
 .dots {
     position: absolute;
@@ -125,6 +122,7 @@
     flex-direction: column;
     gap: .8rem;
     min-width: 0;
+    background: var(--theme-background, #fff);
 }
 
 .title {
@@ -141,13 +139,13 @@
 }
 
 .description {
-    color: #475467;
+    color: color-mix(in srgb, var(--theme-secondary, #475467) 85%, transparent);
     line-height: 1.5;
     word-break: break-word;
 }
 
 .stock {
-    color: #475467;
+    color: color-mix(in srgb, var(--theme-secondary, #475467) 75%, transparent);
     font-size: .9rem;
 }
 
@@ -192,8 +190,8 @@
 
 .btnGhost {
     background: transparent;
-    border-color: #d0d5dd;
-    color: #344054;
+    border-color: color-mix(in srgb, var(--theme-primary, #113f67) 25%, transparent);
+    color: var(--theme-primary, #344054);
 }
 
 .btnDisabled {
@@ -202,6 +200,7 @@
     cursor: not-allowed;
 }
 
+/* ── Sub-modal (carrito, added, términos) ── */
 .subOverlay {
     position: fixed;
     inset: 0;
@@ -215,7 +214,7 @@
 }
 
 .subModal {
-    background: #fff;
+    background: var(--theme-background, #fff);
     border-radius: 14px;
     padding: 1.5rem;
     width: 100%;
@@ -224,6 +223,7 @@
     max-height: 88dvh;
     overflow: auto;
     box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--theme-primary, #113f67) 10%, transparent);
 }
 
 .subModal h3 {
@@ -241,22 +241,24 @@
 .field label {
     font-weight: 600;
     font-size: .9rem;
-    color: #344054;
+    color: var(--theme-primary, #344054);
 }
 
 .field span {
     font-weight: 400;
-    color: #667085;
+    color: color-mix(in srgb, var(--theme-secondary, #667085) 80%, transparent);
     font-size: .82rem;
 }
 
 .input {
     padding: .6rem .8rem;
-    border: 1px solid #d0d5dd;
+    border: 1px solid color-mix(in srgb, var(--theme-primary, #113f67) 20%, transparent);
     border-radius: 8px;
     font-size: 16px;
     width: 100%;
     box-sizing: border-box;
+    background: var(--theme-background, #fff);
+    color: var(--theme-primary, #344054);
 }
 
 .input:focus {
@@ -287,6 +289,7 @@
     align-items: center;
     gap: .4rem;
     font-size: .9rem;
+    color: var(--theme-secondary, #344054);
 }
 
 .subActions {
@@ -297,26 +300,19 @@
     flex-wrap: wrap;
 }
 
-.successText {
-    color: #475467;
-    line-height: 1.5;
-}
-
 .termsText {
-    color: #475467;
+    color: color-mix(in srgb, var(--theme-secondary, #475467) 85%, transparent);
     line-height: 1.6;
     white-space: pre-wrap;
 }
 
-/* ---- Variantes ---- */
-.variantGroup {
-    margin-bottom: .9rem;
-}
+/* ── Variantes ── */
+.variantGroup { margin-bottom: .9rem; }
 
 .variantLabel {
     font-size: .85rem;
     font-weight: 600;
-    color: #344054;
+    color: var(--theme-primary, #344054);
     margin-bottom: .4rem;
 }
 
@@ -328,18 +324,17 @@
 
 .pill {
     padding: .35rem .9rem;
-    border: 1.5px solid #d0d5dd;
-    background: #fff;
+    border: 1.5px solid color-mix(in srgb, var(--theme-primary, #113f67) 22%, transparent);
+    background: var(--theme-background, #fff);
     border-radius: 20px;
     font-size: .88rem;
     cursor: pointer;
     transition: all .15s;
     font-weight: 500;
+    color: var(--theme-secondary, #344054);
 }
 
-.pill:hover {
-    border-color: var(--theme-primary, #113f67);
-}
+.pill:hover { border-color: var(--theme-primary, #113f67); }
 
 .pillActive {
     border-color: var(--theme-primary, #113f67);
@@ -356,16 +351,14 @@
     display: flex;
     gap: 1rem;
     font-size: .85rem;
-    color: #475467;
+    color: color-mix(in srgb, var(--theme-secondary, #475467) 85%, transparent);
     margin: .25rem 0 .75rem;
     padding: .5rem .75rem;
-    background: #f0f7ff;
+    background: color-mix(in srgb, var(--theme-primary, #113f67) 6%, transparent);
     border-radius: 8px;
 }
 
-.variantInfo strong {
-    color: var(--theme-primary, #113f67);
-}
+.variantInfo strong { color: var(--theme-primary, #113f67); }
 
 .fulfillmentGroup {
     display: flex;
@@ -378,20 +371,19 @@
     align-items: center;
     gap: .6rem;
     padding: .65rem .9rem;
-    border: 1.5px solid #d0d5dd;
+    border: 1.5px solid color-mix(in srgb, var(--theme-primary, #113f67) 20%, transparent);
     border-radius: 10px;
     cursor: pointer;
     font-size: .9rem;
     transition: border-color .15s, background .15s;
+    color: var(--theme-secondary, #344054);
 }
 
-.fulfillmentOption:hover {
-    border-color: var(--theme-primary, #113f67);
-}
+.fulfillmentOption:hover { border-color: var(--theme-primary, #113f67); }
 
 .fulfillmentActive {
     border-color: var(--theme-primary, #113f67);
-    background: #f0f7ff;
+    background: color-mix(in srgb, var(--theme-primary, #113f67) 6%, transparent);
     font-weight: 600;
 }
 
@@ -401,9 +393,9 @@
 
 .fulfillmentInfo {
     font-size: .9rem;
-    color: #344054;
-    background: #f9fafb;
-    border: 1px solid #eef0f3;
+    color: var(--theme-secondary, #344054);
+    background: color-mix(in srgb, var(--theme-primary, #113f67) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-primary, #113f67) 12%, transparent);
     border-radius: 8px;
     padding: .65rem .9rem;
 }
@@ -420,6 +412,50 @@
     font-weight: 700;
 }
 
+/* ── Step: agregado al carrito ── */
+.addedIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--theme-accent, #34699a) 15%, transparent);
+    color: var(--theme-accent, #065f46);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.addedTitle {
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--theme-primary, #113f67);
+    margin: 0 0 .5rem;
+}
+
+.addedDesc {
+    text-align: center;
+    font-size: .95rem;
+    color: color-mix(in srgb, var(--theme-secondary, #475467) 85%, transparent);
+    margin: 0 0 1.5rem;
+}
+
+.addedVariant {
+    color: color-mix(in srgb, var(--theme-secondary, #667085) 70%, transparent);
+    font-size: .88rem;
+}
+
+.addedActions {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+@media (min-width: 400px) {
+    .addedActions { flex-direction: row; }
+}
+
+/* ── Mobile ── */
 @media (max-width: 760px) {
     .overlay {
         padding: 0;
@@ -434,69 +470,16 @@
         border-radius: 0;
     }
 
-    .gallery {
-        min-height: 200px;
-    }
+    .gallery { min-height: 200px; }
 
     .galleryImg {
         max-height: 40vh;
         max-height: 40dvh;
     }
 
-    .body {
-        padding: 1.2rem;
-    }
+    .body { padding: 1.2rem; }
 
-    .actions {
-        flex-direction: column;
-    }
+    .actions { flex-direction: column; }
 
-    .actions .btn {
-        width: 100%;
-    }
-}
-
-/* ── Step: agregado al carrito ── */
-.addedIcon {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #d1fae5;
-    color: #065f46;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-}
-
-.addedTitle {
-    text-align: center;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #065f46;
-    margin: 0 0 .5rem;
-}
-
-.addedDesc {
-    text-align: center;
-    font-size: .95rem;
-    color: #475467;
-    margin: 0 0 1.5rem;
-}
-
-.addedVariant {
-    color: #667085;
-    font-size: .88rem;
-}
-
-.addedActions {
-    display: flex;
-    flex-direction: column;
-    gap: .6rem;
-}
-
-@media (min-width: 400px) {
-    .addedActions {
-        flex-direction: row;
-    }
+    .actions .btn { width: 100%; }
 }
