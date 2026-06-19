@@ -52,8 +52,13 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     if (getCustomerSession(businessId)?.token) setOrdersOpen(true);
     else setAuthOpen(true);
   };
+  const openCart = () => {
+    setCartKey(k => k + 1);   // ← fuerza remount del CartDrawer
+    setCartOpen(true);
+  };
 
   const [cartOpen, setCartOpen] = useState(false);
+  const [cartKey, setCartKey] = useState(0);
   const [cartCnt, setCartCnt] = useState(0);
   const refreshCart = () => setCartCnt(cartCount(getCart(businessId)));
   useEffect(() => { if (businessId) refreshCart(); }, [businessId]); // eslint-disable-line
@@ -195,10 +200,11 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
           product={selectedProduct}
           business={businessData}
           onClose={() => setSelectedProduct(null)}
-          onAdded={() => { refreshCart(); setCartOpen(true); }}
+          onAdded={() => { refreshCart(); }}
           onOpenCart={() => {
             setSelectedProduct(null); {/* ← cierra el product modal */ }
-            setCartOpen(true); {/* ← abre el cart */ }
+            openCart();
+            // setCartOpen(true); {/* ← abre el cart */ }
           }}
           preselectedLocality={selectedLocality !== "all" ? selectedLocality : ""}  // ← nuevo
         />
@@ -221,7 +227,7 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
       {!isPreview && businessId && (
         <>
           <button className={portal.fab} onClick={openOrders}>Mis órdenes</button>
-          <button className={portal.fabCart} onClick={() => setCartOpen(true)}>
+          <button className={portal.fabCart} onClick={openCart}>
             🛒{cartCnt > 0 && <span className={portal.fabBadge}>{cartCnt}</span>}
           </button>
 
