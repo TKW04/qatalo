@@ -196,6 +196,10 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
           business={businessData}
           onClose={() => setSelectedProduct(null)}
           onAdded={() => { refreshCart(); setCartOpen(true); }}
+          onOpenCart={() => {
+            setSelectedProduct(null); {/* ← cierra el product modal */ }
+            setCartOpen(true); {/* ← abre el cart */ }
+          }}
           preselectedLocality={selectedLocality !== "all" ? selectedLocality : ""}  // ← nuevo
         />
       )}

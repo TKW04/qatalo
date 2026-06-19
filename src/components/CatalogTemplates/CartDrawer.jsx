@@ -75,6 +75,12 @@ const CartDrawer = ({
   businessId, businessName, onClose, onChanged, onCheckoutStart, onPurchase, }) => {
   const { showWarning, showError } = useNotification();
   const [items, setItems] = useState(() => getCart(businessId));
+
+  useEffect(() => {
+    setItems(getCart(businessId));
+  }, [businessId]);
+
+  
   const [step, setStep] = useState("cart");
   const [session, setSession] = useState(() => getValidCustomerSession(businessId));
   const [selectedPm, setSelectedPm] = useState("");
