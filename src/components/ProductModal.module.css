@@ -455,3 +455,48 @@
         width: 100%;
     }
 }
+
+/* ── Step: agregado al carrito ── */
+.addedIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #065f46;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.addedTitle {
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #065f46;
+    margin: 0 0 .5rem;
+}
+
+.addedDesc {
+    text-align: center;
+    font-size: .95rem;
+    color: #475467;
+    margin: 0 0 1.5rem;
+}
+
+.addedVariant {
+    color: #667085;
+    font-size: .88rem;
+}
+
+.addedActions {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+@media (min-width: 400px) {
+    .addedActions {
+        flex-direction: row;
+    }
+}

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
-import { ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Check, ShoppingBag } from "lucide-react";
 import { useNotification } from "./UI/NotificationProvider";
 import {
   getCart, setCart, getValidCustomerSession, setCustomerSession, fetchMyOrders,
 } from "../services/customerAuthApi";
-import { formatted, formatTextDate } from "../helpers/utils";
+import { formatted } from "../helpers/utils";
 import styles from "./ProductModal.module.css";
 
 const toISO = (s) => {
@@ -17,7 +17,7 @@ const toISO = (s) => {
   return "";
 };
 
-const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality = "" }) => {
+const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, preselectedLocality = "" }) => {
   const { showWarning } = useNotification();
   const productLocalities = product.localities || [];
   const noTerms = !product.terms;
@@ -26,17 +26,18 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
   const [form, setForm] = useState({
     quantity: 1, delivery_day: "", acceptTerms: noTerms,
     locality: (() => {
-      // Si hay un filtro activo Y el producto lo incluye → pre-llenar
       if (preselectedLocality && productLocalities.includes(preselectedLocality)) return preselectedLocality;
-      // Si el producto solo tiene una localidad → pre-llenar
       if (productLocalities.length === 1) return productLocalities[0];
       return "";
     })(),
     fulfillment_type: "",
   });
-  const [step, setStep] = useState(null); // null | "cart"
+
+  // null | "cart" | "added"
+  const [step, setStep] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [lastAdded, setLastAdded] = useState(null); // { name, qty, variantLabel }
 
   // Variant state
   const [selectedColor, setSelectedColor] = useState("");
@@ -47,7 +48,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Variant computations
   const availableColors = useMemo(() => {
     if (!product.is_customizable || !product.variants) return [];
     return [...new Set(product.variants.filter((v) => v.quantity > 0).map((v) => v.color))];
@@ -77,7 +77,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
     ? selectedVariant.quantity
     : (!product.is_customizable ? (product.quantity ?? 9999) : 9999);
 
-  // Config de entrega para la localidad seleccionada
   const localityConfig = useMemo(() => {
     if (!form.locality || !product.locality_config?.length) return null;
     return product.locality_config.find((c) => c.locality === form.locality) || null;
@@ -87,20 +86,19 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
   const hasTakeout = !!localityConfig?.takeout;
   const deliveryPrice = form.fulfillment_type === "delivery" ? (Number(localityConfig?.delivery_price) || 0) : 0;
 
-
-  // Auto-selección cuando solo hay una opción
   useEffect(() => {
     if (!localityConfig) { set("fulfillment_type", ""); return; }
     if (hasDelivery && !hasTakeout) set("fulfillment_type", "delivery");
     else if (!hasDelivery && hasTakeout) set("fulfillment_type", "takeout");
     else set("fulfillment_type", "");
   }, [localityConfig]); // eslint-disable-line
-  // WhatsApp
+
   const openWhatsApp = (who) => {
     const saludo = who ? `soy ${who}, ` : "";
     const msg = `Hola, ${saludo}estoy interesad@ en "${product.name}". Lo vi en tu catálogo: ${window.location.href}`;
     window.open(`https://wa.me/${(business.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
   };
+
   const handleWhatsApp = async () => {
     const s = getValidCustomerSession(business.business_id);
     if (!s?.token) return openWhatsApp("");
@@ -116,7 +114,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
   };
 
   const addToCart = () => {
-    // Variant validation
     if (product.is_customizable) {
       if (!selectedColor || availableColors.length === 0) return showWarning("Aviso", "Selecciona un color");
       if (availableSizes.length > 0 && !selectedSize) return showWarning("Aviso", "Selecciona una talla");
@@ -133,9 +130,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
     const variantLabel = product.is_customizable && selectedVariant
       ? [selectedVariant.color, selectedVariant.size].filter(Boolean).join(" / ")
       : "";
-    const itemPrice = displayPrice;
 
-    // Merge if same product+variant+locality+delivery_day
     const matchKey = `${product.product_id}|${variantLabel}|${form.locality}|${form.delivery_day}`;
     const idx = items.findIndex((i) => `${i.product_id}|${i.variant_label || ""}|${i.locality}|${i.delivery_day}` === matchKey);
     if (idx >= 0) {
@@ -144,15 +139,15 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
       items.push({
         product_id: product.product_id,
         product_name: product.name,
-        price: itemPrice,
+        price: displayPrice,
         currency: product.currency,
         quantity: Number(form.quantity) || 1,
         locality: form.locality,
         delivery_day: form.delivery_day,
         accept_terms: !!form.acceptTerms,
         image: images[0] || "",
-        fulfillment_type: form.fulfillment_type || (hasDelivery ? "delivery" : hasTakeout ? "takeout" : ""), // ← nuevo
-        delivery_price: deliveryPrice,  // ← nuevo
+        fulfillment_type: form.fulfillment_type || (hasDelivery ? "delivery" : hasTakeout ? "takeout" : ""),
+        delivery_price: deliveryPrice,
         ...(product.is_customizable && selectedVariant ? {
           variant: { variant_id: selectedVariant.variant_id, color: selectedVariant.color, size: selectedVariant.size || "" },
           variant_label: variantLabel,
@@ -160,9 +155,32 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
         category_id: product.category_id || "",
       });
     }
+
     setCart(business.business_id, items);
     onAdded?.();
+
+    // Guardar qué se agregó para mostrarlo en el feedback
+    setLastAdded({
+      name: product.name,
+      qty: Number(form.quantity) || 1,
+      variantLabel,
+    });
+
+    // Ir al step de confirmación en vez de cerrar
+    setStep("added");
+  };
+
+  // "Seguir comprando" — vuelve a la vista del producto
+  const keepShopping = () => {
+    setStep(null);
+    // Reset del form para poder agregar otra variante/cantidad si quieren
+    setForm(f => ({ ...f, quantity: 1 }));
+  };
+
+  // "Ver carrito" — cierra el modal y abre el carrito
+  const goToCart = () => {
     onClose();
+    onOpenCart?.();
   };
 
   const canAdd = useMemo(() => {
@@ -171,7 +189,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
       if (availableSizes.length > 0 && !selectedSize) return false;
       if (!selectedVariant || selectedVariant.quantity < 1) return false;
     }
-    if (localityConfig && hasDelivery && hasTakeout && !form.fulfillment_type) return false; // ← nuevo
+    if (localityConfig && hasDelivery && hasTakeout && !form.fulfillment_type) return false;
     if (productLocalities.length > 0 && !form.locality) return false;
     if (product.required_delivery_day && !form.delivery_day) return false;
     if (product.terms && !form.acceptTerms) return false;
@@ -180,9 +198,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
   }, [form, product, productLocalities, selectedColor, selectedSize, selectedVariant, availableSizes, availableColors, localityConfig, hasDelivery, hasTakeout]);
 
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
-
-
-
 
   return (
     <div className={styles.overlay} onClick={overlay}>
@@ -245,13 +260,12 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
         </div>
       </div>
 
-      {/* Cart step */}
+      {/* ── Step: formulario de carrito ── */}
       {step === "cart" && (
         <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
           <div className={styles.subModal}>
             <h3>Agregar al carrito</h3>
 
-            {/* Variant selectors */}
             {product.is_customizable && (
               <>
                 <div className={styles.variantGroup}>
@@ -270,7 +284,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
                     </div>
                   )}
                 </div>
-
                 {selectedColor && availableSizes.length > 0 && (
                   <div className={styles.variantGroup}>
                     <div className={styles.variantLabel}>Talla *</div>
@@ -285,7 +298,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
                     </div>
                   </div>
                 )}
-
                 {selectedVariant && (
                   <div className={styles.variantInfo}>
                     <span>Disponible: <strong>{selectedVariant.quantity}</strong></span>
@@ -297,7 +309,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
               </>
             )}
 
-            {/* Locality */}
             {productLocalities.length > 0 && (
               <div className={styles.field}>
                 <label>Localidad</label>
@@ -307,7 +318,7 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
                 </select>
               </div>
             )}
-            {/* Tipo de entrega */}
+
             {localityConfig && (hasDelivery || hasTakeout) && (
               <div className={styles.field}>
                 <label>Tipo de entrega</label>
@@ -336,7 +347,6 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
               </div>
             )}
 
-            {/* Quantity */}
             <div className={styles.field}>
               <label>Cantidad {product.show_quantity && !product.is_customizable && <span>({product.quantity} disponibles)</span>}
                 {product.is_customizable && selectedVariant && <span>({selectedVariant.quantity} disponibles)</span>}
@@ -351,19 +361,13 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
                 }} />
             </div>
 
-            {/* Delivery day */}
             {product.required_delivery_day && (
               <div className={styles.field}>
-                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleDateString("es-ES", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })})</span>}</label>
+                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })})</span>}</label>
                 <input type="date" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(e) => set("delivery_day", e.target.value)} />
               </div>
             )}
 
-            {/* Terms */}
             {product.terms && (
               <div className={styles.terms}>
                 <button type="button" className={styles.termsLink} onClick={() => setShowTerms(true)}>Términos y condiciones</button>
@@ -375,6 +379,31 @@ const ProductModal = ({ product, business, onClose, onAdded, preselectedLocality
               <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(null)}>Cancelar</button>
               <button className={`${styles.btn} ${styles.btnPrimary}`} disabled={!canAdd} onClick={addToCart}>
                 <Check size={16} /> Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step: confirmación "agregado" ── */}
+      {step === "added" && lastAdded && (
+        <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.subModal}>
+            <div className={styles.addedIcon}>
+              <Check size={28} strokeWidth={2.5} />
+            </div>
+            <h3 className={styles.addedTitle}>¡Agregado al carrito!</h3>
+            <p className={styles.addedDesc}>
+              <strong>{lastAdded.qty}×</strong> {lastAdded.name}
+              {lastAdded.variantLabel && <span className={styles.addedVariant}> · {lastAdded.variantLabel}</span>}
+            </p>
+
+            <div className={styles.addedActions}>
+              <button className={`${styles.btn} ${styles.btnGhost}`} onClick={keepShopping}>
+                <ShoppingCart size={16} /> Seguir comprando
+              </button>
+              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={goToCart}>
+                <ShoppingBag size={16} /> Ver carrito
               </button>
             </div>
           </div>
