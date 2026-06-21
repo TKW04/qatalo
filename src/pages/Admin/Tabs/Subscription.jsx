@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getTokenInfo } from "../../../helpers/token";
 import Loading from "../../../components/UI/Loading";
 import { formatDate, formatted } from "../../../helpers/utils";
-import { fetchSubscription } from "../../../services/subscriptionApi";
+import { fetchSubscription, fetchReactivationPrice } from "../../../services/subscriptionApi";
+import PaddleCheckoutButton from "../../../components/PaddleCheckoutButton";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Subscription.module.css";
 
@@ -12,14 +13,30 @@ const STATUS_LABEL = {
 };
 const INTERVAL_LABEL = { month: "Mes", year: "Año", week: "Semana", day: "Día" };
 
+// Estados donde la sub ya no está vigente → ofrecer reactivación
+const NEEDS_REACTIVATION = ["canceled", "expired", "paused"];
+
 const Subscription = () => {
   const auth = getTokenInfo();
   const subscriptionId = auth?.["custom:transaction_id"];
+  const customerId = auth?.["custom:customer_id"];   // para vincular el checkout al cliente Paddle
+  const userId = auth?.sub;
 
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["subscription", subscriptionId],
     queryFn: () => fetchSubscription(subscriptionId),
     enabled: !!subscriptionId,
+    retry: false,
+  });
+
+  const status = subscription?.status;
+  const needsReactivation = NEEDS_REACTIVATION.includes(status);
+
+  // Solo carga el price de reactivación si hace falta
+  const { data: reactPrice } = useQuery({
+    queryKey: ["reactivation-price"],
+    queryFn: fetchReactivationPrice,
+    enabled: needsReactivation,
     retry: false,
   });
 
@@ -39,6 +56,8 @@ const Subscription = () => {
 
   const hasSub = subscription && subscription.subscription_id;
 
+  console.log(reactPrice);
+  
   return (
     <div>
       <div className={adminStyles.adminHeader}>
@@ -105,8 +124,8 @@ const Subscription = () => {
               </div>
             </div>
 
-            {subscription.update_url && (
-
+            {/* Suscripción vigente → administrar */}
+            {!needsReactivation && subscription.update_url && (
               <a href={subscription.update_url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -114,6 +133,30 @@ const Subscription = () => {
               >
                 Administrar suscripción
               </a>
+            )}
+
+            {/* Suscripción cancelada/pausada → reactivar SIN trial */}
+            {needsReactivation && (
+              <div className={styles.reactivateBox}>
+                <p className={styles.reactivateText}>
+                  Tu suscripción está {getStatus(subscription.status).toLowerCase()}.
+                  Puedes reactivarla ahora — el pago se procesa de inmediato, sin periodo de prueba.
+                </p>
+                {reactPrice?.price_id ? (
+                  <PaddleCheckoutButton
+                    mode="price"
+                    priceId={reactPrice.price_id}
+                    quantity={1}
+                    email={auth.email}
+                    customerId={subscription.customer_id || customerId}
+                    customData={{ appUserId: userId }}
+                    locale="es"
+                    successUrl={import.meta.env.VITE_APP_LOGIN_REDIRECT_URL}
+                  />
+                ) : (
+                  <p className={styles.empty}>Cargando opción de reactivación...</p>
+                )}
+              </div>
             )}
           </>
         )}

@@ -17,5 +17,16 @@ export const fetchSubscription = async (subscriptionId) => {
     headers: { "Content-Type": "application/json", Authorization: getToken() },
   });
   if (!res.ok) throw new Error("No se pudo obtener la suscripción");
+  // console.log(await res.json());
+  
+  return res.json();
+};
+
+export const fetchReactivationPrice = async () => {
+  const res = await fetch(`${API_URL}paddle/reactivation-price`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json", Authorization: getToken() },
+  });
+  if (!res.ok) throw new Error("No se pudo obtener el plan de reactivación");
   return res.json();
 };
