@@ -57,17 +57,68 @@
     background: var(--color-navy, #113f67);
     color: #fff;
 }
+
 .reactivateBox {
-  margin-top: 1.5rem;
-  padding: 1.25rem;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: 10px;
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
 }
 
 .reactivateText {
-  font-size: .9rem;
-  color: #92400e;
-  margin: 0 0 1rem;
-  line-height: 1.5;
+    font-size: .9rem;
+    color: #92400e;
+    margin: 0 0 1rem;
+    line-height: 1.5;
+}
+
+.planGrid {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.planCard {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    border: 2px solid #e8ecf0;
+    border-radius: 10px;
+    padding: .9rem 1rem;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.planCard input {
+    display: none;
+}
+
+.planCard:hover {
+    border-color: #c7d6e5;
+}
+
+.planCardActive {
+    border-color: #34699a;
+    background: rgba(88, 160, 200, .06);
+}
+
+.planName {
+    font-weight: 700;
+    color: #113f67;
+    font-size: .95rem;
+}
+
+.planPrice {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #34699a;
+}
+
+.planHint {
+    font-size: .82rem;
+    color: #667085;
 }
