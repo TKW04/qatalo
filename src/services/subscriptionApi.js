@@ -17,16 +17,14 @@ export const fetchSubscription = async (subscriptionId) => {
     headers: { "Content-Type": "application/json", Authorization: getToken() },
   });
   if (!res.ok) throw new Error("No se pudo obtener la suscripción");
-  // console.log(await res.json());
-  
   return res.json();
 };
 
-export const fetchReactivationPrice = async () => {
-  const res = await fetch(`${API_URL}paddle/reactivation-price`, {
+export const fetchReactivationPrices = async () => {
+  const res = await fetch(`${API_URL}paddle/reactivation-prices`, {
     method: "GET",
     headers: { "Content-Type": "application/json", Authorization: getToken() },
   });
-  if (!res.ok) throw new Error("No se pudo obtener el plan de reactivación");
+  if (!res.ok) throw new Error("No se pudieron obtener los planes de reactivación");
   return res.json();
 };

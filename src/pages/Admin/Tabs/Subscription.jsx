@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getTokenInfo } from "../../../helpers/token";
 import Loading from "../../../components/UI/Loading";
 import { formatDate, formatted } from "../../../helpers/utils";
-import { fetchSubscription, fetchReactivationPrice } from "../../../services/subscriptionApi";
+import { fetchSubscription, fetchReactivationPrices } from "../../../services/subscriptionApi";
 import PaddleCheckoutButton from "../../../components/PaddleCheckoutButton";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Subscription.module.css";
@@ -33,12 +33,22 @@ const Subscription = () => {
   const needsReactivation = NEEDS_REACTIVATION.includes(status);
 
   // Solo carga el price de reactivación si hace falta
-  const { data: reactPrice } = useQuery({
-    queryKey: ["reactivation-price"],
-    queryFn: fetchReactivationPrice,
+  const { data: reactPlans = [] } = useQuery({
+    queryKey: ["reactivation-prices"],
+    queryFn: fetchReactivationPrices,
     enabled: needsReactivation,
     retry: false,
   });
+
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  // Helper para nombrar el ciclo
+  const cycleLabel = (p) => {
+    if (p.billing_interval === "year") return "Anual";
+    if (p.billing_interval === "month" && p.billing_frequency === 3) return "Trimestral";
+    if (p.billing_interval === "month") return "Mensual";
+    return p.product_name;
+  }
 
   const getStatus = (s) => STATUS_LABEL[s] || "Desconocido";
   const getInterval = (i) => INTERVAL_LABEL[i] || "Desconocido";
@@ -56,8 +66,6 @@ const Subscription = () => {
 
   const hasSub = subscription && subscription.subscription_id;
 
-  console.log(reactPrice);
-  
   return (
     <div>
       <div className={adminStyles.adminHeader}>
@@ -140,21 +148,48 @@ const Subscription = () => {
               <div className={styles.reactivateBox}>
                 <p className={styles.reactivateText}>
                   Tu suscripción está {getStatus(subscription.status).toLowerCase()}.
-                  Puedes reactivarla ahora — el pago se procesa de inmediato, sin periodo de prueba.
+                  Elige un plan y reactívala — el pago se procesa de inmediato, sin periodo de prueba.
                 </p>
-                {reactPrice?.price_id ? (
-                  <PaddleCheckoutButton
-                    mode="price"
-                    priceId={reactPrice.price_id}
-                    quantity={1}
-                    email={auth.email}
-                    customerId={subscription.customer_id || customerId}
-                    customData={{ appUserId: userId }}
-                    locale="es"
-                    successUrl={import.meta.env.VITE_APP_LOGIN_REDIRECT_URL}
-                  />
+
+                {reactPlans.length === 0 ? (
+                  <p className={styles.empty}>Cargando planes...</p>
                 ) : (
-                  <p className={styles.empty}>Cargando opción de reactivación...</p>
+                  <>
+                    <div className={styles.planGrid}>
+                      {reactPlans.map((p) => (
+                        <label
+                          key={p.price_id}
+                          className={`${styles.planCard} ${selectedPlan === p.price_id ? styles.planCardActive : ""}`}
+                        >
+                          <input
+                            type="radio"
+                            name="reactPlan"
+                            checked={selectedPlan === p.price_id}
+                            onChange={() => setSelectedPlan(p.price_id)}
+                          />
+                          <span className={styles.planName}>{cycleLabel(p)}</span>
+                          <span className={styles.planPrice}>
+                            {(p.currency || "").toUpperCase()} {formatted(p.unit_price)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {selectedPlan ? (
+                      <PaddleCheckoutButton
+                        mode="price"
+                        priceId={selectedPlan}
+                        quantity={1}
+                        email={auth.email}
+                        customerId={subscription.customer_id || customerId}
+                        customData={{ appUserId: userId }}
+                        locale="es"
+                        successUrl={import.meta.env.VITE_APP_LOGIN_REDIRECT_URL}
+                      />
+                    ) : (
+                      <p className={styles.planHint}>Selecciona un plan para continuar.</p>
+                    )}
+                  </>
                 )}
               </div>
             )}
