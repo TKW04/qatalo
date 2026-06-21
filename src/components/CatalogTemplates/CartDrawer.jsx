@@ -37,6 +37,27 @@ const calcDiscount = (offer, items) => {
   if (!offer) return 0;
   const applicable = getApplicableItems(offer, items);
   if (!applicable.length) return 0;
+
+  // ── Paga X lleva Y (2x1, 3x2...) ──
+  if (offer.discount_type === "buy_x_get_y") {
+    const X = Number(offer.buy_quantity) || 0;
+    const Y = Number(offer.paid_quantity) || 0;
+    if (X < 2 || Y < 1 || Y >= X) return 0;
+
+    let total = 0;
+    // Se calcula POR PRODUCTO (no mezcla unidades de productos distintos)
+    for (const it of applicable) {
+      const qty = Number(it.quantity) || 0;
+      const price = Number(it.price) || 0;
+      const bloques = Math.floor(qty / X);
+      const gratisPorBloque = X - Y;
+      const unidadesGratis = bloques * gratisPorBloque;
+      total += unidadesGratis * price;
+    }
+    return total;
+  }
+
+  // ── Porcentaje / monto fijo (lógica existente) ──
   const sub = applicable.reduce(
     (s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0
   );
@@ -50,7 +71,32 @@ const calcDiscount = (offer, items) => {
 const distributeDiscount = (offer, items, totalDiscount) => {
   if (totalDiscount <= 0 || !offer)
     return items.map(it => ({ ...it, original_price: it.price, discount_amount: 0 }));
+
   const applicable = getApplicableItems(offer, items);
+
+  // ── Paga X lleva Y: descuento exacto por línea ──
+  if (offer.discount_type === "buy_x_get_y") {
+    const X = Number(offer.buy_quantity) || 0;
+    const Y = Number(offer.paid_quantity) || 0;
+    return items.map(it => {
+      const isApp = applicable.some(a => a.product_id === it.product_id);
+      if (!isApp || X < 2 || Y < 1) return { ...it, original_price: it.price, discount_amount: 0 };
+      const qty = Number(it.quantity) || 0;
+      const price = Number(it.price) || 0;
+      const bloques = Math.floor(qty / X);
+      const unidadesGratis = bloques * (X - Y);
+      const lineDiscount = unidadesGratis * price;
+      const dpUnit = qty > 0 ? lineDiscount / qty : 0;
+      return {
+        ...it,
+        original_price: it.price,
+        discount_amount: lineDiscount,
+        price: Math.max(0, price - dpUnit),
+      };
+    });
+  }
+
+  // ── Porcentaje / fijo (lógica existente proporcional) ──
   const appSub = applicable.reduce(
     (s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0
   );
@@ -64,8 +110,8 @@ const distributeDiscount = (offer, items, totalDiscount) => {
     return {
       ...it,
       original_price: it.price,
-      discount_amount: itemTotalDiscount,  // total descuento de esta línea
-      price: Math.max(0, Number(it.price) - dpUnit), // precio unitario descontado
+      discount_amount: itemTotalDiscount,
+      price: Math.max(0, Number(it.price) - dpUnit),
     };
   });
 };

@@ -22,6 +22,7 @@ const emptyForm = {
   has_min_order: false, min_order_amount: "",
   unlimited_uses: true, max_uses: "",
   no_expiry: true, valid_from: "", valid_until: "",
+  buy_quantity: "", paid_quantity: "",
 };
 
 const Toggle = ({ checked, onChange, label }) => (
@@ -75,8 +76,21 @@ const Offers = () => {
     const err = {};
     if (!form.name.trim()) err.name = "El nombre es requerido";
     if (form.trigger === "code" && !form.code.trim()) err.code = "El código es requerido";
-    if (!form.discount_value || Number(form.discount_value) <= 0) err.discount_value = "El descuento debe ser mayor a 0";
-    if (form.discount_type === "percentage" && Number(form.discount_value) > 100) err.discount_value = "El porcentaje no puede superar 100";
+
+    if (form.discount_type === "buy_x_get_y") {
+      if (!form.buy_quantity || Number(form.buy_quantity) < 2)
+        err.discount_value = "La cantidad a comprar debe ser al menos 2";
+      else if (!form.paid_quantity || Number(form.paid_quantity) < 1)
+        err.discount_value = "La cantidad a pagar debe ser al menos 1";
+      else if (Number(form.paid_quantity) >= Number(form.buy_quantity))
+        err.discount_value = "La cantidad a pagar debe ser menor que la de comprar";
+    } else {
+      if (!form.discount_value || Number(form.discount_value) <= 0)
+        err.discount_value = "El descuento debe ser mayor a 0";
+      if (form.discount_type === "percentage" && Number(form.discount_value) > 100)
+        err.discount_value = "El porcentaje no puede superar 100";
+    }
+
     if (form.applies_to === "products" && !form.product_ids?.length) err.applies = "Selecciona al menos un producto";
     if (form.applies_to === "categories" && !form.category_ids?.length) err.applies = "Selecciona al menos una categoría";
     return err;
@@ -90,6 +104,8 @@ const Offers = () => {
     max_uses: !form.unlimited_uses && form.max_uses ? Number(form.max_uses) : null,
     valid_from: form.no_expiry ? "" : (form.valid_from || ""),
     valid_until: form.no_expiry ? "" : (form.valid_until || ""),
+    buy_quantity: form.discount_type === "buy_x_get_y" ? Number(form.buy_quantity) || 0 : 0,
+    paid_quantity: form.discount_type === "buy_x_get_y" ? Number(form.paid_quantity) || 0 : 0,
   });
 
   const saveMutation = useMutation({
@@ -121,6 +137,8 @@ const Offers = () => {
       no_expiry: !o.valid_from && !o.valid_until,
       product_ids: o.product_ids || [],
       category_ids: o.category_ids || [],
+      buy_quantity: o.buy_quantity || "",
+      paid_quantity: o.paid_quantity || "",
     });
     setErrors({});
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -134,7 +152,10 @@ const Offers = () => {
     return offers;
   }, [offers, filter]);
 
-  const discountLabel = (o) => o.discount_type === "percentage" ? `${o.discount_value}% off` : `${formatted(o.discount_value)} off`;
+  const discountLabel = (o) =>
+    o.discount_type === "buy_x_get_y" ? `${o.buy_quantity}x${o.paid_quantity}`
+      : o.discount_type === "percentage" ? `${o.discount_value}% off`
+        : `${formatted(o.discount_value)} off`;
   const scopeLabel = (o) => o.applies_to === "all" ? "Todos los productos" : o.applies_to === "products" ? `${o.product_ids?.length || 0} producto(s)` : `${o.category_ids?.length || 0} categoría(s)`;
 
   if (isLoading) return <Loading message="Cargando ofertas..." />;
@@ -197,15 +218,40 @@ const Offers = () => {
                 <select className="input" value={form.discount_type} onChange={e => sf("discount_type", e.target.value)}>
                   <option value="percentage">Porcentaje (%)</option>
                   <option value="fixed">Monto fijo</option>
+                  <option value="buy_x_get_y">Paga X lleva Y (2x1, 3x2...)</option>
                 </select>
               </div>
-              <div className={styles.formGroup}>
+              {/* <div className={styles.formGroup}>
                 <label>Valor <span className={styles.required}>*</span> {form.discount_type === "percentage" ? "(%)" : ""}</label>
                 <input type="number" min="0.01" step="0.01" className="input"
                   value={form.discount_value} onChange={e => sf("discount_value", e.target.value)}
                   placeholder={form.discount_type === "percentage" ? "20" : "200"} />
                 {errors.discount_value && <span className={styles.err}>{errors.discount_value}</span>}
-              </div>
+              </div> */}
+              {form.discount_type === "buy_x_get_y" ? (
+                <>
+                  <div className={styles.formGroup}>
+                    <label>Compra (X) <span className={styles.required}>*</span></label>
+                    <input type="number" min="2" className="input"
+                      value={form.buy_quantity} onChange={e => sf("buy_quantity", e.target.value)}
+                      placeholder="2" />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Paga (Y) <span className={styles.required}>*</span></label>
+                    <input type="number" min="1" className="input"
+                      value={form.paid_quantity} onChange={e => sf("paid_quantity", e.target.value)}
+                      placeholder="1" />
+                  </div>
+                </>
+              ) : (
+                <div className={styles.formGroup}>
+                  <label>Valor <span className={styles.required}>*</span> {form.discount_type === "percentage" ? "(%)" : ""}</label>
+                  <input type="number" min="0.01" step="0.01" className="input"
+                    value={form.discount_value} onChange={e => sf("discount_value", e.target.value)}
+                    placeholder={form.discount_type === "percentage" ? "20" : "200"} />
+                </div>
+              )}
+              {errors.discount_value && <span className={styles.err}>{errors.discount_value}</span>}
             </div>
           </div>
 
