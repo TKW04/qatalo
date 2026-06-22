@@ -12,6 +12,7 @@ import CustomerOrders from "./CustomerOrders";
 import CartDrawer from "./CartDrawer";
 import { getCustomerSession, setCustomerSession, getValidCustomerSession, decodeCustomerToken, getCart, cartCount } from "../../services/customerAuthApi";
 import portal from "./CustomerPortal.module.css";
+import Select from "../Select";
 
 const Templates = {
   default: TemplateDefault,
@@ -172,14 +173,14 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
           borderBottom: "1px solid rgba(0,0,0,.06)",
         }}>
           <span style={{ fontSize: ".9rem", color: "var(--theme-secondary, #2d3e50)", fontWeight: 600 }}>Localidad:</span>
-          <select
+          <Select
             value={selectedLocality}
-            onChange={(e) => setSelectedLocality(e.target.value)}
-            style={{ padding: ".45rem .8rem", borderRadius: "8px", border: "1px solid rgba(0,0,0,.15)", background: "#fff", color: "#1d2939", fontWeight: 600, fontSize: "16px" }}
-          >
-            <option value="all">Todas</option>
-            {localityOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
-          </select>
+            onChange={(e) => setSelectedLocality(e)}
+            options={[
+              { value: "all", label: "Todas" },
+              ...localityOptions.map(l => ({ value: l, label: l })),
+            ]}
+          />
         </div>
       )}
 

@@ -16,6 +16,8 @@ import {
 } from "../../../services/paymentMethodsApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./PaymentMethods.module.css";
+import CurrencySelect from "../../../components/CurrencySelect";
+import Select from "../../../components/Select";
 
 const PAYMENT_TYPES = [
   { code: "bank_transfer", name: "Transferencia Bancaria" },
@@ -140,10 +142,14 @@ const PaymentMethods = () => {
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label>Método de Pago *</label>
-            <select className="input" value={form.payment_type} onChange={(e) => setField("payment_type", e.target.value)}>
-              <option value="">Seleccionar método de pago</option>
-              {PAYMENT_TYPES.map((t) => (<option key={t.code} value={t.code}>{t.name}</option>))}
-            </select>
+            <Select
+              value={form.payment_type}
+              onChange={(e) => setField("payment_type", e)}
+              options={[
+                { value: "", label: "Seleccionar método de pago" },
+                ...PAYMENT_TYPES.map((t) => ({ value: t.code, label: t.name })),
+              ]}
+            />
             {errors.payment_type && <span className={styles.err}>{errors.payment_type}</span>}
           </div>
 
@@ -191,10 +197,14 @@ const PaymentMethods = () => {
                 </div>
                 <div className={styles.formGroup}>
                   <label>Tipo de Cuenta *</label>
-                  <select className="input" value={form.account_type} onChange={(e) => setField("account_type", e.target.value)}>
-                    <option value="">Seleccionar tipo de cuenta</option>
-                    {ACCOUNT_TYPES.map((t) => (<option key={t.code} value={t.code}>{t.name}</option>))}
-                  </select>
+                  <Select
+                    value={form.account_type}
+                    onChange={(e) => setField("account_type", e)}
+                    options={[
+                      { value: "", label: "Seleccionar tipo de cuenta" },
+                      ...ACCOUNT_TYPES.map((t) => ({ value: t.code, label: t.name })),
+                    ]}
+                  />
                   {errors.account_type && <span className={styles.err}>{errors.account_type}</span>}
                 </div>
               </div>
@@ -202,10 +212,10 @@ const PaymentMethods = () => {
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>Moneda *</label>
-                  <select className="input" value={form.currency} onChange={(e) => setField("currency", e.target.value)}>
-                    <option value="">Seleccionar moneda</option>
-                    {currencies.map((c) => (<option key={c.code} value={c.code}>{c.name} ({c.symbol})</option>))}
-                  </select>
+                  <CurrencySelect
+                    value={form.currency}
+                    onChange={(code) => setField("currency", code)}
+                  />
                   {errors.currency && <span className={styles.err}>{errors.currency}</span>}
                 </div>
                 <div className={styles.formGroup}>
@@ -231,10 +241,10 @@ const PaymentMethods = () => {
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label>Moneda *</label>
-                <select className="input" value={form.currency} onChange={(e) => setField("currency", e.target.value)}>
-                  <option value="">Seleccionar moneda</option>
-                  {currencies.map((c) => (<option key={c.code} value={c.code}>{c.name} ({c.symbol})</option>))}
-                </select>
+                <CurrencySelect
+                  value={form.currency}
+                  onChange={(code) => setField("currency", code)}
+                />
                 {errors.currency && <span className={styles.err}>{errors.currency}</span>}
               </div>
               <div className={styles.formGroup}>

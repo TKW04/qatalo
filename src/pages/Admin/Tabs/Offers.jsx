@@ -13,6 +13,7 @@ import { fetchCategories } from "../../../services/categoryApi";
 import { fetchOffers, createOffer, updateOffer, deleteOffer } from "../../../services/offersApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Offers.module.css";
+import Select from "../../../components/Select";
 
 const emptyForm = {
   offer_id: "", name: "", description: "", is_active: true,
@@ -215,19 +216,16 @@ const Offers = () => {
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label>Tipo <span className={styles.required}>*</span></label>
-                <select className="input" value={form.discount_type} onChange={e => sf("discount_type", e.target.value)}>
-                  <option value="percentage">Porcentaje (%)</option>
-                  <option value="fixed">Monto fijo</option>
-                  <option value="buy_x_get_y">Paga X lleva Y (2x1, 3x2...)</option>
-                </select>
+                <Select
+                  value={form.discount_type}
+                  onChange={(e) => sf("discount_type", e)}
+                  options={[
+                    { value: "percentage", label: "Porcentaje (%)" },
+                    { value: "fixed", label: "Monto fijo" },
+                    { value: "buy_x_get_y", label: "Paga X lleva Y (2x1, 3x2...)" },
+                  ]}
+                />
               </div>
-              {/* <div className={styles.formGroup}>
-                <label>Valor <span className={styles.required}>*</span> {form.discount_type === "percentage" ? "(%)" : ""}</label>
-                <input type="number" min="0.01" step="0.01" className="input"
-                  value={form.discount_value} onChange={e => sf("discount_value", e.target.value)}
-                  placeholder={form.discount_type === "percentage" ? "20" : "200"} />
-                {errors.discount_value && <span className={styles.err}>{errors.discount_value}</span>}
-              </div> */}
               {form.discount_type === "buy_x_get_y" ? (
                 <>
                   <div className={styles.formGroup}>

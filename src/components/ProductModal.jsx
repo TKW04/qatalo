@@ -6,6 +6,7 @@ import { useNotification } from "./UI/NotificationProvider";
 import {
   getCart, setCart, getValidCustomerSession, setCustomerSession, fetchMyOrders,
 } from "../services/customerAuthApi";
+import Select from "./Select";
 import { formatted } from "../helpers/utils";
 import styles from "./ProductModal.module.css";
 
@@ -312,10 +313,15 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
             {productLocalities.length > 0 && (
               <div className={styles.field}>
                 <label>Localidad</label>
-                <select className={styles.input} value={form.locality} onChange={(e) => set("locality", e.target.value)}>
-                  <option value="">Selecciona tu localidad</option>
-                  {productLocalities.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
-                </select>
+                <Select
+                  placeholder="Selecciona tu localidad"
+                  value={form.locality}
+                  onChange={(e) => (e) => set("locality", e)}
+                  options={[
+                    { value: "all", label: "Todas" },
+                    ...productLocalities.map(l => ({ value: l, label: l })),
+                  ]}
+                />
               </div>
             )}
 

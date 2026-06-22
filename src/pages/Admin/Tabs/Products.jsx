@@ -16,6 +16,8 @@ import {
 } from "../../../services/productsApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Products.module.css";
+import CurrencySelect from "../../../components/CurrencySelect";
+import Select from "../../../components/Select";
 
 const MAX_IMAGES = 5;
 const emptyVariant = { color: "", size: "", quantity: 0, extra_price: 0 };
@@ -237,9 +239,12 @@ const Products = () => {
   const handleSubmit = (e) => { e.preventDefault(); const err = validate(); setErrors(err); if (Object.keys(err).length) return; saveMutation.mutate(); };
 
   const handleEdit = (p) => {
+
+    const currency = currencies.filter((c) => c.symbol === p.currency)[0].code || "";
+
     setForm({
       product_id: p.product_id, name: p.name || "", description: p.description || "",
-      currency: p.currency || "", price: p.price ?? "", category_id: p.category_id || "",
+      currency: currency || "", price: p.price ?? "", category_id: p.category_id || "",
       is_available: p.is_available || "available", orden: p.orden ?? 0, quantity: p.quantity ?? 0,
       show_quantity: !!p.show_quantity, just_one: !!p.just_one, min_age_allow: !!p.min_age_allow,
       min_age: p.min_age ?? 0, required_delivery_day: !!p.required_delivery_day,
@@ -332,10 +337,10 @@ const Products = () => {
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Moneda <span className={styles.required}>*</span></label>
-              <select className="input" value={form.currency} onChange={(e) => setField("currency", e.target.value)}>
-                <option value="">Seleccionar moneda</option>
-                {currencies.map((c) => (<option key={c.code} value={c.symbol}>{c.name} ({c.symbol})</option>))}
-              </select>
+              <CurrencySelect
+                value={form.currency}
+                onChange={(code) => setField("currency", code)}
+              />
               {errors.currency && <span className={styles.err}>{errors.currency}</span>}
             </div>
             <div className={styles.formGroup}>
@@ -345,11 +350,12 @@ const Products = () => {
             </div>
             <div className={styles.formGroup}>
               <label>ITBIS del precio</label>
-              <select className="input" value={form.itbis_mode} onChange={(e) => setField("itbis_mode", e.target.value)}>
-                <option value="included">Precio incluye ITBIS (se desglosa)</option>
-                <option value="added">ITBIS se suma aparte</option>
-                <option value="exempt">Exento de ITBIS</option>
-              </select>
+              <Select
+                value={form.itbis_mode}
+                onChange={(v) => setField("itbis_mode", v)}
+                options={[{ value: "included", label: "Precio incluye ITBIS (se desglosa)" }, { value: "added", label: "ITBIS se suma aparte" }, { value: "exempt", label: "Exento de ITBIS" }]}
+                placeholder="Seleccionar categoría"
+              />
               <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
                 {form.itbis_mode === "included"
                   ? "El precio ya incluye el 18%. En la factura se mostrará desglosado."
@@ -362,19 +368,23 @@ const Products = () => {
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Categoría <span className={styles.required}>*</span></label>
-              <select className="input" value={form.category_id} onChange={(e) => setField("category_id", e.target.value)}>
-                <option value="">Seleccionar categoría</option>
-                {categories.map((c) => (<option key={c.category_id} value={c.category_id}>{c.name}</option>))}
-              </select>
+              <Select
+                value={form.category_id}
+                onChange={(v) => setField("category_id", v)}
+                options={categories.map(c => ({ value: c.category_id, label: c.name }))}
+                placeholder="Seleccionar categoría"
+              />
               {errors.category_id && <span className={styles.err}>{errors.category_id}</span>}
             </div>
             {!form.is_customizable && (
               <div className={styles.formGroup}>
                 <label>Estado</label>
-                <select className="input" value={form.is_available} onChange={(e) => setField("is_available", e.target.value)}>
-                  <option value="available">Disponible</option>
-                  <option value="unavailable">Agotado</option>
-                </select>
+                <Select
+                  value={form.is_available}
+                  onChange={(v) => setField("is_available", v)}
+                  options={[{ value: "available", label: "Disponible" }, { value: "unavailable", label: "Agotado" }]}
+                  placeholder="Seleccionar categoría"
+                />
               </div>
             )}
           </div>
@@ -547,7 +557,16 @@ const Products = () => {
 
           <div className={styles.toggleRow}>
             <Toggle checked={form.min_age_allow} onChange={(v) => setField("min_age_allow", v)} label="Edad mínima" />
-            {form.min_age_allow && (<select className="input" style={{ maxWidth: 160 }} value={form.min_age} onChange={(e) => setField("min_age", e.target.value)}>{getAges().map((a) => (<option key={a.code} value={a.code}>{a.name}</option>))}</select>)}
+            {form.min_age_allow && (
+              <Select
+                value={form.min_age}
+                onChange={(value) => setField("min_age", value)}
+                options={[
+                  { value: "", label: "Seleccionar edad mínima" },
+                  ...getAges().map((a) => ({ value: a.code, label: a.name })),
+                ]}
+              />
+            )}
           </div>
           <div className={styles.toggleRow}>
             <Toggle checked={form.required_delivery_day} onChange={(v) => setField("required_delivery_day", v)} label="Requiere fecha de entrega" />
@@ -705,22 +724,23 @@ const Products = () => {
                   ].map(({ key, label }) => (
                     <div key={key} className={styles.mappingRow}>
                       <span className={styles.mappingLabel}>{label}</span>
-                      <select
-                        className="input"
+    
+                      <Select
                         value={importMapping[key] || ""}
-                        onChange={e => setImportMapping(m => ({ ...m, [key]: e.target.value }))}
-                      >
-                        <option value="">— sin mapear —</option>
-                        {importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                      </select>
+                        onChange={(value) => setImportMapping(m => ({ ...m, [key]: value }))}
+                        options={[
+                          { value: "", label: "— sin mapear —" },
+                          ...importHeaders.map(h => ({ value: h, label: h })),
+                        ]}
+                      />
                     </div>
                   ))}
                   <div className={styles.mappingRow}>
                     <span className={styles.mappingLabel}>Moneda por defecto</span>
-                    <select className="input" value={defCurrency} onChange={e => setDefCurrency(e.target.value)}>
-                      <option value="">— seleccionar —</option>
-                      {currencies.map(c => <option key={c.code} value={c.symbol}>{c.name} ({c.symbol})</option>)}
-                    </select>
+                    <CurrencySelect
+                      value={defCurrency}
+                      onChange={setDefCurrency}
+                    />
                   </div>
                 </div>
 

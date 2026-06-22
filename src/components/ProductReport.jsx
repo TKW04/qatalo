@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
+import Select from "./Select";
 import styles from "./SellReport.module.css"; // misma paleta visual
 
 const PAID = ["Aprobada", "Entregada"];
@@ -178,27 +179,36 @@ const ProductReport = ({ customers = [] }) => {
       <div className={styles.filters}>
         <label className={styles.filter}>
           Producto
-          <select className="input" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-            <option value="all">Todos los productos</option>
-            {productNames.map((n) => (<option key={n} value={n}>{n}</option>))}
-          </select>
+          <Select
+            value={selectedProduct}
+            onChange={setSelectedProduct}
+            options={[
+              { value: "all", label: "Todos los productos" },
+              ...productNames.map((n) => ({ value: n, label: n })),
+            ]}
+          />
         </label>
         {currencyCodes.length > 1 && (
           <label className={styles.filter}>
             Moneda
-            <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {currencyCodes.map((c) => (<option key={c} value={c}>{c}</option>))}
-            </select>
+            <CurrencySelect
+              value={currency}
+              onChange={(code) => setCurrency(code)}
+            />
           </label>
         )}
         {hasLocalities && (
           <label className={styles.filter}>
             Localidad
-            <select className="input" value={locality} onChange={(e) => setLocality(e.target.value)}>
-              <option value="all">Todas</option>
-              {localityCodes.map((l) => (<option key={l} value={l}>{l}</option>))}
-              <option value={NO_LOC}>Sin especificar</option>
-            </select>
+            <Select
+              value={locality}
+              onChange={setLocality}
+              options={[
+                // { value: "all", label: "Todas" },
+                ...localityCodes.map(l => ({ value: l, label: l })),
+                { value: NO_LOC, label: "Sin especificar" },
+              ]}
+            />
           </label>
         )}
         <label className={styles.filter}>Desde<input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></label>

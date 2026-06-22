@@ -48,9 +48,37 @@ export const formatTextDateShort = (dateString) => {
   const date = new Date(dates[2], dates[1] - 1, dates[0]);
   return date.toLocaleDateString("es-ES");
 };
+// Reemplaza el array `currencies` en helpers/utils.js por este.
+// Se agregó el campo `region` para agrupar en el dropdown.
+// El resto de utils.js (formatted, etc.) queda igual.
+
 export const currencies = [
-  { code: "USD", name: "Dólar estadounidense", symbol: "$" },
-  { code: "DOP", name: "Peso dominicano", symbol: "RD$" },
+  // Principales / mercado base
+  { code: "DOP", name: "Peso dominicano", symbol: "RD$", region: "Principales" },
+  { code: "USD", name: "Dólar estadounidense", symbol: "$", region: "Principales" },
+  { code: "EUR", name: "Euro", symbol: "€", region: "Principales" },
+
+  // Centroamérica
+  { code: "MXN", name: "Peso mexicano", symbol: "$", region: "Centroamérica" },
+  { code: "GTQ", name: "Quetzal guatemalteco", symbol: "Q", region: "Centroamérica" },
+  { code: "HNL", name: "Lempira hondureño", symbol: "L", region: "Centroamérica" },
+  { code: "NIO", name: "Córdoba nicaragüense", symbol: "C$", region: "Centroamérica" },
+  { code: "CRC", name: "Colón costarricense", symbol: "₡", region: "Centroamérica" },
+  { code: "PAB", name: "Balboa panameño", symbol: "B/.", region: "Centroamérica" },
+
+  // Caribe
+  { code: "CUP", name: "Peso cubano", symbol: "$", region: "Caribe" },
+
+  // Sudamérica
+  { code: "COP", name: "Peso colombiano", symbol: "$", region: "Sudamérica" },
+  { code: "VES", name: "Bolívar venezolano", symbol: "Bs.", region: "Sudamérica" },
+  { code: "PEN", name: "Sol peruano", symbol: "S/", region: "Sudamérica" },
+  { code: "BOB", name: "Boliviano", symbol: "Bs.", region: "Sudamérica" },
+  { code: "CLP", name: "Peso chileno", symbol: "$", region: "Sudamérica" },
+  { code: "ARS", name: "Peso argentino", symbol: "$", region: "Sudamérica" },
+  { code: "PYG", name: "Guaraní paraguayo", symbol: "₲", region: "Sudamérica" },
+  { code: "UYU", name: "Peso uruguayo", symbol: "$U", region: "Sudamérica" },
+  { code: "BRL", name: "Real brasileño", symbol: "R$", region: "Sudamérica" },
 ];
 export const getAges = () => {
   const ages = [];

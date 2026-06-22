@@ -5,7 +5,9 @@ import {
 } from "recharts";
 import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
+import CurrencySelect from "./CurrencySelect";
 import styles from "./SellReport.module.css";
+import Select from "./Select";
 
 const PAID = ["Aprobada", "Entregada"];
 const STATUS_COLORS = {
@@ -146,26 +148,35 @@ const SellReport = ({ customers = [] }) => {
       <div className={styles.filters}>
         {currencyCodes.length > 1 && (
           <label className={styles.filter}>Moneda
-            <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {currencyCodes.map((c) => (<option key={c} value={c}>{c}</option>))}
-            </select>
+            <CurrencySelect
+              value={currency}
+              onChange={(code) => setCurrency(code)}
+            />
           </label>
         )}
         {hasLocalities && (
           <label className={styles.filter}>Localidad
-            <select className="input" value={locality} onChange={(e) => setLocality(e.target.value)}>
-              <option value="all">Todas</option>
-              {localityCodes.map((l) => (<option key={l} value={l}>{l}</option>))}
-            </select>
+            <Select
+              value={locality}
+              onChange={(code) => setLocality(code)}
+              options={[
+                { value: "all", label: "Todas" },
+                ...localityCodes.map(l => ({ value: l, label: l })),
+              ]}
+            />
           </label>
         )}
         {offerOptions.length > 0 && (
           <label className={styles.filter}>
             Oferta
-            <select className="input" value={offerFilter} onChange={e => setOfferFilter(e.target.value)}>
-              <option value="all">Todas</option>
-              {offerOptions.map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+            <Select
+              value={offerFilter}
+              onChange={(code) => setOfferFilter(code)}
+              options={[
+                { value: "all", label: "Todas" },
+                ...offerOptions.map(n => ({ value: n, label: n })),
+              ]}
+            />
           </label>
         )}
         <label className={styles.filter}>Desde<input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></label>

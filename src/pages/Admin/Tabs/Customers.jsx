@@ -20,6 +20,7 @@ import {
 } from "../../../services/customersApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Customers.module.css";
+import Select from "../../../components/Select";
 
 const STATUS_LABEL = {
   Aprobada: "Pago Completado",
@@ -243,10 +244,14 @@ const Customers = () => {
             placeholder="Buscar por nombre o email..."
           />
         </div>
-        <select className={`input ${styles.statusSelect}`} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="all">Todos los estados</option>
-          {Object.keys(STATUS_LABEL).map((s) => (<option key={s} value={s}>{STATUS_LABEL[s]}</option>))}
-        </select>
+        <Select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e)}
+          options={[
+            { value: "all", label: "Todos los estados" },
+            ...Object.keys(STATUS_LABEL).map((s) => ({ value: s, label: STATUS_LABEL[s] })),
+          ]}
+        />
       </div>
 
       {filteredCustomers.length === 0 ? (
@@ -314,18 +319,26 @@ const Customers = () => {
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>Producto *</label>
-                  <select className="input" value={txForm.product_id} onChange={(e) => pickProduct(e.target.value)}>
-                    <option value="">Selecciona un producto</option>
-                    {products.map((p) => (<option key={p.product_id} value={p.product_id}>{p.name}</option>))}
-                  </select>
+                  <Select
+                    value={txForm.product_id}
+                    onChange={(e) => pickProduct(e)}
+                    options={[
+                      { value: "", label: "Selecciona un producto" },
+                      ...products.map((p) => ({ value: p.product_id, label: p.name })),
+                    ]}
+                  />
                   {txErrors.product && <span className={styles.err}>{txErrors.product}</span>}
                 </div>
                 <div className={styles.formGroup}>
                   <label>Método de pago *</label>
-                  <select className="input" value={txForm.payment_method_id} onChange={(e) => setTxForm({ ...txForm, payment_method_id: e.target.value })}>
-                    <option value="">Selecciona un método</option>
-                    {paymentMethods.map((pm) => (<option key={pm.payment_method_id} value={pm.payment_method_id}>{pm.payment_method_name}</option>))}
-                  </select>
+                  <Select
+                    value={txForm.payment_method_id}
+                    onChange={(e) => setTxForm({ ...txForm, payment_method_id: e })}
+                    options={[
+                      { value: "", label: "Selecciona un método" },
+                      ...paymentMethods.map((pm) => ({ value: pm.payment_method_id, label: pm.payment_method_name })),
+                    ]}
+                  />
                   {txErrors.pm && <span className={styles.err}>{txErrors.pm}</span>}
                 </div>
               </div>
@@ -354,14 +367,14 @@ const Customers = () => {
                 return (
                   <div className={styles.formGroup}>
                     <label>Localidad</label>
-                    <select
-                      className="input"
+                    <Select
                       value={txForm.locality}
-                      onChange={(e) => setTxForm({ ...txForm, locality: e.target.value })}
-                    >
-                      <option value="">Sin especificar</option>
-                      {locs.map((l) => (<option key={l} value={l}>{l}</option>))}
-                    </select>
+                      onChange={(e) => setTxForm({ ...txForm, locality: e })}
+                      options={[
+                        { value: "", label: "Sin especificar" },
+                        ...locs.map(l => ({ value: l, label: l })),
+                      ]}
+                    />
                   </div>
                 );
               })()}
