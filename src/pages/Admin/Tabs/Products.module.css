@@ -887,6 +887,84 @@
   border-bottom: none;
 }
 
+/* ── Buscador + filtros ── */
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: .6rem .9rem;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #1d2939;
+  background: transparent;
+}
+
+.searchClear {
+  background: #eef0f3;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  color: #667085;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.filterControls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+}
+
+.filterField {
+  min-width: 0;
+}
+
+.resultsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.resultsCount {
+  font-size: .88rem;
+  color: #667085;
+  font-weight: 600;
+}
+
+.clearFilters {
+  background: transparent;
+  border: none;
+  color: #34699a;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  .filterControls {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width:600px) {
   .formRow {
     grid-template-columns: 1fr;

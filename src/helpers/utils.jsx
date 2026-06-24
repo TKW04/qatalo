@@ -80,6 +80,12 @@ export const currencies = [
   { code: "UYU", name: "Peso uruguayo", symbol: "$U", region: "Sudamérica" },
   { code: "BRL", name: "Real brasileño", symbol: "R$", region: "Sudamérica" },
 ];
+
+// Convierte código de moneda (DOP) a símbolo (RD$).
+// Si no encuentra el código o ya es símbolo, devuelve lo que reciba.
+export const curSymbol = (code) =>
+  currencies.find((c) => c.code === code)?.symbol || code || "";
+
 export const getAges = () => {
   const ages = [];
   for (let i = 0; i <= 100; i++) {

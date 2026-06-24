@@ -1,5 +1,6 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateFashion.module.css";
+import { curSymbol } from "../../helpers/utils";
 
 /**
  * TemplateFashion (Ropa / Perfume)
@@ -123,7 +124,7 @@ export default function TemplateFashion({
                 )}
                 <div className={styles.footer}>
                   <span className={styles.price}>
-                    {product.currency} {formatPrice(product.price)}
+                    {curSymbol(product.currency)} {formatPrice(product.price)}
                   </span>
                   <button type="button" className={styles.cta}>
                     Descubrir

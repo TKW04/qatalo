@@ -266,7 +266,7 @@ const Business = () => {
               </div>
 
               <div className={styles.formGroup}>
-                <label>Slug (URL de tu tienda)<span className={styles.required}>*</span></label>
+                <label>Slug (https://qatalo.online/catalog/<span style={{ color: "red" }}>{formData.slug || '---'}</span>)<span className={styles.required}>*</span></label>
                 <input className="input" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="mi-tienda" />
               </div>
 

@@ -1,5 +1,6 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateTech.module.css";
+import { curSymbol } from "../../helpers/utils";
 
 /**
  * TemplateTech (Celulares / Electrónica)
@@ -123,7 +124,7 @@ export default function TemplateTech({
 
               <div className={styles.cardBottom}>
                 <span className={styles.price}>
-                  Desde {product.currency} {formatPrice(product.price)}
+                  Desde {curSymbol(product.currency)} {formatPrice(product.price)}
                 </span>
                 <div className={styles.actions}>
                   <button 

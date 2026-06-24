@@ -1,5 +1,6 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateAccessory.module.css";
+import { curSymbol } from "../../helpers/utils";
 
 /**
  * TemplateAccessory (Accesorios)
@@ -137,7 +138,7 @@ export default function TemplateAccessory({
                   <p className={styles.productDesc}>{product.description}</p>
                 )}
                 <span className={styles.price}>
-                  {product.currency} {formatPrice(product.price)}
+                  {curSymbol(product.currency)} {formatPrice(product.price)}
                 </span>
               </div>
             </article>

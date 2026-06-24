@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { saveAs } from "file-saver";
-import { FaPen, FaTrashCan, FaEye, FaArrowsRotate, FaRegImage, FaPlus, FaFileExcel, FaCloudArrowUp } from "react-icons/fa6";
+import { FaPen, FaTrashCan, FaEye, FaArrowsRotate, FaRegImage, FaPlus, FaFileExcel, FaCloudArrowUp, FaMagnifyingGlass } from "react-icons/fa6";
 
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
@@ -32,6 +32,9 @@ const emptyForm = {
   itbis_mode: "included",
 
 };
+
+// Convierte código de moneda (DOP) a símbolo (RD$). Si ya es símbolo o no se encuentra, lo deja igual.
+const curSymbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
 const Toggle = ({ checked, onChange, label }) => (
   <label className={styles.toggle}>
@@ -67,6 +70,12 @@ const Products = () => {
   const [importMapping, setImportMapping] = useState({});
   const [importResult, setImportResult] = useState(null);
   const [defCurrency, setDefCurrency] = useState("");
+
+  // ── Búsqueda y filtros de la lista ──
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterSort, setFilterSort] = useState("orden");
 
   const editingId = form.product_id;
   const categoryName = useMemo(() => (id) => categories.find((c) => c.category_id === id)?.name || "Sin categoría", [categories]);
@@ -240,7 +249,7 @@ const Products = () => {
 
   const handleEdit = (p) => {
 
-    const currency = currencies.filter((c) => c.symbol === p.currency)[0].code || "";
+    const currency = currencies.filter((c) => c.symbol === p.currency)[0]?.code || p.currency || "";
 
     setForm({
       product_id: p.product_id, name: p.name || "", description: p.description || "",
@@ -308,6 +317,33 @@ const Products = () => {
     );
   };
 
+  // ── Lista filtrada + ordenada ──
+  const visibleProducts = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    let list = products.filter((p) => {
+      const matchSearch = !term ||
+        (p.name || "").toLowerCase().includes(term) ||
+        (p.description || "").toLowerCase().includes(term);
+      const matchCat = filterCategory === "all" || p.category_id === filterCategory;
+      const matchStatus =
+        filterStatus === "all" ||
+        (filterStatus === "available" && p.is_available === "available") ||
+        (filterStatus === "unavailable" && p.is_available !== "available");
+      return matchSearch && matchCat && matchStatus;
+    });
+
+    const sorted = [...list];
+    if (filterSort === "orden") sorted.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    else if (filterSort === "name") sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    else if (filterSort === "price_asc") sorted.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    else if (filterSort === "price_desc") sorted.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+    else if (filterSort === "stock_asc") sorted.sort((a, b) => (Number(a.quantity) || 0) - (Number(b.quantity) || 0));
+    return sorted;
+  }, [products, search, filterCategory, filterStatus, filterSort]);
+
+  const hasActiveFilters = search || filterCategory !== "all" || filterStatus !== "all";
+  const clearFilters = () => { setSearch(""); setFilterCategory("all"); setFilterStatus("all"); setFilterSort("orden"); };
+
   if (isLoading) return <Loading message="Cargando productos..." />;
   const busy = saveMutation.isPending;
 
@@ -344,7 +380,7 @@ const Products = () => {
               {errors.currency && <span className={styles.err}>{errors.currency}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label>Precio base <span className={styles.required}>*</span> {form.currency}</label>
+              <label>Precio base <span className={styles.required}>*</span> {curSymbol(form.currency)}</label>
               <input type="number" step="0.01" min="0" className="input" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="1850.00" />
               {errors.price && <span className={styles.err}>{errors.price}</span>}
             </div>
@@ -354,7 +390,7 @@ const Products = () => {
                 value={form.itbis_mode}
                 onChange={(v) => setField("itbis_mode", v)}
                 options={[{ value: "included", label: "Precio incluye ITBIS (se desglosa)" }, { value: "added", label: "ITBIS se suma aparte" }, { value: "exempt", label: "Exento de ITBIS" }]}
-                placeholder="Seleccionar categoría"
+                placeholder="Seleccionar"
               />
               <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
                 {form.itbis_mode === "included"
@@ -383,7 +419,7 @@ const Products = () => {
                   value={form.is_available}
                   onChange={(v) => setField("is_available", v)}
                   options={[{ value: "available", label: "Disponible" }, { value: "unavailable", label: "Agotado" }]}
-                  placeholder="Seleccionar categoría"
+                  placeholder="Seleccionar estado"
                 />
               </div>
             )}
@@ -460,7 +496,7 @@ const Products = () => {
                             </label>
                             {cfg.delivery && (
                               <div className={styles.deliveryPriceRow}>
-                                <span className={styles.deliveryPriceLabel}>Precio {form.currency}</span>
+                                <span className={styles.deliveryPriceLabel}>Precio {curSymbol(form.currency)}</span>
                                 <input type="number" min="0" step="0.01" className="input"
                                   style={{ width: "110px" }} placeholder="0"
                                   value={cfg.delivery_price}
@@ -524,7 +560,7 @@ const Products = () => {
                 <div className={styles.variantField}><label>Color <span className={styles.required}>*</span></label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
                 <div className={styles.variantField}><label>Talla</label><input className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
                 <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
-                <div className={styles.variantField}><label>Precio extra {form.currency}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
+                <div className={styles.variantField}><label>Precio extra {curSymbol(form.currency)}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
                 <div className={styles.variantBtns}>
                   <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
                   {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
@@ -540,7 +576,7 @@ const Products = () => {
                         <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
                           <td>{v.color}</td><td>{v.size || "—"}</td>
                           <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
-                          <td>{v.extra_price ? `+ ${form.currency} ${formatted(v.extra_price)}` : "—"}</td>
+                          <td>{v.extra_price ? `+ ${curSymbol(form.currency)} ${formatted(v.extra_price)}` : "—"}</td>
                           <td className={styles.variantActions}>
                             <button type="button" className={styles.iconBtn} onClick={() => startEditVariant(v)}><FaPen size={12} /></button>
                             <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeVariant(v.variant_id)}><FaTrashCan size={12} /></button>
@@ -594,9 +630,84 @@ const Products = () => {
           </button>
         </div>
       </div>
-      {products.length === 0 ? (<div className={styles.empty}>Aún no tienes productos.</div>) : (
+
+      {/* ── Buscador + filtros ── */}
+      {products.length > 0 && (
+        <div className={styles.filterBar}>
+          <div className={styles.searchBox}>
+            <FaMagnifyingGlass color="#667085" />
+            <input
+              className={styles.searchInput}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre o descripción..."
+            />
+            {search && <button className={styles.searchClear} onClick={() => setSearch("")}>×</button>}
+          </div>
+
+          <div className={styles.filterControls}>
+            <div className={styles.filterField}>
+              <Select
+                value={filterCategory}
+                onChange={setFilterCategory}
+                options={[
+                  { value: "all", label: "Todas las categorías" },
+                  ...categories.map((c) => ({ value: c.category_id, label: c.name })),
+                ]}
+                searchable={false}
+              />
+            </div>
+            <div className={styles.filterField}>
+              <Select
+                value={filterStatus}
+                onChange={setFilterStatus}
+                options={[
+                  { value: "all", label: "Todos los estados" },
+                  { value: "available", label: "Disponibles" },
+                  { value: "unavailable", label: "Agotados" },
+                ]}
+                searchable={false}
+              />
+            </div>
+            <div className={styles.filterField}>
+              <Select
+                value={filterSort}
+                onChange={setFilterSort}
+                options={[
+                  { value: "orden", label: "Orden personalizado" },
+                  { value: "name", label: "Nombre (A-Z)" },
+                  { value: "price_asc", label: "Precio (menor a mayor)" },
+                  { value: "price_desc", label: "Precio (mayor a menor)" },
+                  { value: "stock_asc", label: "Stock (menor a mayor)" },
+                ]}
+                searchable={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contador de resultados */}
+      {products.length > 0 && (
+        <div className={styles.resultsRow}>
+          <span className={styles.resultsCount}>
+            {visibleProducts.length === products.length
+              ? `${products.length} producto(s)`
+              : `${visibleProducts.length} de ${products.length} producto(s)`}
+          </span>
+          {hasActiveFilters && (
+            <button className={styles.clearFilters} onClick={clearFilters}>Limpiar filtros</button>
+          )}
+        </div>
+      )}
+
+      {products.length === 0 ? (
+        <div className={styles.empty}>Aún no tienes productos.</div>
+      ) : visibleProducts.length === 0 ? (
+        <div className={styles.empty}>No hay productos que coincidan con la búsqueda o filtros.</div>
+      ) : (
         <div className={styles.grid}>
-          {products.map((p) => {
+          {visibleProducts.map((p) => {
             const img = p.imagesUrl?.[0]?.image || p.imagesUrl?.[0];
             return (
               <div key={p.product_id} className={styles.productCard}>
@@ -608,7 +719,7 @@ const Products = () => {
                 <div className={styles.productBody}>
                   <h3>{p.name}</h3>
                   <span className={styles.productCat}>{categoryName(p.category_id)}</span>
-                  <span className={styles.productPrice}>{p.currency}{formatted(p.price)}</span>
+                  <span className={styles.productPrice}>{curSymbol(p.currency)} {formatted(p.price)}</span>
                   {p.is_customizable && p.variants?.length > 0 && <span className={styles.variantCount}>{p.variants.length} variante(s)</span>}
                   {(p.locality_config || []).length > 0 && (
                     <span className={styles.deliveryBadge}>
@@ -646,7 +757,7 @@ const Products = () => {
             <h3>{viewing.name}</h3>
             <div className={styles.detailGallery}>{(viewing.imagesUrl || []).map((i, idx) => <img key={idx} src={i.image || i} alt="" />)}</div>
             <ul className={styles.detailList}>
-              <li><span>Precio base</span><strong>{viewing.currency}{formatted(viewing.price)}</strong></li>
+              <li><span>Precio base</span><strong>{curSymbol(viewing.currency)} {formatted(viewing.price)}</strong></li>
               <li><span>Categoría</span><strong>{categoryName(viewing.category_id)}</strong></li>
               {!viewing.is_customizable && <li><span>Cantidad</span><strong>{viewing.quantity}</strong></li>}
               <li><span>Estado</span><strong>{viewing.is_available === "available" ? "Disponible" : "Agotado"}</strong></li>
@@ -659,7 +770,7 @@ const Products = () => {
                       <span key={cfg.locality} style={{ fontSize: ".85rem", color: "#344054" }}>
                         <strong>{cfg.locality}:</strong>{" "}
                         {[
-                          cfg.delivery ? `🛵 Delivery${cfg.delivery_price > 0 ? ` (+${viewing.currency}${formatted(cfg.delivery_price)})` : " (gratis)"}` : null,
+                          cfg.delivery ? `🛵 Delivery${cfg.delivery_price > 0 ? ` (+${curSymbol(viewing.currency)}${formatted(cfg.delivery_price)})` : " (gratis)"}` : null,
                           cfg.takeout ? "🏪 Take out" : null,
                         ].filter(Boolean).join(" · ")}
                       </span>
@@ -724,7 +835,7 @@ const Products = () => {
                   ].map(({ key, label }) => (
                     <div key={key} className={styles.mappingRow}>
                       <span className={styles.mappingLabel}>{label}</span>
-    
+
                       <Select
                         value={importMapping[key] || ""}
                         onChange={(value) => setImportMapping(m => ({ ...m, [key]: value }))}

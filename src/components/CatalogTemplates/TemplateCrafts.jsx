@@ -1,5 +1,6 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateCrafts.module.css";
+import { curSymbol } from "../../helpers/utils";
 
 /**
  * TemplateCrafts (Manualidades)
@@ -118,7 +119,7 @@ export default function TemplateCrafts({
                 )}
                 <div className={styles.meta}>
                   <span className={styles.price}>
-                    {product.currency} {formatPrice(product.price)}
+                    {curSymbol(product.currency)} {formatPrice(product.price)}
                   </span>
                   {product.show_quantity && product.quantity > 0 && (
                     <span className={styles.chip}>Disp: {product.quantity}</span>

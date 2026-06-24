@@ -1,5 +1,6 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateDefault.module.css";
+import { curSymbol } from "../../helpers/utils";
 
 const TemplateDefault = ({
   business,
@@ -126,7 +127,7 @@ const TemplateDefault = ({
                 <div className={styles.productInfo}>
                   <h3 className={styles.productName}>{product.name}</h3>
                   <div className={styles.productPrice}>
-                    {product.currency} {formatPrice(product.price)}
+                    {curSymbol(product.currency)} {formatPrice(product.price)}
                   </div>
                   
                   {product.quantity > 0 && product.show_quantity && (
