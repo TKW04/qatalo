@@ -20,6 +20,9 @@ export default function TemplateFashion({
 }) {
   const { name = "Maison", description = "", logo_url } = business;
 
+  console.log(categories);
+  
+
   const formatPrice = (price) =>
     Number(price).toLocaleString("en-US", {
       minimumFractionDigits: 2,

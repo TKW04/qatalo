@@ -13,6 +13,7 @@ import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../..
 import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { DEMO_PRODUCTS } from "../../../constants/dummyCatalog";
+import { fetchCategories } from "../../../services/categoryApi";
 
 const TABS = [
   { id: "general", label: "General", icon: TbBuildingStore },
@@ -70,6 +71,13 @@ const Business = () => {
   const { data: myProducts = [] } = useQuery({
     queryKey: ["products", tenantId],
     queryFn: fetchProducts,
+    enabled: !!tenantId,
+    retry: false,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories", tenantId],
+    queryFn: fetchCategories,
     enabled: !!tenantId,
     retry: false,
   });
@@ -445,7 +453,7 @@ const Business = () => {
                     width={DEVICES.find((d) => d.id === device).width}
                     height={device === "mobile" ? 700 : device === "tablet" ? 760 : 720}
                   >
-                    <CatalogManager businessData={formData} products={previewProducts} isPreview />
+                    <CatalogManager businessData={formData} products={previewProducts} isPreview categories={categories} />
                   </DevicePreviewFrame>
                 </div>
               </div>

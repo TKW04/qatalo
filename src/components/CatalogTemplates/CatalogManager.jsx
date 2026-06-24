@@ -35,6 +35,7 @@ const parsePalette = (raw) => {
 };
 
 const CatalogManager = ({ businessData, products = [], categories: categoriesProp, isPreview = false }) => {
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocality, setSelectedLocality] = useState("all");
@@ -114,7 +115,7 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
 
   const categories = useMemo(() => {
     if (usingDummy) return DUMMY_CATEGORIES;
-    if (categoriesProp && categoriesProp.length) return categoriesProp;
+    if (categoriesProp && categoriesProp.length) return categoriesProp;    
     return Array.from(
       new Map(
         sourceProducts
