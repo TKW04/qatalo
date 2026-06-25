@@ -1,0 +1,206 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.cardTitle {
+  font-size: 1.2rem;
+  color: #113f67;
+  margin: 0 0 .3rem;
+}
+
+.cardSub {
+  color: #667085;
+  font-size: .9rem;
+  margin: 0 0 1.2rem;
+}
+
+/* ── QR ── */
+.qrWrap {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: #f7f9fb;
+  border-radius: 14px;
+  margin-bottom: 1.2rem;
+}
+
+.linkBtn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .7rem 1.4rem;
+  border-radius: 10px;
+  border: 1px solid #34699a;
+  background: transparent;
+  color: #34699a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.linkBtn:hover {
+  background: #34699a;
+  color: #fff;
+}
+
+/* ── Campos ── */
+.fieldLabel {
+  display: block;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: .4rem;
+}
+
+.editable {
+  font-weight: 400;
+  color: #98a2b3;
+  font-size: .8rem;
+}
+
+/* Link copiable */
+.copyRow {
+  display: flex;
+  gap: .5rem;
+}
+
+.copyInput {
+  flex: 1;
+  min-width: 0;
+  padding: .65rem .8rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: .9rem;
+  color: #1d2939;
+  background: #f9fafb;
+}
+
+.copyBtn,
+.copyTextBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .65rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #113f67;
+  color: #fff;
+  font-weight: 600;
+  font-size: .88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s ease;
+}
+
+.copyBtn:hover,
+.copyTextBtn:hover {
+  background: #34699a;
+}
+
+/* Mensaje editable */
+.messageBox {
+  width: 100%;
+  box-sizing: border-box;
+  padding: .75rem .9rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: .92rem;
+  font-family: inherit;
+  color: #1d2939;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.messageBox:focus {
+  outline: none;
+  border-color: #34699a;
+}
+
+.msgActions {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  margin-top: .6rem;
+}
+
+.resetBtn {
+  background: transparent;
+  border: none;
+  color: #34699a;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ── Botones de compartir ── */
+.shareButtons {
+  display: flex;
+  gap: .7rem;
+  margin-top: 1.4rem;
+  flex-wrap: wrap;
+}
+
+.shareBtn {
+  flex: 1;
+  min-width: 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .8rem 1rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  font-size: .92rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+
+.shareBtn:hover {
+  transform: translateY(-2px);
+}
+
+.whatsapp {
+  background: #25d366;
+  color: #fff;
+}
+
+.whatsapp:hover {
+  box-shadow: 0 8px 20px -6px rgba(37, 211, 102, .5);
+}
+
+.generic {
+  background: #eef2f6;
+  color: #113f67;
+}
+
+.generic:hover {
+  box-shadow: 0 8px 20px -6px rgba(17, 63, 103, .25);
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .qrWrap{
+    padding: 0px;
+    margin: 0px;
+  }
+  .copyRow {
+    flex-direction: column;
+  }
+  .copyBtn {
+    justify-content: center;
+  }
+}

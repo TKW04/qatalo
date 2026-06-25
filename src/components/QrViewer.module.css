@@ -59,3 +59,11 @@
 .btnPrint:hover {
   background: rgba(255, 255, 255, 0.12);
 }
+
+@media (max-width: 480px) {
+  .qrContainer {
+    width: 367px;
+    margin: 0px;
+    /* padding: 0; */
+  }
+}
