@@ -140,6 +140,9 @@ const CartDrawer = ({
     age: savedGuest.age || 0,
   });
 
+  // Teléfono confirmado para órdenes con link de pago (lo usa el negocio para enviar el link)
+  const [confirmPhone, setConfirmPhone] = useState("");
+
   // Offer state
   const [promoCode, setPromoCode] = useState("");
   const [appliedOffer, setAppliedOffer] = useState(null);
@@ -161,6 +164,10 @@ const CartDrawer = ({
     queryFn: () => fetchPublicOffers(businessId),
     enabled: !!businessId, retry: false, staleTime: 1000 * 60 * 5,
   });
+
+  // Método seleccionado y si es "link de pago"
+  const selectedMethod = paymentMethods.find(pm => pm.payment_method_id === selectedPm) || null;
+  const isPaymentLink = selectedMethod?.payment_type === "payment_link";
 
   // ── Totales ──
   const productsSubtotal = items.reduce(
@@ -267,13 +274,16 @@ const CartDrawer = ({
         ...it,
         delivery_address: it.fulfillment_type === "delivery" ? deliveryAddress.trim() : "",
       }));
-      if (session?.token) return checkoutCartWithToken(businessId, selectedPm, itemsFinal, offerInfo);
+      // Teléfono a registrar: el confirmado (link de pago) tiene prioridad
+      const phoneToUse = (confirmPhone || guest.phone || "").trim();
+      if (session?.token)
+        return checkoutCartWithToken(businessId, selectedPm, itemsFinal, { ...offerInfo, confirmed_phone: phoneToUse });
       return createCatalogCart({
         business_id: businessId,
         given_name: guest.given_name,
         family_name: guest.family_name,
         email: guest.email,
-        phone: guest.phone,
+        phone: phoneToUse,
         age: Number(guest.age) || 0,
         payment_method: { payment_method_id: selectedPm },
         items: itemsFinal,
@@ -284,7 +294,8 @@ const CartDrawer = ({
       onPurchase?.({                              // ← nuevo
         total,
         currency: items[0]?.payment_method?.currency || "",
-      }); clearCart(businessId); onChanged?.(); setStep("success");
+      }); clearCart(businessId); onChanged?.();
+      setStep(isPaymentLink ? "successLink" : "success");
     },
     onError: (e) => {
       const body = e?.response?.data || {};
@@ -301,6 +312,31 @@ const CartDrawer = ({
       }
     },
   });
+
+  // Acción del botón confirmar en el paso de pago
+  const handleConfirm = () => {
+    if (!selectedPm) return showWarning("Aviso", "Selecciona un método de pago");
+    if (hasDelivery && !deliveryAddress.trim())
+      return showWarning("Aviso", "La dirección de entrega es requerida");
+    // Si es link de pago, pasar al paso de confirmar teléfono
+    if (isPaymentLink) {
+      // Pre-llenar con el teléfono que ya tengamos
+      setConfirmPhone(prev => prev || guest.phone || session?.phone || "");
+      setStep("confirmPhone");
+      return;
+    }
+    checkout.mutate();
+  };
+
+  // Confirmar teléfono y crear la orden (flujo link de pago)
+  const handleConfirmPhone = () => {
+    const phone = confirmPhone.trim();
+    // Validación simple: al menos 10 dígitos
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 10)
+      return showWarning("Aviso", "Ingresa un número de teléfono válido (con WhatsApp)");
+    checkout.mutate();
+  };
 
   // ── Render ──
   return (
@@ -460,18 +496,63 @@ const CartDrawer = ({
               )}
 
             </div>
-            <button className={styles.primaryBtn} disabled={!selectedPm || checkout.isPending} onClick={() => checkout.mutate()}>
-              {checkout.isPending ? "Enviando…" : <><Check size={16} /> Confirmar pedido</>}
+
+            {/* Aviso para link de pago */}
+            {isPaymentLink && (
+              <div className={styles.payLinkNote}>
+                💬 El negocio te enviará un link de pago por el monto exacto de tu pedido.
+                En el siguiente paso confirma tu número de WhatsApp.
+              </div>
+            )}
+
+            <button className={styles.primaryBtn} disabled={!selectedPm || checkout.isPending} onClick={handleConfirm}>
+              {checkout.isPending ? "Enviando…" : <><Check size={16} /> {isPaymentLink ? "Continuar" : "Confirmar pedido"}</>}
             </button>
             <button className={styles.linkBtn} onClick={() => setStep("cart")}>Volver al carrito</button>
           </>
         )}
 
+        {/* Confirmar teléfono (solo link de pago) */}
+        {step === "confirmPhone" && (
+          <>
+            <h2 className={styles.title}>Confirma tu WhatsApp</h2>
+            <p className={styles.lead}>
+              El negocio te enviará el link de pago por WhatsApp por el total de{" "}
+              <strong>{cur} {formatted(total)}</strong>. Confirma tu número para recibirlo.
+            </p>
+            <label className={styles.label}>Número de WhatsApp *</label>
+            <input
+              className={styles.input}
+              value={confirmPhone}
+              onChange={e => setConfirmPhone(e.target.value)}
+              placeholder="Ej. 809 555 1234"
+              inputMode="tel"
+            />
+            <button className={styles.primaryBtn} disabled={checkout.isPending} onClick={handleConfirmPhone}>
+              {checkout.isPending ? "Enviando…" : <><Check size={16} /> Confirmar pedido</>}
+            </button>
+            <button className={styles.linkBtn} onClick={() => setStep("pay")}>Volver</button>
+          </>
+        )}
+
+        {/* Success normal (transferencia, etc.) */}
         {step === "success" && (
           <>
             <h2 className={styles.title}>¡Pedido enviado!</h2>
             <p className={styles.lead}>Recibirás un correo con el resumen y las instrucciones de pago.</p>
             <button className={styles.primaryBtn} onClick={onClose}>Cerrar</button>
+          </>
+        )}
+
+        {/* Success link de pago */}
+        {step === "successLink" && (
+          <>
+            <h2 className={styles.title}>¡Pedido recibido! 🎉</h2>
+            <p className={styles.lead}>
+              El negocio te enviará el <strong>link de pago por WhatsApp</strong> por el monto
+              exacto de tu pedido ({cur} {formatted(total)}). Mantente atento a tu WhatsApp.
+            </p>
+            <button className={styles.primaryBtn} onClick={onClose}>Entendido</button>
           </>
         )}
       </div>

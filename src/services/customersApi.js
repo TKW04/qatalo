@@ -129,3 +129,22 @@ export const cancelTransaction = async (customerId, transactionId, reason) => {
   });
   return handle(res);
 };
+
+export const changeOrderPaymentMethod = async (customerId, transactionId, paymentMethodId) => {
+  const res = await fetch(`${API_URL}customers/transactions/payment-method`, {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({
+      customer_id: customerId,
+      transaction_id: transactionId,
+      payment_method_id: paymentMethodId,
+    }),
+  });
+  return handle(res);
+};
+export const reactivateTransaction = async (customerId, transactionId) => {
+  const res = await fetch(`${API_URL}customers/transactions/reactivate`, {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({ customer_id: customerId, transaction_id: transactionId }),
+  });
+  return handle(res);
+};

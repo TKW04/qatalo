@@ -582,6 +582,73 @@
     border-color: #113f67;
 }
 
+.editPmBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    background: transparent;
+    border: 1px solid #c7d6e5;
+    color: #34699a;
+    border-radius: 6px;
+    padding: .15rem .5rem;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.editPmBtn:hover {
+    background: #34699a;
+    color: #fff;
+    border-color: #34699a;
+}
+
+.linkLikeBtn {
+    background: transparent;
+    border: none;
+    color: #667085;
+    font-size: .82rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.actReactivate {
+    border-color: #34699a;
+    color: #34699a;
+}
+
+.actReactivate:hover {
+    background: #34699a;
+    color: #fff;
+}
+
+.actReactivate:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.btnReactivate {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .6rem 1.1rem;
+    background: #34699a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: .88rem;
+}
+
+.btnReactivate:hover {
+    background: #2a5680;
+}
+
+.btnReactivate:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
 /* ── Responsive ── */
 @media (max-width: 680px) {
     .orderMain {

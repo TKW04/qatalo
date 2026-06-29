@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowsRotate, FaCheck, FaTruck, FaBan,
   FaEye, FaMagnifyingGlass, FaReceipt,
-  FaFileInvoiceDollar, FaDownload, FaEnvelope,
+  FaFileInvoiceDollar, FaDownload, FaEnvelope, FaWhatsapp, FaPen, FaRotateLeft,
 } from "react-icons/fa6";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
@@ -12,8 +12,11 @@ import { currencies, formatted, getStatusStyle } from "../../../helpers/utils";
 import {
   fetchCustomers, approveTransaction,
   deliveredTransaction, cancelTransaction, emitInvoice,
+  changeOrderPaymentMethod, reactivateTransaction,
 } from "../../../services/customersApi";
+import { fetchPaymentMethods } from "../../../services/paymentMethodsApi";
 import { fetchBusinessData } from "../../../services/businessApi";
+import Select from "../../../components/Select";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Orders.module.css";
 
@@ -39,6 +42,14 @@ const CANCELLABLE = (s) => ["Pendiente de pago", "Pendiente de validación", "Ap
 const INVOICEABLE = (s) => ["Aprobada", "Entregada"].includes(s);
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const sym = (code) => currencies.find(c => c.code === code)?.symbol || code || "";
+
+// ── Helper: limpiar teléfono RD para WhatsApp ─────────────────────────────────
+const cleanPhoneRD = (raw) => {
+  if (!raw) return "";
+  let d = String(raw).replace(/\D/g, "");
+  if (d.length === 10 && /^(8[024]9)/.test(d)) d = "1" + d;   // 809/829/849 → 1809...
+  return d;
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const buildOrders = (customers) => {
@@ -90,7 +101,6 @@ const Orders = () => {
   const { showError, showSuccess } = useNotification();
   const qc = useQueryClient();
 
-  // Caché compartido con Clientes y Reportes — sin fetch extra
   const { data: customers = [], isLoading, refetch } = useQuery({
     queryKey: ["customers", tenantId],
     queryFn: fetchCustomers,
@@ -98,10 +108,17 @@ const Orders = () => {
     retry: false,
   });
 
-  // Caché compartido con Configuración del negocio — sin fetch extra
   const { data: business } = useQuery({
     queryKey: ["business", tenantId],
     queryFn: fetchBusinessData,
+    enabled: !!tenantId,
+    retry: false,
+  });
+
+  // Métodos de pago del negocio (para cambiar el método de una orden)
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ["payment-methods", tenantId],
+    queryFn: fetchPaymentMethods,
     enabled: !!tenantId,
     retry: false,
   });
@@ -112,15 +129,16 @@ const Orders = () => {
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
   const [receiptUrl, setReceiptUrl] = useState(null);
+  const [editingPm, setEditingPm] = useState(false);   // ← modo edición del método de pago
 
-  // Facturación
   const [invoiceTarget, setInvoiceTarget] = useState(null);
-  const [invoiceType, setInvoiceType] = useState("recibo"); // "recibo" | "factura"
+  const [invoiceType, setInvoiceType] = useState("recibo");
   const [ncfManual, setNcfManual] = useState("");
 
   const ncfEnabled = !!business?.ncf_enabled;
   const ncfPool = business?.ncf_pool || [];
   const ncfAvailable = ncfPool.filter(n => !n.used).length;
+  const businessName = business?.business_name || business?.name || "nuestro negocio";
 
   const orders = useMemo(() => buildOrders(customers), [customers]);
 
@@ -144,6 +162,27 @@ const Orders = () => {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["customers", tenantId] });
 
+  // ── Enviar link de pago por WhatsApp ──
+  const sendPaymentLinkWA = (order) => {
+    const { customer, items } = order;
+    const phone = cleanPhoneRD(customer.phone);
+    if (!phone) {
+      showError("Sin teléfono", "Este cliente no tiene un número de teléfono válido registrado.");
+      return;
+    }
+    const total = orderTotal(items);
+    const cur = sym(items[0]?.payment_method?.currency || "");
+    const nombre = customer.given_name || customer.full_name || "";
+    const orderRef = String(order.order_id).slice(0, 8).toUpperCase();
+    const msg =
+      `¡Hola ${nombre}! 👋 Gracias por tu pedido en ${businessName} (#${orderRef}).\n\n` +
+      `El total es ${cur} ${formatted(total)}. Aquí tienes tu link de pago:\n\n` +
+      `[PEGA AQUÍ TU LINK DE PAGO]\n\n` +
+      `Cuando completes el pago, avísame para confirmar tu pedido. ¡Gracias! 🛍️`;
+    const url = `https://api.whatsapp.com/send/?phone=${phone}&text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noopener");
+  };
+
   const approveM = useMutation({
     mutationFn: ({ customerId, transactionId }) => approveTransaction(customerId, transactionId),
     onSuccess: () => { showSuccess("Aprobada", "Pago validado"); invalidate(); setViewOrder(null); },
@@ -163,7 +202,46 @@ const Orders = () => {
     onError: (e) => showError("Error", e.message),
   });
 
-  // Emisión de comprobante (factura / recibo)
+  // Cambiar método de pago de la orden (todas las transacciones del grupo)
+  const changePmM = useMutation({
+    mutationFn: ({ customerId, transactionId, paymentMethodId }) =>
+      changeOrderPaymentMethod(customerId, transactionId, paymentMethodId),
+    onSuccess: (res) => {
+      showSuccess("Actualizado", "Método de pago cambiado");
+      // Refleja el cambio en el modal abierto sin cerrar
+      setViewOrder(prev => {
+        if (!prev) return prev;
+        const newPm = res?.payment_method || {};
+        return {
+          ...prev,
+          items: prev.items.map(it => ({ ...it, payment_method: newPm })),
+        };
+      });
+      setEditingPm(false);
+      invalidate();
+    },
+    onError: (e) => showError("Error", e.message),
+  });
+
+  // Reactivar orden cancelada (vuelve a su estado previo)
+  const reactivateM = useMutation({
+    mutationFn: ({ customerId, transactionId }) => reactivateTransaction(customerId, transactionId),
+    onSuccess: () => {
+      showSuccess("Reactivada", "La orden volvió a su estado anterior");
+      invalidate();
+      setViewOrder(null);
+    },
+    onError: (e) => {
+      // Mensaje claro si falla por stock
+      const body = e?.response?.data || {};
+      if (body.error === "stock_insuficiente") {
+        showError("Sin stock", body.message || "No hay stock suficiente para reactivar.");
+      } else {
+        showError("Error", e.message);
+      }
+    },
+  });
+
   const invoiceM = useMutation({
     mutationFn: (payload) => emitInvoice(payload),
     onSuccess: (res, vars) => {
@@ -173,7 +251,7 @@ const Orders = () => {
       } else if (vars.action === "email") {
         showSuccess("Enviado", res?.message || "Comprobante enviado al correo del cliente.");
       }
-      invalidate(); // refleja el ncf_used recién persistido
+      invalidate();
       closeInvoice();
     },
     onError: (e) => showError("Error", e.message),
@@ -182,7 +260,6 @@ const Orders = () => {
   const openInvoice = (order) => {
     setViewOrder(null);
     setInvoiceTarget(order);
-    // Si ya fue facturada con NCF, arranca en modo factura; si no, recibo
     const existing = order.items.find(t => t.ncf_used)?.ncf_used;
     setInvoiceType(existing ? "factura" : "recibo");
     setNcfManual("");
@@ -267,11 +344,13 @@ const Orders = () => {
             const names = [...new Set(items.map(t => t.product_name).filter(Boolean))];
             const preview = names.slice(0, 2).join(", ") +
               (names.length > 2 ? ` y ${names.length - 2} más` : "");
+            const isPayLinkPending =
+              firstTx?.payment_method?.payment_type === "payment_link" &&
+              status === "Pendiente de pago";
 
             return (
               <div key={order_id} className={`${styles.orderCard} ${status === "Cancelada" ? styles.dimmed : ""}`}>
                 <div className={styles.orderMain}>
-                  {/* Fecha + cliente */}
                   <div className={styles.colLeft}>
                     <span className={styles.orderDate}>{formatDate(create_date)}</span>
                     <span className={styles.orderCustomer}>
@@ -280,7 +359,6 @@ const Orders = () => {
                     <span className={styles.orderEmail}>{customer.email}</span>
                   </div>
 
-                  {/* Productos + entrega */}
                   <div className={styles.colCenter}>
                     <span className={styles.orderProducts}>{preview || "—"}</span>
                     {(hasDelivery || hasTakeout || locality) && (
@@ -291,7 +369,6 @@ const Orders = () => {
                     )}
                   </div>
 
-                  {/* Total + status + semáforo */}
                   <div className={styles.colRight}>
                     <span className={styles.orderTotal}>{cur} {formatted(total)}</span>
                     <span className={styles.statusBadge} style={getStatusStyle(status)}>
@@ -305,11 +382,19 @@ const Orders = () => {
                   </div>
                 </div>
 
-                {/* Acciones rápidas */}
                 <div className={styles.orderActions}>
                   <button className={styles.actBtn} onClick={() => setViewOrder(order)}>
                     <FaEye /> Ver
                   </button>
+                  {isPayLinkPending && (
+                    <button
+                      className={`${styles.actBtn} ${styles.actWhats}`}
+                      onClick={() => sendPaymentLinkWA(order)}
+                      title="Enviar link de pago por WhatsApp"
+                    >
+                      <FaWhatsapp /> Enviar link
+                    </button>
+                  )}
                   {APPROVABLE(status) && (
                     <button
                       className={`${styles.actBtn} ${styles.actApprove}`}
@@ -344,6 +429,15 @@ const Orders = () => {
                       <FaBan /> Cancelar
                     </button>
                   )}
+                  {status === "Cancelada" && (
+                    <button
+                      className={`${styles.actBtn} ${styles.actReactivate}`}
+                      disabled={reactivateM.isPending}
+                      onClick={() => reactivateM.mutate({ customerId: customer.customer_id, transactionId: firstTx.transaction_id })}
+                    >
+                      <FaRotateLeft /> Reactivar
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -362,13 +456,15 @@ const Orders = () => {
         const discountAmt = items.reduce((s, t) => s + (Number(t.discount_amount) || 0), 0);
         const total = subtotal + deliveryAmt - discountAmt;
         const existingNcf = items.find(t => t.ncf_used)?.ncf_used || "";
+        const isPayLinkPending =
+          firstTx?.payment_method?.payment_type === "payment_link" &&
+          status === "Pendiente de pago";
 
         return (
-          <div className={styles.overlay} onClick={() => setViewOrder(null)}>
+          <div className={styles.overlay} onClick={() => { setViewOrder(null); setEditingPm(false); }}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
               <h3>Detalle de orden</h3>
 
-              {/* Cliente */}
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Cliente</div>
                 <div className={styles.row}>
@@ -378,7 +474,6 @@ const Orders = () => {
                 {customer.phone && <div className={styles.muted} style={{ marginTop: ".2rem" }}>{customer.phone}</div>}
               </div>
 
-              {/* Productos */}
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Productos ({items.length})</div>
                 {items.map((t, i) => {
@@ -420,7 +515,6 @@ const Orders = () => {
                 })}
               </div>
 
-              {/* Totales */}
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Totales</div>
                 <div className={styles.row}><span>Subtotal</span><strong>{cur} {formatted(subtotal)}</strong></div>
@@ -431,14 +525,51 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Pago + estado */}
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Pago</div>
                 <div className={styles.row}>
-                  <span>{firstTx?.payment_method?.payment_type === "bank_transfer" ? "Transferencia bancaria" : "Link de pago"}</span>
-                  <span className={styles.statusBadge} style={getStatusStyle(status)}>
-                    {STATUS_LABEL[status] || status}
-                  </span>
+                  {editingPm && status !== "Entregada" && status !== "Cancelada" ? (
+                    <div style={{ width: "100%" }}>
+                      <Select
+                        value={firstTx?.payment_method?.payment_method_id || ""}
+                        onChange={(pmId) => changePmM.mutate({
+                          customerId: customer.customer_id,
+                          transactionId: firstTx.transaction_id,
+                          paymentMethodId: pmId,
+                        })}
+                        options={paymentMethods.map(pm => ({
+                          value: pm.payment_method_id,
+                          label: pm.payment_method_name,
+                        }))}
+                        placeholder="Seleccionar método"
+                        searchable={false}
+                      />
+                      <div style={{ display: "flex", gap: ".5rem", marginTop: ".5rem", alignItems: "center" }}>
+                        {changePmM.isPending && <span className={styles.muted}>Guardando…</span>}
+                        <button className={styles.linkLikeBtn} onClick={() => setEditingPm(false)}>Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: ".5rem" }}>
+                        {firstTx?.payment_method?.payment_type === "bank_transfer"
+                          ? "Transferencia bancaria"
+                          : firstTx?.payment_method?.payment_method_name || "Link de pago"}
+                        {status !== "Entregada" && status !== "Cancelada" && (
+                          <button
+                            className={styles.editPmBtn}
+                            onClick={() => setEditingPm(true)}
+                            title="Cambiar método de pago"
+                          >
+                            <FaPen size={11} /> Cambiar
+                          </button>
+                        )}
+                      </span>
+                      <span className={styles.statusBadge} style={getStatusStyle(status)}>
+                        {STATUS_LABEL[status] || status}
+                      </span>
+                    </>
+                  )}
                 </div>
                 {existingNcf && (
                   <div style={{ fontSize: ".82rem", color: "#065F46", marginTop: ".4rem", fontWeight: 600 }}>
@@ -452,7 +583,13 @@ const Orders = () => {
                 )}
               </div>
 
-              {/* Comprobante de pago (subido por el cliente) */}
+              {isPayLinkPending && (
+                <div className={styles.payLinkAdminNote}>
+                  💬 Esta orden espera que le envíes el <strong>link de pago</strong> al cliente por el total exacto.
+                  Usa el botón de WhatsApp y pega tu link en el mensaje.
+                </div>
+              )}
+
               {firstTx?.receipt_url && (
                 <button className={styles.receiptBtn} onClick={() => setReceiptUrl(firstTx.receipt_url)}>
                   <FaReceipt /> Ver comprobante
@@ -460,7 +597,12 @@ const Orders = () => {
               )}
 
               <div className={styles.modalActions}>
-                <button className={styles.btnOutline} onClick={() => setViewOrder(null)}>Cerrar</button>
+                <button className={styles.btnOutline} onClick={() => { setViewOrder(null); setEditingPm(false); }}>Cerrar</button>
+                {isPayLinkPending && (
+                  <button className={styles.btnWhats} onClick={() => sendPaymentLinkWA(viewOrder)}>
+                    <FaWhatsapp /> Enviar link por WhatsApp
+                  </button>
+                )}
                 {INVOICEABLE(status) && (
                   <button className={styles.btnInvoice} onClick={() => openInvoice(viewOrder)}>
                     <FaFileInvoiceDollar /> Emitir factura
@@ -484,6 +626,12 @@ const Orders = () => {
                     <FaBan /> Cancelar
                   </button>
                 )}
+                {status === "Cancelada" && (
+                  <button className={styles.btnReactivate} disabled={reactivateM.isPending}
+                    onClick={() => reactivateM.mutate({ customerId: customer.customer_id, transactionId: firstTx.transaction_id })}>
+                    <FaRotateLeft /> {reactivateM.isPending ? "Reactivando..." : "Reactivar orden"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -496,7 +644,6 @@ const Orders = () => {
         const existingNcf = items.find(t => t.ncf_used)?.ncf_used || "";
         const custEmail = customer.email || "";
         const isFactura = invoiceType === "factura";
-        // No se puede emitir factura nueva si no hay NCF y la orden no tiene uno ya asignado
         const noNcfLeft = isFactura && !existingNcf && !ncfManual.trim() && ncfAvailable === 0;
         const busy = invoiceM.isPending;
 
@@ -515,7 +662,6 @@ const Orders = () => {
                 </div>
               )}
 
-              {/* Tipo de comprobante */}
               <div className={styles.invoiceOptions}>
                 <label className={`${styles.invoiceOption} ${!isFactura ? styles.invoiceOptionActive : ""}`}>
                   <input type="radio" name="invtype" checked={!isFactura}
@@ -540,7 +686,6 @@ const Orders = () => {
                 </label>
               </div>
 
-              {/* NCF manual (solo factura, sin NCF ya asignado) */}
               {isFactura && !existingNcf && (
                 <div className={styles.formGroup} style={{ marginBottom: "1rem" }}>
                   <label style={{ fontSize: ".82rem", fontWeight: 600, color: "#475467" }}>
