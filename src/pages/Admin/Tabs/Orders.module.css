@@ -648,7 +648,47 @@
     opacity: .5;
     cursor: not-allowed;
 }
+/* ── Botón enviar link por WhatsApp ── */
+.actWhats {
+    border-color: #25d366;
+    color: #128c3e;
+}
 
+.actWhats:hover {
+    background: #25d366;
+    color: #fff;
+    border-color: #25d366;
+}
+
+.btnWhats {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .6rem 1.1rem;
+    background: #25d366;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: .88rem;
+    transition: background .15s;
+}
+
+.btnWhats:hover {
+    background: #1da851;
+}
+
+/* Aviso de link de pago pendiente en el detalle */
+.payLinkAdminNote {
+    background: #f0f7ff;
+    border: 1px solid #bcdbf5;
+    color: #1e40af;
+    border-radius: 8px;
+    padding: .7rem .9rem;
+    font-size: .85rem;
+    margin-bottom: 1rem;
+}
 /* ── Responsive ── */
 @media (max-width: 680px) {
     .orderMain {
