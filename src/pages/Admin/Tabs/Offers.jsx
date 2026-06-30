@@ -24,6 +24,15 @@ const emptyForm = {
   unlimited_uses: true, max_uses: "",
   no_expiry: true, valid_from: "", valid_until: "",
   buy_quantity: "", paid_quantity: "",
+  priority: "media",
+};
+
+// Etiqueta legible de prioridad
+const PRIORITY_LABEL = { alta: "Alta", media: "Media", baja: "Baja" };
+const PRIORITY_COLOR = {
+  alta: { background: "#fee2e2", color: "#991b1b" },
+  media: { background: "#fef3c7", color: "#92400e" },
+  baja: { background: "#e0e7ff", color: "#3730a3" },
 };
 
 const Toggle = ({ checked, onChange, label }) => (
@@ -107,6 +116,7 @@ const Offers = () => {
     valid_until: form.no_expiry ? "" : (form.valid_until || ""),
     buy_quantity: form.discount_type === "buy_x_get_y" ? Number(form.buy_quantity) || 0 : 0,
     paid_quantity: form.discount_type === "buy_x_get_y" ? Number(form.paid_quantity) || 0 : 0,
+    priority: form.priority || "media",
   });
 
   const saveMutation = useMutation({
@@ -140,6 +150,7 @@ const Offers = () => {
       category_ids: o.category_ids || [],
       buy_quantity: o.buy_quantity || "",
       paid_quantity: o.paid_quantity || "",
+      priority: o.priority || "media",
     });
     setErrors({});
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -291,6 +302,23 @@ const Offers = () => {
             )}
           </div>
 
+          {/* Prioridad */}
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>Prioridad de la oferta</span>
+            <p className={styles.pillHint} style={{ margin: "0 0 .6rem" }}>
+              Si varias ofertas aplican al mismo tiempo, se usa la de mayor prioridad.
+              Si dos tienen la misma prioridad, gana la que más le ahorre al cliente. Las ofertas no se suman entre sí.
+            </p>
+            <div className={styles.optionGroup}>
+              {[["alta", "🔴 Alta"], ["media", "🟡 Media"], ["baja", "🔵 Baja"]].map(([val, lbl]) => (
+                <label key={val} className={`${styles.optionCard} ${form.priority === val ? styles.optionActive : ""}`}>
+                  <input type="radio" name="priority" value={val} checked={form.priority === val} onChange={() => sf("priority", val)} />
+                  {lbl}
+                </label>
+              ))}
+            </div>
+          </div>
+
           {/* Condiciones y límites */}
           <div className={styles.section}>
             <span className={styles.sectionLabel}>Condiciones y límites</span>
@@ -354,12 +382,14 @@ const Offers = () => {
         <div className={styles.offerList}>
           {filteredOffers.map(offer => {
             const status = offerStatus(offer);
+            const prio = offer.priority || "media";
             return (
               <div key={offer.offer_id} className={`${styles.offerCard} ${status !== "active" ? styles.offerCardDim : ""}`}>
                 <div className={styles.offerCardLeft}>
                   <div className={styles.offerCardHeader}>
                     <span className={styles.offerName}>{offer.name}</span>
                     <span className={styles.statusBadge} style={STATUS_COLOR[status]}>{STATUS_LABEL[status]}</span>
+                    <span className={styles.statusBadge} style={PRIORITY_COLOR[prio]}>Prioridad: {PRIORITY_LABEL[prio]}</span>
                   </div>
                   {offer.description && <div className={styles.offerDesc}>{offer.description}</div>}
                   <div className={styles.offerMeta}>

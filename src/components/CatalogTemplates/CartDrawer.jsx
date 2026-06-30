@@ -17,7 +17,11 @@ import styles from "./CustomerPortal.module.css";
 
 const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
-// ── Offer helpers ──────────────────────────────────────────────
+// Prioridad como numero para comparar (mayor gana)
+const PRIORITY_RANK = { alta: 3, media: 2, baja: 1 };
+const priorityRank = (offer) => PRIORITY_RANK[(offer?.priority || "media").toLowerCase()] || 2;
+
+// -- Offer helpers --
 const getApplicableItems = (offer, items) => {
   if (!offer) return [];
   if (offer.applies_to === "all") return items;
@@ -38,14 +42,12 @@ const calcDiscount = (offer, items) => {
   const applicable = getApplicableItems(offer, items);
   if (!applicable.length) return 0;
 
-  // ── Paga X lleva Y (2x1, 3x2...) ──
   if (offer.discount_type === "buy_x_get_y") {
     const X = Number(offer.buy_quantity) || 0;
     const Y = Number(offer.paid_quantity) || 0;
     if (X < 2 || Y < 1 || Y >= X) return 0;
 
     let total = 0;
-    // Se calcula POR PRODUCTO (no mezcla unidades de productos distintos)
     for (const it of applicable) {
       const qty = Number(it.quantity) || 0;
       const price = Number(it.price) || 0;
@@ -57,7 +59,6 @@ const calcDiscount = (offer, items) => {
     return total;
   }
 
-  // ── Porcentaje / monto fijo (lógica existente) ──
   const sub = applicable.reduce(
     (s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0
   );
@@ -66,15 +67,30 @@ const calcDiscount = (offer, items) => {
     : Math.min(Number(offer.discount_value) || 0, sub);
 };
 
+// -- Elegir la oferta GANADORA entre una lista de candidatas --
+// Regla: mayor prioridad gana; si empatan, mayor descuento para el cliente. No se suman.
+const pickWinningOffer = (candidates, items, subtotal) => {
+  let winner = null, winnerDiscount = 0;
+  for (const o of candidates) {
+    if (!isOfferApplicable(o, items, subtotal)) continue;
+    const d = calcDiscount(o, items);
+    if (d <= 0) continue;
+    if (!winner) { winner = o; winnerDiscount = d; continue; }
+    const pr = priorityRank(o), pw = priorityRank(winner);
+    if (pr > pw || (pr === pw && d > winnerDiscount)) {
+      winner = o; winnerDiscount = d;
+    }
+  }
+  return { winner, discount: winnerDiscount };
+};
 
-// Distribuye el descuento proporcionalmente por ítem aplicable
+// Distribuye el descuento proporcionalmente por item aplicable
 const distributeDiscount = (offer, items, totalDiscount) => {
   if (totalDiscount <= 0 || !offer)
     return items.map(it => ({ ...it, original_price: it.price, discount_amount: 0 }));
 
   const applicable = getApplicableItems(offer, items);
 
-  // ── Paga X lleva Y: descuento exacto por línea ──
   if (offer.discount_type === "buy_x_get_y") {
     const X = Number(offer.buy_quantity) || 0;
     const Y = Number(offer.paid_quantity) || 0;
@@ -96,7 +112,6 @@ const distributeDiscount = (offer, items, totalDiscount) => {
     });
   }
 
-  // ── Porcentaje / fijo (lógica existente proporcional) ──
   const appSub = applicable.reduce(
     (s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0
   );
@@ -116,7 +131,7 @@ const distributeDiscount = (offer, items, totalDiscount) => {
   });
 };
 
-// ── Componente ────────────────────────────────────────────────
+// -- Componente --
 const CartDrawer = ({
   businessId, businessName, onClose, onChanged, onCheckoutStart, onPurchase, }) => {
   const { showWarning, showError } = useNotification();
@@ -126,7 +141,7 @@ const CartDrawer = ({
     setItems(getCart(businessId));
   }, [businessId]);
 
-  
+
   const [step, setStep] = useState("cart");
   const [session, setSession] = useState(() => getValidCustomerSession(businessId));
   const [selectedPm, setSelectedPm] = useState("");
@@ -140,14 +155,16 @@ const CartDrawer = ({
     age: savedGuest.age || 0,
   });
 
-  // Teléfono confirmado para órdenes con link de pago (lo usa el negocio para enviar el link)
+  // Telefono confirmado para ordenes con link de pago
   const [confirmPhone, setConfirmPhone] = useState("");
 
   // Offer state
   const [promoCode, setPromoCode] = useState("");
+  const [enteredCode, setEnteredCode] = useState(null);  // oferta de codigo ingresada (valida)
   const [appliedOffer, setAppliedOffer] = useState(null);
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
+  const [promoInfo, setPromoInfo] = useState("");        // aviso: ya tienes una oferta mejor
 
   const [stockError, setStockError] = useState(null);
 
@@ -165,11 +182,11 @@ const CartDrawer = ({
     enabled: !!businessId, retry: false, staleTime: 1000 * 60 * 5,
   });
 
-  // Método seleccionado y si es "link de pago"
+  // Metodo seleccionado y si es link de pago
   const selectedMethod = paymentMethods.find(pm => pm.payment_method_id === selectedPm) || null;
   const isPaymentLink = selectedMethod?.payment_type === "payment_link";
 
-  // ── Totales ──
+  // -- Totales --
   const productsSubtotal = items.reduce(
     (s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0
   );
@@ -178,23 +195,36 @@ const CartDrawer = ({
   const total = productsSubtotal + deliverySubtotal - discountAmount;
   const hasDelivery = items.some(it => it.fulfillment_type === "delivery");
 
-  // ── Auto-aplicar ofertas automáticas ──
+  // -- Recalcular oferta ganadora cuando cambian carrito, ofertas o el codigo ingresado --
   useEffect(() => {
     const auto = availableOffers.filter(o => o.trigger === "automatic");
-    let best = null, bestD = 0;
-    for (const o of auto) {
-      if (!isOfferApplicable(o, items, productsSubtotal)) continue;
-      const d = calcDiscount(o, items);
-      if (d > bestD) { bestD = d; best = o; }
-    }
-    // Solo reemplaza si no hay un código manual activo
-    if (!appliedOffer || appliedOffer.trigger === "automatic") {
-      setAppliedOffer(best);
-      setPromoSuccess(best ? `⚡ "${best.name}" aplicado automáticamente.` : "");
-    }
-  }, [availableOffers, items.length, productsSubtotal]); // eslint-disable-line
+    const candidates = enteredCode ? [...auto, enteredCode] : auto;
+    const { winner } = pickWinningOffer(candidates, items, productsSubtotal);
+    setAppliedOffer(winner);
 
-  // ── Helpers de carrito ──
+    if (winner) {
+      if (enteredCode && winner.offer_id === enteredCode.offer_id) {
+        const d = calcDiscount(winner, items);
+        setPromoSuccess(
+          `✓ "${winner.name}" — ${winner.discount_type === "percentage"
+            ? `${winner.discount_value}% off`
+            : `${cur} ${formatted(d)} off`}`
+        );
+        setPromoInfo("");
+      } else if (enteredCode) {
+        setPromoSuccess(winner.trigger === "automatic" ? `⚡ "${winner.name}" aplicado automáticamente.` : "");
+        setPromoInfo(`Ya tienes aplicada una oferta mejor: "${winner.name}". La mantenemos para que ahorres más.`);
+      } else {
+        setPromoSuccess(winner.trigger === "automatic" ? `⚡ "${winner.name}" aplicado automáticamente.` : "");
+        setPromoInfo("");
+      }
+    } else {
+      setPromoSuccess("");
+      setPromoInfo("");
+    }
+  }, [availableOffers, items, productsSubtotal, enteredCode]); // eslint-disable-line
+
+  // -- Helpers de carrito --
   const persist = (next) => { setItems(next); setCart(businessId, next); onChanged?.(); };
   const changeQty = (i, delta) =>
     persist(items.map((it, idx) => idx === i ? { ...it, quantity: Math.max(1, Number(it.quantity || 1) + delta) } : it));
@@ -204,14 +234,14 @@ const CartDrawer = ({
     if (!next.length) setStep("cart");
   };
 
-  // ── Código promo ──
+  // -- Codigo promo --
   const applyPromoCode = () => {
     const code = promoCode.trim().toUpperCase();
     if (!code) return;
     const offer = availableOffers.find(o => o.trigger === "code" && o.code === code);
     if (!offer) {
       setPromoError("Código no válido o expirado.");
-      setPromoSuccess(""); return;
+      return;
     }
     if (!isOfferApplicable(offer, items, productsSubtotal)) {
       setPromoError(
@@ -219,31 +249,28 @@ const CartDrawer = ({
           ? `Este código requiere un pedido mínimo de ${cur} ${formatted(offer.min_order_amount)}.`
           : "Este código no aplica a los productos en tu carrito."
       );
-      setPromoSuccess(""); return;
+      return;
     }
     const d = calcDiscount(offer, items);
     if (d <= 0) {
       setPromoError("Este código no aplica a los productos en tu carrito.");
-      setPromoSuccess(""); return;
+      return;
     }
-    setAppliedOffer(offer);
     setPromoError("");
-    setPromoSuccess(
-      `✓ "${offer.name}" — ${offer.discount_type === "percentage"
-        ? `${offer.discount_value}% off`
-        : `${cur} ${formatted(d)} off`}`
-    );
+    setEnteredCode(offer);
   };
 
   const removeOffer = () => {
-    setAppliedOffer(null); setPromoCode("");
-    setPromoError(""); setPromoSuccess("");
+    setEnteredCode(null);
+    setPromoCode("");
+    setPromoError("");
+    setPromoInfo("");
   };
 
   const goCheckout = () => {
     setStockError(null);
     if (!items.length) return showWarning("Aviso", "Tu carrito está vacío");
-    onCheckoutStart?.();   // ← nuevo
+    onCheckoutStart?.();
     const s = getValidCustomerSession(businessId);
     if (s?.token) { setSession(s); setStep("pay"); }
     else if (getCustomerMode(businessId) === "guest") setStep("guest");
@@ -263,7 +290,7 @@ const CartDrawer = ({
     ? { offer_id: appliedOffer.offer_id, offer_name: appliedOffer.name, offer_code: appliedOffer.code || "" }
     : {};
 
-  // ── Checkout ──
+  // -- Checkout --
   const checkout = useMutation({
     mutationFn: () => {
       if (!selectedPm) throw new Error("Selecciona un método de pago");
@@ -274,7 +301,6 @@ const CartDrawer = ({
         ...it,
         delivery_address: it.fulfillment_type === "delivery" ? deliveryAddress.trim() : "",
       }));
-      // Teléfono a registrar: el confirmado (link de pago) tiene prioridad
       const phoneToUse = (confirmPhone || guest.phone || "").trim();
       if (session?.token)
         return checkoutCartWithToken(businessId, selectedPm, itemsFinal, { ...offerInfo, confirmed_phone: phoneToUse });
@@ -291,7 +317,7 @@ const CartDrawer = ({
       });
     },
     onSuccess: () => {
-      onPurchase?.({                              // ← nuevo
+      onPurchase?.({
         total,
         currency: items[0]?.payment_method?.currency || "",
       }); clearCart(businessId); onChanged?.();
@@ -303,7 +329,7 @@ const CartDrawer = ({
         setStockError(
           `"${body.product_name}" solo tiene ${body.available} unidad${body.available !== 1 ? "es" : ""} disponible${body.available !== 1 ? "s" : ""}.`
         );
-        setStep("cart");   // regresa al carrito para que vea el error
+        setStep("cart");
       } else if (body.error === "producto_no_disponible") {
         setStockError(`"${body.product_name}" ya no está disponible.`);
         setStep("cart");
@@ -313,14 +339,11 @@ const CartDrawer = ({
     },
   });
 
-  // Acción del botón confirmar en el paso de pago
   const handleConfirm = () => {
     if (!selectedPm) return showWarning("Aviso", "Selecciona un método de pago");
     if (hasDelivery && !deliveryAddress.trim())
       return showWarning("Aviso", "La dirección de entrega es requerida");
-    // Si es link de pago, pasar al paso de confirmar teléfono
     if (isPaymentLink) {
-      // Pre-llenar con el teléfono que ya tengamos
       setConfirmPhone(prev => prev || guest.phone || session?.phone || "");
       setStep("confirmPhone");
       return;
@@ -328,23 +351,22 @@ const CartDrawer = ({
     checkout.mutate();
   };
 
-  // Confirmar teléfono y crear la orden (flujo link de pago)
   const handleConfirmPhone = () => {
     const phone = confirmPhone.trim();
-    // Validación simple: al menos 10 dígitos
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10)
       return showWarning("Aviso", "Ingresa un número de teléfono válido (con WhatsApp)");
     checkout.mutate();
   };
 
-  // ── Render ──
+  const showPromoInput = !enteredCode;
+
+  // -- Render --
   return (
     <div className={styles.portal} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <button className={styles.close} onClick={onClose} aria-label="Cerrar">×</button>
 
-        {/* Cart */}
         {step === "cart" && (
           <>
             <h2 className={styles.title}>Tu carrito</h2>
@@ -382,9 +404,8 @@ const CartDrawer = ({
                   ))}
                 </div>
 
-                {/* Código promo */}
                 <div className={styles.promoSection}>
-                  {(!appliedOffer || appliedOffer.trigger === "automatic") && (
+                  {showPromoInput && (
                     <div className={styles.promoRow}>
                       <input
                         className={styles.promoInput}
@@ -402,14 +423,14 @@ const CartDrawer = ({
                   {promoSuccess && (
                     <div className={styles.promoSuccess}>
                       <span>{promoSuccess}</span>
-                      {appliedOffer?.trigger === "code" && (
+                      {enteredCode && (
                         <button className={styles.promoRemove} onClick={removeOffer} aria-label="Quitar"><X size={14} /></button>
                       )}
                     </div>
                   )}
+                  {promoInfo && <p className={styles.promoInfo}>{promoInfo}</p>}
                 </div>
 
-                {/* Totales */}
                 <div className={styles.cartTotal}><span>Subtotal</span><strong>{cur} {formatted(productsSubtotal)}</strong></div>
                 {discountAmount > 0 && (
                   <div className={`${styles.cartTotal} ${styles.discountLine}`}>
@@ -425,7 +446,6 @@ const CartDrawer = ({
                 </div>
 
                 <button className={styles.primaryBtn} onClick={goCheckout}>Proceder al pago</button>
-                {/* Muestra el error sobre el botón de pagar */}
                 {stockError && (
                   <div className={styles.stockErrorBanner}>
                     ⚠️ {stockError}
@@ -436,7 +456,6 @@ const CartDrawer = ({
           </>
         )}
 
-        {/* Identity */}
         {step === "identity" && (
           <>
             <h2 className={styles.title}>¿Ya compraste aquí antes?</h2>
@@ -446,7 +465,6 @@ const CartDrawer = ({
           </>
         )}
 
-        {/* Guest */}
         {step === "guest" && (
           <>
             <h2 className={styles.title}>Tus datos</h2>
@@ -463,7 +481,6 @@ const CartDrawer = ({
           </>
         )}
 
-        {/* Pay */}
         {step === "pay" && (
           <>
             <h2 className={styles.title}>Método de pago</h2>
@@ -497,7 +514,6 @@ const CartDrawer = ({
 
             </div>
 
-            {/* Aviso para link de pago */}
             {isPaymentLink && (
               <div className={styles.payLinkNote}>
                 💬 El negocio te enviará un link de pago por el monto exacto de tu pedido.
@@ -512,7 +528,6 @@ const CartDrawer = ({
           </>
         )}
 
-        {/* Confirmar teléfono (solo link de pago) */}
         {step === "confirmPhone" && (
           <>
             <h2 className={styles.title}>Confirma tu WhatsApp</h2>
@@ -535,7 +550,6 @@ const CartDrawer = ({
           </>
         )}
 
-        {/* Success normal (transferencia, etc.) */}
         {step === "success" && (
           <>
             <h2 className={styles.title}>¡Pedido enviado!</h2>
@@ -544,7 +558,6 @@ const CartDrawer = ({
           </>
         )}
 
-        {/* Success link de pago */}
         {step === "successLink" && (
           <>
             <h2 className={styles.title}>¡Pedido recibido! 🎉</h2>

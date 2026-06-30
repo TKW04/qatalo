@@ -480,6 +480,122 @@
     border-color: var(--theme-primary, #113f67);
     background: #f0f7ff;
 }
+/* ════════════════════════════════════════════════════════
+   CÓDIGO PROMO — agregar a CustomerPortal.module.css
+   ════════════════════════════════════════════════════════ */
+
+.promoSection {
+    margin: .85rem 0;
+    padding: .85rem 0;
+    border-top: 1px solid #eef0f3;
+    border-bottom: 1px solid #eef0f3;
+}
+
+.promoRow {
+    display: flex;
+    gap: .5rem;
+    align-items: stretch;
+}
+
+.promoInput {
+    flex: 1;
+    min-width: 0;
+    padding: .6rem .8rem;
+    border: 1.5px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: .9rem;
+    color: #1d2939;
+    outline: none;
+    text-transform: uppercase;
+    transition: border-color .15s;
+}
+
+.promoInput::placeholder {
+    text-transform: none;
+    color: #98a2b3;
+}
+
+.promoInput:focus {
+    border-color: var(--color-navy, #113f67);
+}
+
+.promoBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .6rem 1rem;
+    background: var(--color-navy, #113f67);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+}
+
+.promoBtn:hover {
+    background: #0d3253;
+}
+
+/* Mensaje de éxito (oferta aplicada) */
+.promoSuccess {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-top: .6rem;
+    padding: .55rem .8rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    border-radius: 8px;
+    font-size: .84rem;
+    font-weight: 600;
+}
+
+.promoRemove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #065f46;
+    cursor: pointer;
+    padding: .1rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+
+.promoRemove:hover {
+    background: rgba(6, 95, 70, .12);
+}
+
+/* Mensaje de error / aviso */
+.promoError {
+    margin: .6rem 0 0;
+    padding: .55rem .8rem;
+    background: #fff1f2;
+    border: 1px solid #fecaca;
+    color: #b42318;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 500;
+}
+
+/* Aviso informativo cuando se mantiene una oferta mejor (jerarquía) */
+.promoInfo {
+    margin: .6rem 0 0;
+    padding: .55rem .8rem;
+    background: #f0f7ff;
+    border: 1px solid #bcdbf5;
+    color: #1e40af;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 500;
+}
 
 @media (max-width: 480px) {
     .sheet {
