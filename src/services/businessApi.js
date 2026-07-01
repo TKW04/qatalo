@@ -71,9 +71,7 @@ export const saveBusinessData = async (tenantId, businessData) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
-  });
-  console.log(response.ok);
-  
+  });  
 
   if (!response.ok) throw new Error("Error al guardar la configuración del negocio");
   return await response.json();
