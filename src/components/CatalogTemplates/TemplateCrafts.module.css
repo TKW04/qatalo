@@ -13,7 +13,7 @@
 
   background: var(--bg-color);
   color: var(--secondary-color);
-  font-family: "Quicksand", system-ui, sans-serif;
+  font-family: var(--font-body, "Quicksand", system-ui, sans-serif);
   padding: 2rem 1rem 3.5rem;
   max-width: none;
   margin: 0 auto;
@@ -52,9 +52,9 @@
 }
 
 .logo {
-  height: 150px;
+  height: calc(150px * var(--logo-scale, 1));
   width: auto;
-  max-width: 200px;
+  max-width: calc(200px * var(--logo-scale, 1));
   object-fit: contain;
   border-radius: 16px;
   padding: 6px;
@@ -63,7 +63,8 @@
 }
 
 .businessName {
-  font-size: clamp(1.9rem, 6vw, 2.8rem);
+  font-family: var(--font-heading, "Quicksand", system-ui, sans-serif);
+  font-size: calc(clamp(1.9rem, 6vw, 2.8rem) * var(--font-scale, 1));
   font-weight: 700;
   margin: 0;
   color: var(--primary-color);
@@ -72,7 +73,7 @@
 .description {
   margin: 0.6rem auto 0;
   max-width: 48ch;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 500;
   line-height: 1.6;
   color: color-mix(in srgb, var(--secondary-color) 68%, transparent);
@@ -108,7 +109,7 @@
   background: transparent;
   width: 100%;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   color: var(--primary-color);
   outline: none;
 }
@@ -128,7 +129,7 @@
 
 .chipBtn {
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--font-scale, 1));
   font-weight: 600;
   padding: 0.4rem 1.2rem;
   border-radius: 980px;
@@ -200,7 +201,7 @@
   left: 10px;
   background: rgba(255, 255, 255, 0.9);
   color: #d63031;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--font-scale, 1));
   font-weight: 700;
   padding: 0.3rem 0.8rem;
   border-radius: 980px;
@@ -215,7 +216,7 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--font-scale, 1));
   font-weight: 700;
   padding: 0.45rem 0.9rem;
   border-radius: 980px;
@@ -236,7 +237,8 @@
 }
 
 .productName {
-  font-size: 1.05rem;
+  font-family: var(--font-heading, "Quicksand", system-ui, sans-serif);
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 600;
   margin: 0;
   color: var(--secondary-color);
@@ -245,7 +247,7 @@
 
 .productDesc {
   margin: 0.4rem 0 0;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--font-scale, 1));
   font-weight: 500;
   line-height: 1.5;
   color: color-mix(in srgb, var(--secondary-color) 62%, transparent);
@@ -260,13 +262,13 @@
 }
 
 .price {
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--font-scale, 1));
   font-weight: 700;
   color: var(--primary-color);
 }
 
 .chip {
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--font-scale, 1));
   font-weight: 600;
   padding: 0.25rem 0.65rem;
   border-radius: 980px;

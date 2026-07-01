@@ -14,7 +14,7 @@
 
   background: var(--bg-color);
   color: var(--secondary-color);
-  font-family: "Nunito Sans", system-ui, sans-serif;
+  font-family: var(--font-body, "Nunito Sans", system-ui, sans-serif);
   padding: 1.5rem 1rem 4rem;
   max-width: none;
   margin: 0 auto;
@@ -60,17 +60,17 @@
 }
 
 .logo {
-  height: 150px;
+  height: calc(150px * var(--logo-scale, 1));
   width: auto;
-  max-width: 200px;
+  max-width: calc(200px * var(--logo-scale, 1));
   object-fit: contain;
   border-radius: 16px;
   box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--secondary-color) 55%, transparent);
 }
 
 .businessName {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: clamp(2rem, 6vw, 3rem);
+  font-family: var(--font-heading, "Fraunces", Georgia, serif);
+  font-size: calc(clamp(2rem, 6vw, 3rem) * var(--font-scale, 1));
   font-weight: 700;
   margin: 0;
   line-height: 1.1;
@@ -79,7 +79,7 @@
 
 .tagline {
   margin: 0.35rem 0 0;
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 600;
   color: color-mix(in srgb, var(--secondary-color) 65%, transparent);
 }
@@ -116,7 +116,7 @@
   background: transparent;
   width: 100%;
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 600;
   color: var(--secondary-color);
   outline: none;
@@ -143,7 +143,7 @@
   background: white;
   border: none;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 700;
   padding: 0.6rem 1.25rem;
   border-radius: 980px;
@@ -216,7 +216,7 @@
   position: absolute;
   top: 14px;
   left: 14px;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--font-scale, 1));
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -242,8 +242,8 @@
 .soldOutOverlay span {
   background: var(--secondary-color);
   color: white;
-  font-family: "Fraunces", serif;
-  font-size: 1.2rem;
+  font-family: var(--font-heading, "Fraunces", serif);
+  font-size: calc(1.2rem * var(--font-scale, 1));
   font-weight: 700;
   padding: 0.5rem 1.5rem;
   border-radius: 12px;
@@ -254,8 +254,8 @@
   position: absolute;
   bottom: 14px;
   right: 14px;
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 1.5rem;
+  font-family: var(--font-heading, "Fraunces", Georgia, serif);
+  font-size: calc(1.5rem * var(--font-scale, 1));
   font-weight: 700;
   padding: 0.5rem 1rem;
   border-radius: 18px;
@@ -269,8 +269,8 @@
 }
 
 .priceTag small {
-  font-family: "Nunito Sans", sans-serif;
-  font-size: 0.9rem;
+  font-family: var(--font-body, "Nunito Sans", sans-serif);
+  font-size: calc(0.9rem * var(--font-scale, 1));
   font-weight: 600;
   opacity: 0.9;
 }
@@ -283,8 +283,8 @@
 }
 
 .productName {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 1.5rem;
+  font-family: var(--font-heading, "Fraunces", Georgia, serif);
+  font-size: calc(1.5rem * var(--font-scale, 1));
   font-weight: 700;
   margin: 0;
   color: var(--secondary-color);
@@ -293,7 +293,7 @@
 
 .productDesc {
   margin: 0.6rem 0 1.5rem;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   line-height: 1.6;
   color: color-mix(in srgb, var(--secondary-color) 68%, transparent);
   flex: 1;
@@ -303,7 +303,7 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 700;
   width: 100%;
   padding: 1rem;
@@ -332,8 +332,8 @@
   padding: 6rem 1rem;
   color: color-mix(in srgb, var(--secondary-color) 30%, transparent);
   text-align: center;
-  font-family: "Fraunces", serif;
-  font-size: 1.2rem;
+  font-family: var(--font-heading, "Fraunces", serif);
+  font-size: calc(1.2rem * var(--font-scale, 1));
   font-style: italic;
   gap: 1rem;
 }
@@ -370,6 +370,6 @@
     gap: 0.85rem;
   }
   .logo {
-    height: 110px;
+    height: calc(110px * var(--logo-scale, 1));
   }
 }

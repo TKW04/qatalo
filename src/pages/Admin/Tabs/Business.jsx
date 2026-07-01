@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop, TbFileInvoice } from "react-icons/tb";
+import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop, TbFileInvoice, TbTypography, TbPhoto } from "react-icons/tb";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
 import Loading from "../../../components/UI/Loading";
 import PrimaryButton from "../../../components/PrimaryButton";
 import CatalogManager from "../../../components/CatalogTemplates/CatalogManager";
 import DevicePreviewFrame from "../../../components/UI/DevicePreviewFrame";
+import Select from "../../../components/Select";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Business.module.css";
 import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
+import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont } from "../../../constants/catalogFonts";
+import { loadCatalogFonts } from "../../../helpers/fontLoader";
 import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { DEMO_PRODUCTS } from "../../../constants/dummyCatalog";
@@ -50,6 +53,12 @@ const Business = () => {
     ncf_enabled: false,
     itbis_rate: 18,
     ncf_pool: [],
+    // Tipografía (default = no fuerza fuente; se ve como hoy)
+    fontHeading: "default",
+    fontBody: "default",
+    fontScale: "medium",
+    // Tamaño del logo (medium = alto original del template)
+    logoScale: "medium",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -109,9 +118,19 @@ const Business = () => {
         themeType,
         themePalette: palette,
         localities: businessData.localities || [],
+        // Tipografía con fallback (catálogos existentes no traen estos campos)
+        fontHeading: businessData.fontHeading || "default",
+        fontBody: businessData.fontBody || "default",
+        fontScale: businessData.fontScale || "medium",
+        logoScale: businessData.logoScale || "medium",
       }));
     }
   }, [businessData]);
+
+  // Cargar las Google Fonts seleccionadas para que el preview las muestre
+  useEffect(() => {
+    loadCatalogFonts([formData.fontHeading, formData.fontBody]);
+  }, [formData.fontHeading, formData.fontBody]);
 
   const mutation = useMutation({
     mutationFn: (data) => saveBusinessData(tenantId, data),
@@ -232,6 +251,10 @@ const Business = () => {
   };
 
   if (isFetching) return <Loading message="Cargando configuración..." />;
+
+  // Familias CSS de la fuente elegida (para el mini-preview de tipografía)
+  const headingFamily = getFont(formData.fontHeading).family;
+  const bodyFamily = getFont(formData.fontBody).family;
 
   return (
     <div className={styles.businessContainer}>
@@ -412,6 +435,77 @@ const Business = () => {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* --- TIPOGRAFÍA --- */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}><TbTypography /> Tipografía</h2>
+              <p className={styles.sectionDesc}>
+                Elige las fuentes de tu catálogo. Deja "Predeterminada del tema" para usar la tipografía
+                que trae la plantilla.
+              </p>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>Fuente de títulos</label>
+                  <Select
+                    value={formData.fontHeading}
+                    onChange={(v) => setFormData((p) => ({ ...p, fontHeading: v }))}
+                    options={FONT_OPTIONS}
+                    placeholder="Seleccionar fuente"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Fuente del texto</label>
+                  <Select
+                    value={formData.fontBody}
+                    onChange={(v) => setFormData({ ...formData, fontBody: v })}
+                    // onClick={() => setFormData({ ...formData, templateId: tpl.id })}
+                    options={FONT_OPTIONS}
+                    placeholder="Seleccionar fuente"
+                  />
+                </div>
+                <div className={styles.formGroup} style={{ maxWidth: 220 }}>
+                  <label>Tamaño de fuente</label>
+                  <Select
+                    value={formData.fontScale}
+                    onChange={(v) => setFormData((p) => ({ ...p, fontScale: v }))}
+                    options={SCALE_OPTIONS}
+                    placeholder="Tamaño"
+                    searchable={false}
+                  />
+                </div>
+              </div>
+
+              {/* Mini vista previa de la combinación elegida */}
+              <div className={styles.fontPreviewCard}>
+                <div className={styles.fontPreviewHeading} style={{ fontFamily: headingFamily || "inherit" }}>
+                  Nombre de tu producto
+                </div>
+                <div className={styles.fontPreviewBody} style={{ fontFamily: bodyFamily || "inherit" }}>
+                  Así se verá la descripción de tus productos y el texto del catálogo. Una buena
+                  combinación de fuentes le da personalidad a tu tienda.
+                </div>
+              </div>
+            </div>
+
+            {/* --- LOGO --- */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}><TbPhoto /> Logo</h2>
+              <p className={styles.sectionDesc}>
+                Ajusta el tamaño con el que se muestra tu logo en el catálogo. Puedes ver el
+                resultado en la previsualización de abajo.
+              </p>
+              <div className={styles.formGroup} style={{ maxWidth: 220 }}>
+                <label>Tamaño del logo</label>
+                <Select
+                  value={formData.logoScale}
+                  onChange={(v) => setFormData((p) => ({ ...p, logoScale: v }))}
+                  options={LOGO_SCALE_OPTIONS}
+                  placeholder="Tamaño"
+                  searchable={false}
+                />
+              </div>
             </div>
 
             {/* --- PREVIEW EN VIVO --- */}

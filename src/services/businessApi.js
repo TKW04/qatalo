@@ -51,6 +51,11 @@ export const saveBusinessData = async (tenantId, businessData) => {
     meta_pixel_id: businessData.meta_pixel_id.trim(),
     low_stock_threshold: businessData.low_stock_threshold ?? 5,
     delivery_reminder_enabled: businessData.delivery_reminder_enabled ?? false,
+    font_body: businessData.fontBody,
+    font_heading: businessData.fontHeading,
+    font_scale: businessData.fontScale,
+    logo_scale: businessData.logoScale,
+    
   };
 
   const isUpdating = businessData.business_id && businessData.business_id !== "";
@@ -67,6 +72,8 @@ export const saveBusinessData = async (tenantId, businessData) => {
     },
     body: JSON.stringify(payload),
   });
+  console.log(response.ok);
+  
 
   if (!response.ok) throw new Error("Error al guardar la configuración del negocio");
   return await response.json();

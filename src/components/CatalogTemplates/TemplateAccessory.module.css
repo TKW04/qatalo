@@ -13,7 +13,7 @@
 
   background: var(--bg-color);
   color: var(--secondary-color);
-  font-family: "Archivo", system-ui, sans-serif;
+  font-family: var(--font-body, "Archivo", system-ui, sans-serif);
   padding: 2.25rem 1rem 3.5rem;
   max-width: none;
   margin: 0 auto;
@@ -41,13 +41,14 @@
 
 .logo {
   width: auto;
-  height: 150px;
+  height: calc(150px * var(--logo-scale, 1));
   object-fit: cover;
   border-radius: 50%;
 }
 
 .businessName {
-  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  font-family: var(--font-heading, "Archivo", system-ui, sans-serif);
+  font-size: calc(clamp(1.5rem, 5vw, 2.1rem) * var(--font-scale, 1));
   font-weight: 700;
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -57,7 +58,7 @@
 
 .tagline {
   margin: 0.3rem 0 0;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--font-scale, 1));
   font-weight: 500;
   letter-spacing: 0.04em;
   color: color-mix(in srgb, var(--secondary-color) 60%, transparent);
@@ -107,7 +108,7 @@
   background: transparent;
   width: 100%;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--font-scale, 1));
   color: var(--primary-color);
   outline: none;
 }
@@ -133,7 +134,7 @@
   background: transparent;
   border: none;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--font-scale, 1));
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -211,7 +212,7 @@
   left: 8px;
   background: rgba(0, 0, 0, 0.7);
   color: white;
-  font-size: 0.65rem;
+  font-size: calc(0.65rem * var(--font-scale, 1));
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 0.3rem 0.6rem;
@@ -240,7 +241,7 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -264,7 +265,8 @@
 }
 
 .productName {
-  font-size: 0.92rem;
+  font-family: var(--font-heading, "Archivo", system-ui, sans-serif);
+  font-size: calc(0.92rem * var(--font-scale, 1));
   font-weight: 600;
   margin: 0;
   color: var(--secondary-color);
@@ -272,7 +274,7 @@
 
 .productDesc {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--font-scale, 1));
   line-height: 1.4;
   color: color-mix(in srgb, var(--secondary-color) 58%, transparent);
   overflow: hidden;
@@ -282,7 +284,7 @@
 
 .price {
   margin-top: 0.2rem;
-  font-size: 0.92rem;
+  font-size: calc(0.92rem * var(--font-scale, 1));
   font-weight: 700;
   color: var(--primary-color);
 }
@@ -295,7 +297,7 @@
   padding: 4rem 1rem;
   color: color-mix(in srgb, var(--secondary-color) 40%, transparent);
   text-align: center;
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--font-scale, 1));
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -322,7 +324,7 @@
   }
 
   .productName {
-    font-size: 1rem;
+    font-size: calc(1rem * var(--font-scale, 1));
   }
 }
 
@@ -339,7 +341,7 @@
     gap: 0.75rem;
   }
   .logo {
-    height: 110px;
+    height: calc(110px * var(--logo-scale, 1));
   }
    .controls {
     flex-direction: row;

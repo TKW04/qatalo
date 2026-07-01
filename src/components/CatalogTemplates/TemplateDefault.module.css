@@ -16,7 +16,7 @@
 
   background-color: var(--bg-color);
   min-height: 100vh;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-body, "Roboto", sans-serif);
 }
 
 /* --- HEADER --- */
@@ -44,23 +44,24 @@
 }
 
 .logo {
-  height: 150px;
+  height: calc(150px * var(--logo-scale, 1));
   width: auto;
-  max-width: 200px;
+  max-width: calc(200px * var(--logo-scale, 1));
   object-fit: contain;
   border-radius: 8px;
   
 }
 
 .businessName {
-  font-size: 2rem;
+  font-family: var(--font-heading, "Roboto", sans-serif);
+  font-size: calc(2rem * var(--font-scale, 1));
   font-weight: 800;
   color: var(--primary-color);
   margin: 0 0 0.25rem 0;
 }
 
 .businessDescription {
-  font-size: 1rem;
+  font-size: calc(1rem * var(--font-scale, 1));
   color: var(--text-light);
   margin: 0;
   max-width: 500px;
@@ -119,7 +120,7 @@
   padding: 0.8rem 1rem 0.8rem 2.5rem;
   border: 1px solid #e1e5e9;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: calc(1rem * var(--font-scale, 1));
   transition: all 0.3s ease;
 }
 
@@ -144,7 +145,7 @@
   background-color: var(--card-bg);
   color: var(--text);
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--font-scale, 1));
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -211,7 +212,7 @@
   color: white;
   padding: 0.4rem 0.8rem;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -224,7 +225,8 @@
 }
 
 .productName {
-  font-size: 1.1rem;
+  font-family: var(--font-heading, "Roboto", sans-serif);
+  font-size: calc(1.1rem * var(--font-scale, 1));
   color: var(--text);
   margin: 0 0 0.5rem 0;
   font-weight: 600;
@@ -232,7 +234,7 @@
 }
 
 .productPrice {
-  font-size: 1.25rem;
+  font-size: calc(1.25rem * var(--font-scale, 1));
   color: var(--primary-color);
   font-weight: 800;
   margin-top: auto;
@@ -240,7 +242,7 @@
 }
 
 .productStock {
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--font-scale, 1));
   color: var(--text-light);
   margin-top: 0.5rem;
 }
@@ -274,7 +276,7 @@
     margin-right: auto;
   }
   .logo {
-    height: 110px;
+    height: calc(110px * var(--logo-scale, 1));
   }
   .shareButton {
     width: 100%;

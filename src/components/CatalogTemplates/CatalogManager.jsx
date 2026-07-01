@@ -11,6 +11,8 @@ import CustomerAuthModal from "./CustomerAuthModal";
 import CustomerOrders from "./CustomerOrders";
 import CartDrawer from "./CartDrawer";
 import { getCustomerSession, setCustomerSession, getValidCustomerSession, decodeCustomerToken, getCart, cartCount } from "../../services/customerAuthApi";
+import { getFont, getScaleValue, getLogoScaleValue } from "../../constants/catalogFonts";
+import { loadCatalogFonts } from "../../helpers/fontLoader";
 import portal from "./CustomerPortal.module.css";
 import Select from "../Select";
 
@@ -35,7 +37,7 @@ const parsePalette = (raw) => {
 };
 
 const CatalogManager = ({ businessData, products = [], categories: categoriesProp, isPreview = false }) => {
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocality, setSelectedLocality] = useState("all");
@@ -64,6 +66,11 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   const [cartCnt, setCartCnt] = useState(0);
   const refreshCart = () => setCartCnt(cartCount(getCart(businessId)));
   useEffect(() => { if (businessId) refreshCart(); }, [businessId]); // eslint-disable-line
+
+  // ── Carga de las Google Fonts del negocio (preview y catálogo público) ──
+  useEffect(() => {
+    loadCatalogFonts([businessData?.fontHeading, businessData?.fontBody]);
+  }, [businessData?.fontHeading, businessData?.fontBody]);
 
   useEffect(() => {
     if (isPreview || !businessId) return;
@@ -115,7 +122,7 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
 
   const categories = useMemo(() => {
     if (usingDummy) return DUMMY_CATEGORIES;
-    if (categoriesProp && categoriesProp.length) return categoriesProp;    
+    if (categoriesProp && categoriesProp.length) return categoriesProp;
     return Array.from(
       new Map(
         sourceProducts
@@ -134,11 +141,23 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
 
   // Variables canónicas que TODOS los templates escuchan
   const palette = parsePalette(businessData?.themePalette);
+
+  // Tipografía: si la fuente es "default" (family vacío) no se setea la variable,
+  // así el template usa su tipografía actual (cero cambios para catálogos existentes).
+  const headingFont = getFont(businessData?.fontHeading);
+  const bodyFont = getFont(businessData?.fontBody);
+  const fontScale = getScaleValue(businessData?.fontScale);
+  const logoScale = getLogoScaleValue(businessData?.logoScale);
+
   const themeStyles = {
     "--theme-primary": palette.primary,
     "--theme-secondary": palette.secondary,
     "--theme-accent": palette.accent,
     "--theme-background": palette.background,
+    ...(headingFont.family ? { "--font-heading": headingFont.family } : {}),
+    ...(bodyFont.family ? { "--font-body": bodyFont.family } : {}),
+    "--font-scale": fontScale,
+    "--logo-scale": logoScale,
   };
 
   const filteredProducts = useMemo(() => {

@@ -11,7 +11,7 @@
 
   background: var(--bg-color);
   color: var(--secondary-color);
-  font-family: ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body, ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif);
   padding: 2rem 1.25rem 4rem;
   max-width: none;
   margin: 0 auto;
@@ -50,15 +50,16 @@
 }
 
 .logo {
-  height: 150px;
+  height: calc(150px * var(--logo-scale, 1));
   width: auto;
-  max-width: 200px;
+  max-width: calc(200px * var(--logo-scale, 1));
   object-fit: contain;
   margin-bottom: 1rem;
 }
 
 .businessName {
-  font-size: clamp(2.2rem, 7vw, 3.4rem);
+  font-family: var(--font-heading, ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif);
+  font-size: calc(clamp(2.2rem, 7vw, 3.4rem) * var(--font-scale, 1));
   font-weight: 700;
   letter-spacing: -0.03em;
   margin: 0;
@@ -67,7 +68,7 @@
 
 .tagline {
   margin: 0.75rem auto 0;
-  font-size: clamp(1rem, 3vw, 1.35rem);
+  font-size: calc(clamp(1rem, 3vw, 1.35rem) * var(--font-scale, 1));
   font-weight: 400;
   letter-spacing: -0.01em;
   color: color-mix(in srgb, var(--secondary-color) 60%, transparent);
@@ -108,7 +109,7 @@
   background: transparent;
   width: 100%;
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   color: var(--secondary-color);
   outline: none;
 }
@@ -136,7 +137,7 @@
   background: transparent;
   border: none;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--font-scale, 1));
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -189,7 +190,7 @@
 }
 
 .badge {
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--accent-color);
@@ -198,7 +199,8 @@
 }
 
 .productName {
-  font-size: 1.7rem;
+  font-family: var(--font-heading, ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif);
+  font-size: calc(1.7rem * var(--font-scale, 1));
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
@@ -207,7 +209,7 @@
 
 .productDesc {
   margin: 0.5rem auto 0;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 400;
   line-height: 1.5;
   max-width: 34ch;
@@ -253,7 +255,7 @@
   right: 1rem;
   background: rgba(0, 0, 0, 0.8);
   color: white;
-  font-size: 0.7rem;
+  font-size: calc(0.7rem * var(--font-scale, 1));
   font-weight: 600;
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
@@ -268,7 +270,7 @@
 }
 
 .price {
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--secondary-color);
@@ -284,7 +286,7 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.92rem;
+  font-size: calc(0.92rem * var(--font-scale, 1));
   font-weight: 500;
   padding: 0.55rem 1.4rem;
   border-radius: 980px;
@@ -303,7 +305,7 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 500;
   color: var(--primary-color);
   position: relative;
@@ -312,7 +314,7 @@
 .learn::after {
   content: "›";
   margin-left: 4px;
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--font-scale, 1));
   transition: transform 0.2s ease;
   display: inline-block;
 }
@@ -329,7 +331,7 @@
   padding: 5rem 1rem;
   color: color-mix(in srgb, var(--secondary-color) 40%, transparent);
   text-align: center;
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--font-scale, 1));
   font-weight: 500;
   gap: 1rem;
 }
