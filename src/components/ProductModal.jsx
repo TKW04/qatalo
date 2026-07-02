@@ -25,7 +25,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   const images = (product.imagesUrl || []).map((i) => i.image).filter(Boolean);
 
   const [form, setForm] = useState({
-    quantity: 1, delivery_day: "", acceptTerms: noTerms,
+    quantity: 1, delivery_day: "", acceptTerms: noTerms, comment: "",
     locality: (() => {
       if (preselectedLocality && productLocalities.includes(preselectedLocality)) return preselectedLocality;
       if (productLocalities.length === 1) return productLocalities[0];
@@ -87,6 +87,9 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   const hasTakeout = !!localityConfig?.takeout;
   const deliveryPrice = form.fulfillment_type === "delivery" ? (Number(localityConfig?.delivery_price) || 0) : 0;
 
+  // Etiqueta del comentario/personalización (fallback si el dueño no puso una)
+  const commentLabel = (product.comment_label || "").trim() || "Personalización";
+
   useEffect(() => {
     if (!localityConfig) { set("fulfillment_type", ""); return; }
     if (hasDelivery && !hasTakeout) set("fulfillment_type", "delivery");
@@ -123,6 +126,8 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     }
     if (productLocalities.length > 0 && !form.locality) return showWarning("Aviso", "Selecciona tu localidad");
     if (product.required_delivery_day && !form.delivery_day) return showWarning("Aviso", "Selecciona la fecha de entrega");
+    if (product.allow_comment && product.comment_required && !form.comment.trim())
+      return showWarning("Aviso", `${commentLabel} es obligatorio`);
     if (product.terms && !form.acceptTerms) return showWarning("Aviso", "Debes aceptar los términos");
     if (!product.is_customizable && product.quantity != null && Number(form.quantity) > product.quantity)
       return showWarning("Aviso", "Excede el inventario disponible");
@@ -131,9 +136,10 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     const variantLabel = product.is_customizable && selectedVariant
       ? [selectedVariant.color, selectedVariant.size].filter(Boolean).join(" / ")
       : "";
+    const commentVal = (form.comment || "").trim();
 
-    const matchKey = `${product.product_id}|${variantLabel}|${form.locality}|${form.delivery_day}`;
-    const idx = items.findIndex((i) => `${i.product_id}|${i.variant_label || ""}|${i.locality}|${i.delivery_day}` === matchKey);
+    const matchKey = `${product.product_id}|${variantLabel}|${form.locality}|${form.delivery_day}|${commentVal}`;
+    const idx = items.findIndex((i) => `${i.product_id}|${i.variant_label || ""}|${i.locality}|${i.delivery_day}|${i.comment || ""}` === matchKey);
     if (idx >= 0) {
       items[idx].quantity = Number(items[idx].quantity || 0) + Number(form.quantity || 1);
     } else {
@@ -146,6 +152,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
         locality: form.locality,
         delivery_day: form.delivery_day,
         accept_terms: !!form.acceptTerms,
+        comment: commentVal,
         image: images[0] || "",
         fulfillment_type: form.fulfillment_type || (hasDelivery ? "delivery" : hasTakeout ? "takeout" : ""),
         delivery_price: deliveryPrice,
@@ -175,7 +182,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   const keepShopping = () => {
     setStep(null);
     // Reset del form para poder agregar otra variante/cantidad si quieren
-    setForm(f => ({ ...f, quantity: 1 }));
+    setForm(f => ({ ...f, quantity: 1, comment: "" }));
   };
 
   // "Ver carrito" — cierra el modal y abre el carrito
@@ -193,6 +200,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     if (localityConfig && hasDelivery && hasTakeout && !form.fulfillment_type) return false;
     if (productLocalities.length > 0 && !form.locality) return false;
     if (product.required_delivery_day && !form.delivery_day) return false;
+    if (product.allow_comment && product.comment_required && !form.comment.trim()) return false;
     if (product.terms && !form.acceptTerms) return false;
     if (!form.quantity || Number(form.quantity) < 1) return false;
     return true;
@@ -310,13 +318,29 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
               </>
             )}
 
+            {product.allow_comment && (
+              <div className={styles.field}>
+                <label>
+                  {commentLabel}{product.comment_required ? " *" : " (opcional)"}
+                </label>
+                <textarea
+                  className={styles.input}
+                  rows={3}
+                  value={form.comment}
+                  onChange={(e) => set("comment", e.target.value)}
+                  placeholder={(product.comment_label || "").trim() ? "" : "Escribe aquí tu personalización..."}
+                  maxLength={300}
+                />
+              </div>
+            )}
+
             {productLocalities.length > 0 && (
               <div className={styles.field}>
                 <label>Localidad</label>
                 <Select
                   placeholder="Selecciona tu localidad"
                   value={form.locality}
-                  onChange={(e) => (e) => set("locality", e)}
+                  onChange={(e) => set("locality", e)}
                   options={[
                     { value: "all", label: "Todas" },
                     ...productLocalities.map(l => ({ value: l, label: l })),

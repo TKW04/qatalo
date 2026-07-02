@@ -124,25 +124,20 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                     <ul className={styles.detail}>
                       {g.items.map((it) => (
                         <li key={it.transaction_id}>
-                          <span>{it.product_name} (x{it.quantity}){it.locality ? ` · ${it.locality}` : ""}{it.delivery_day ? ` · ${it.delivery_day}` : ""}</span>
+                          <span>{it.product_name} (x{it.quantity}){it.locality ? ` · ${it.locality}` : ""}{it.delivery_day ? ` · ${it.delivery_day}` : ""}{it.comment ? ` · ✏️ ${it.comment}` : ""}</span>
                           <strong>{cur} {formatted(it.price * it.quantity)}</strong>
                         </li>
+                        
                       ))}
                       <li><span>Método</span><strong>{isBank ? "Transferencia" : "Link de pago"}</strong></li>
-                      {g.fulfillment_type && (
-                        <li>
-                          <span>Entrega</span>
-                          <strong>{t.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}</strong>
-                        </li>
+                      {g.ref.fulfillment_type && (
+                        <li><span>Entrega</span><strong>{g.ref.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}</strong></li>
                       )}
-                      {g.delivery_price > 0 && (
-                        <li><span>Costo delivery</span><strong>{cur} {formatted(t.delivery_price)}</strong></li>
+                      {g.ref.delivery_price > 0 && (
+                        <li><span>Costo delivery</span><strong>{cur} {formatted(g.ref.delivery_price)}</strong></li>
                       )}
-                      {g.delivery_address && (
-                        <li>
-                          <span>Dirección de entrega</span>
-                          <strong>{g.delivery_address}</strong>
-                        </li>
+                      {g.ref.delivery_address && (
+                        <li><span>Dirección de entrega</span><strong>{g.ref.delivery_address}</strong></li>
                       )}
                       <li><span>Total</span><strong>{cur} {formatted(g.total)}</strong></li>
                       {g.status === "Cancelada" && g.ref.cancellation_reason && (

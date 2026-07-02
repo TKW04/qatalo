@@ -383,6 +383,7 @@ const CartDrawer = ({
                       <div className={styles.cartInfo}>
                         <div className={styles.productName}>{it.product_name}</div>
                         {it.variant_label && <div className={styles.variantTag}>{it.variant_label}</div>}
+                        {it.comment && <div className={styles.variantTag}>✏️ {it.comment}</div>}
                         {it.fulfillment_type && (
                           <div className={styles.fulfillmentTag}>
                             {it.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}

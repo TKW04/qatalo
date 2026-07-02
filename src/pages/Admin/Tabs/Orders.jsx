@@ -505,6 +505,9 @@ const Orders = () => {
                       {t.delivery_address && (
                         <div className={styles.itemSub}>📍 {t.delivery_address}</div>
                       )}
+                      {t.comment && (
+                        <div className={styles.itemSub}>✏️ {t.comment}</div>
+                      )}
                       {(t.discount_amount > 0) && (
                         <div className={styles.itemDiscount}>
                           🎁 {t.offer_name ? `${t.offer_name} ·` : ""} −{cur} {formatted(t.discount_amount)}

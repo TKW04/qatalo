@@ -30,6 +30,7 @@ const emptyForm = {
   locality_config: [],
   low_stock_threshold: "",
   itbis_mode: "included",
+  allow_comment: false, comment_required: false, comment_label: "",
 
 };
 
@@ -200,6 +201,9 @@ const Products = () => {
         locality_config: (form.localities || []).map((loc) => getLocalityConfig(loc)),
         low_stock_threshold: form.low_stock_threshold !== "" ? Number(form.low_stock_threshold) : null,
         itbis_mode: form.itbis_mode || "included",
+        allow_comment: form.allow_comment,
+        comment_required: form.allow_comment ? form.comment_required : false,
+        comment_label: form.allow_comment ? (form.comment_label || "").trim() : "",
       };
       return form.product_id ? updateProduct(payload) : createProduct(payload);
     },
@@ -262,6 +266,9 @@ const Products = () => {
       locality_config: p.locality_config || [],
       low_stock_threshold: p.low_stock_threshold ?? "",
       itbis_mode: p.itbis_mode || "included",
+      allow_comment: !!p.allow_comment,
+      comment_required: !!p.comment_required,
+      comment_label: p.comment_label || "",
     });
     setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -591,6 +598,36 @@ const Products = () => {
             </div>
           )}
 
+          {/* Comentario / personalización del cliente */}
+          <div className={styles.toggleRow}>
+            <Toggle
+              checked={form.allow_comment}
+              onChange={(v) => {
+                setField("allow_comment", v);
+                if (!v) { setField("comment_required", false); setField("comment_label", ""); }
+              }}
+              label="Permitir comentario / personalización del cliente"
+            />
+            {form.allow_comment && (
+              <Toggle checked={form.comment_required} onChange={(v) => setField("comment_required", v)} label="Obligatorio" />
+            )}
+          </div>
+          {form.allow_comment && (
+            <div className={styles.formGroup}>
+              <label>Texto guía para el cliente (opcional)</label>
+              <input
+                className="input"
+                value={form.comment_label}
+                onChange={(e) => setField("comment_label", e.target.value)}
+                placeholder="Ej. ¿Qué nombre quieres grabar?"
+                maxLength={80}
+              />
+              <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
+                Este texto le indica al cliente qué escribir al pedir. Si lo dejas vacío, se mostrará "Personalización".
+              </span>
+            </div>
+          )}
+
           <div className={styles.toggleRow}>
             <Toggle checked={form.min_age_allow} onChange={(v) => setField("min_age_allow", v)} label="Edad mínima" />
             {form.min_age_allow && (
@@ -721,6 +758,7 @@ const Products = () => {
                   <span className={styles.productCat}>{categoryName(p.category_id)}</span>
                   <span className={styles.productPrice}>{curSymbol(p.currency)} {formatted(p.price)}</span>
                   {p.is_customizable && p.variants?.length > 0 && <span className={styles.variantCount}>{p.variants.length} variante(s)</span>}
+                  {p.allow_comment && <span className={styles.variantCount}>✏️ Acepta personalización</span>}
                   {(p.locality_config || []).length > 0 && (
                     <span className={styles.deliveryBadge}>
                       {p.locality_config.some(c => c.delivery) ? "🛵" : ""}{p.locality_config.some(c => c.takeout) ? " 🏪" : ""}
@@ -778,6 +816,7 @@ const Products = () => {
                   </div>
                 </li>
               )}
+              {viewing.allow_comment && <li><span>Personalización</span><strong>{viewing.comment_required ? "Obligatoria" : "Opcional"}{viewing.comment_label ? ` — "${viewing.comment_label}"` : ""}</strong></li>}
               {viewing.min_age_allow && <li><span>Edad mínima</span><strong>{viewing.min_age} años</strong></li>}
               {viewing.terms && <li><span>Términos</span><strong>{viewing.terms}</strong></li>}
             </ul>
