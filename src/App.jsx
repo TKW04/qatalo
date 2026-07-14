@@ -17,14 +17,25 @@ import PrivacyNotice from "./pages/Footer/PrivacyNotice";
 import RefundPolicy from "./pages/Footer/RefundPolicy";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 import NotFoundPage from "./pages/NotFoundPage";
+import RootPanel from "./pages/Root/RootPanel";
+import { getTokenInfo } from "./helpers/token";
 
 
 function App() {
+  const groups = getTokenInfo()?.["cognito:groups"] || [];
+  const isRoot = groups.includes("root");
+
   return (
     <NotificationProvider>
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
+          {isRoot && (
+            <Route
+              path="/root"
+              element={<RootPanel />}
+            />
+          )}
           <Route
             path="/termsandconditions"
             element={<TermsAndConditions />}

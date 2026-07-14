@@ -59,6 +59,7 @@ const Products = () => {
 
   const [form, setForm] = useState(emptyForm);
   const [newFiles, setNewFiles] = useState([]);
+  const [toDeleteUrls, setToDeleteUrls] = useState([]);   // imágenes existentes marcadas para borrar al guardar
   const [errors, setErrors] = useState({});
   const [toDelete, setToDelete] = useState(null);
   const [viewing, setViewing] = useState(null);
@@ -83,7 +84,7 @@ const Products = () => {
 
   const setField = (id, value) => setForm((p) => ({ ...p, [id]: value }));
   const resetForm = () => {
-    setForm(emptyForm); setNewFiles([]); setErrors({});
+    setForm(emptyForm); setNewFiles([]); setToDeleteUrls([]); setErrors({});
     setVariantForm(emptyVariant); setEditingVariantId(null);
   };
   const resetImport = () => {
@@ -120,7 +121,9 @@ const Products = () => {
       };
     });
 
-  const existingUrls = (form.imagesUrl || []).map((i) => (typeof i === "string" ? i : i.image));
+  const existingUrls = (form.imagesUrl || [])
+    .map((i) => (typeof i === "string" ? i : i.image))
+    .filter((u) => !toDeleteUrls.includes(u));
   const totalImages = existingUrls.length + newFiles.length;
 
   const onSelectFiles = (e) => {
@@ -132,15 +135,10 @@ const Products = () => {
   };
   const removeNewFile = (idx) => setNewFiles((prev) => prev.filter((_, i) => i !== idx));
 
-  const imageDeleteMutation = useMutation({
-    mutationFn: ({ productId, url }) => deleteProductImage(productId, url),
-    onSuccess: (_d, { url }) => {
-      setForm((p) => ({ ...p, imagesUrl: (p.imagesUrl || []).filter((i) => (typeof i === "string" ? i : i.image) !== url) }));
-      queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
-      showSuccess("Imagen eliminada", "La imagen se eliminó correctamente");
-    },
-    onError: (e) => showError("Error", e.message),
-  });
+  // Marca una imagen existente para borrarla del S3 SOLO al guardar.
+  // Mientras tanto solo desaparece de la vista; si cancelas, no se tocó nada.
+  const markForDelete = (url) =>
+    setToDeleteUrls((prev) => (prev.includes(url) ? prev : [...prev, url]));
 
   // ---- Variant helpers ----
   const addOrUpdateVariant = () => {
@@ -178,6 +176,14 @@ const Products = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      // Borrar del S3 SOLO ahora (al guardar) las imágenes que el usuario quitó.
+      // Se hace antes del update: el registro aún las contiene, así el endpoint puede removerlas.
+      if (form.product_id && toDeleteUrls.length) {
+        for (const url of toDeleteUrls) {
+          try { await deleteProductImage(form.product_id, url); }
+          catch (err) { console.error("No se pudo eliminar imagen del S3:", err); }
+        }
+      }
       const uploaded = newFiles.length ? await uploadProductImages(newFiles) : [];
       let quantity, is_available;
       if (form.is_customizable) {
@@ -270,7 +276,7 @@ const Products = () => {
       comment_required: !!p.comment_required,
       comment_label: p.comment_label || "",
     });
-    setNewFiles([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
+    setNewFiles([]); setToDeleteUrls([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -532,7 +538,7 @@ const Products = () => {
               {existingUrls.map((url) => (
                 <div key={url} className={styles.thumbBox}>
                   <img src={url} alt="" className={styles.thumbImg} />
-                  <button type="button" className={styles.thumbRemove} onClick={() => imageDeleteMutation.mutate({ productId: editingId, url })}>×</button>
+                  <button type="button" className={styles.thumbRemove} onClick={() => markForDelete(url)}>×</button>
                 </div>
               ))}
               {newFiles.map((file, idx) => (
@@ -549,6 +555,11 @@ const Products = () => {
               )}
             </div>
             {errors.images && <span className={styles.err}>{errors.images}</span>}
+            {toDeleteUrls.length > 0 && (
+              <span style={{ fontSize: ".78rem", color: "#b42318", marginTop: ".3rem", display: "block" }}>
+                {toDeleteUrls.length} imagen(es) se eliminarán al guardar. Si cancelas, se conservan.
+              </span>
+            )}
           </div>
 
           <div className={styles.toggleRow}>

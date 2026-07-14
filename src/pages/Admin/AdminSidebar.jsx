@@ -6,12 +6,14 @@ import { FiPackage } from "react-icons/fi";
 import { IoQrCode } from "react-icons/io5";
 import { LuCalendarSync, LuKeyRound, LuCirclePower } from "react-icons/lu";
 import { FaFolderOpen, FaDollarSign, FaUsers, FaChartBar, FaTag, FaClipboardList } from "react-icons/fa";
+import { FaUserSecret } from "react-icons/fa6";
 
 
 import { logout } from "../../services/authenticate";
 import { getTokenInfo } from "../../helpers/token";
 import { fetchBusinessData } from "../../services/businessApi";
 import styles from "./AdminSidebar.module.css";
+import { NavLink } from "react-router-dom";
 
 const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const auth = getTokenInfo();
@@ -28,6 +30,9 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const status = auth?.["custom:transaction_status"];
   const subscribed = status === "trialing" || status === "active";
   const hasBusiness = !!business?.business_id;
+
+  const groups = getTokenInfo()?.["cognito:groups"] || [];
+  const isRoot = groups.includes("root");
 
   const menuItems = [
     { id: "business", label: "Configuración", icon: <IoIosCog size={22} className={styles.menuIcon} /> },
@@ -95,6 +100,18 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
             </li>
           ))}
         </ul>
+
+        {isRoot && (
+          <ul className={styles.adminNav}>
+            <li className={styles.menuItem}>
+              <NavLink to="/root"
+                className={styles.menuButton}
+              ><FaUserSecret size={22} className={styles.menuIcon} />
+                <span>Panel Root</span></NavLink>
+
+            </li>
+          </ul>
+        )}
 
         <div className={styles.logoutContainer}>
           <button onClick={() => logout()} className={styles.logoutButton}>

@@ -20,6 +20,7 @@ import { isNotValidToken, removeToken, setToken, getTokenInfo } from "../../help
 import { getCurrentSession } from "../../services/authenticate";
 import userpoolMerchants from "../../services/userpoolMerchants";
 import { fetchBusinessData } from "../../services/businessApi";
+import FeatureSuggestionButton from "../../components/Featuresuggestionbutton/FeatureSuggestionButton";
 
 import Footer from "../../components/Footer";
 import styles from "./AdminDashboard.module.css";
@@ -100,6 +101,7 @@ const AdminDashboard = () => {
       {showWelcome && (
         <WelcomeModal onClose={() => setWelcomeDismissed(true)} />
       )}
+      <FeatureSuggestionButton />
     </>
   );
 };

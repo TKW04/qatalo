@@ -63,6 +63,8 @@ const Business = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [logoFile, setLogoFile] = useState(null);      // logo en staging (no sube al S3 hasta guardar)
+  const [logoPreview, setLogoPreview] = useState("");  // object URL local para previsualizar
   const [localityInput, setLocalityInput] = useState("");
   const [ncfPrefix, setNcfPrefix] = useState("B01");
   const [ncfFrom, setNcfFrom] = useState("");
@@ -137,6 +139,9 @@ const Business = () => {
     onSuccess: () => {
       showSuccess("¡Éxito!", "Configuración guardada correctamente");
       queryClient.invalidateQueries(["business", tenantId]);
+      // Limpiar el logo en staging una vez guardado
+      setLogoFile(null);
+      setLogoPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return ""; });
     },
     onError: () => showError("Error", "No se pudo guardar la configuración"),
   });
@@ -217,37 +222,49 @@ const Business = () => {
   const removeNcf = (ncf) =>
     setFormData((p) => ({ ...p, ncf_pool: (p.ncf_pool || []).filter((n) => n.ncf !== ncf || n.used) }));
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+      e.target.value = "";
       return showError("Formato no válido", "El logo debe ser PNG o JPG. Convierte tu imagen antes de subirla.");
     }
 
-    try {
-      setIsLoading(true);
-      setLoadingMessage("Subiendo logo...");
-      const extension = file.name.substring(file.name.lastIndexOf("."));
-      const { uploadUrl, publicUrl } = await getPresignedUrl("logo", extension, file.type);
-      await uploadToS3(uploadUrl, file);
-      setFormData((prev) => ({ ...prev, logo_url: publicUrl }));
-      showSuccess("Logo actualizado", "Imagen subida correctamente");
-    } catch {
-      showError("Error", "Fallo al subir la imagen");
-    } finally {
-      setIsLoading(false);
-    }
+    // Solo staging: no se sube al S3 hasta que se guarde la configuración.
+    setLogoPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    setLogoFile(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.slug) {
       // Si falta algo obligatorio, lleva al usuario al tab donde está el campo
       setActiveTab("general");
       return showError("Error", "Campos obligatorios faltantes");
     }
-    mutation.mutate(formData);
+
+    let dataToSave = formData;
+
+    // Subir el logo al S3 SOLO ahora (al guardar). Si no hay logo nuevo, se guarda el actual.
+    if (logoFile) {
+      try {
+        setIsLoading(true);
+        setLoadingMessage("Subiendo logo...");
+        const extension = logoFile.name.substring(logoFile.name.lastIndexOf("."));
+        const { uploadUrl, publicUrl } = await getPresignedUrl("logo", extension, logoFile.type);
+        await uploadToS3(uploadUrl, logoFile);
+        dataToSave = { ...formData, logo_url: publicUrl };
+        setFormData(dataToSave);
+      } catch {
+        setIsLoading(false);
+        return showError("Error", "Fallo al subir la imagen");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    mutation.mutate(dataToSave);
   };
 
   if (isFetching) return <Loading message="Cargando configuración..." />;
@@ -316,6 +333,20 @@ const Business = () => {
                 <div className={styles.fileUploadWrapper}>
                   <input type="file" onChange={handleFileChange} accept="image/png,image/jpeg" />
                 </div>
+                {(logoPreview || formData.logo_url) && (
+                  <div style={{ marginTop: ".6rem", display: "flex", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
+                    <img
+                      src={logoPreview || formData.logo_url}
+                      alt="Logo"
+                      style={{ height: 64, width: "auto", maxWidth: 160, objectFit: "contain", borderRadius: 8, border: "1px solid #eef0f3", background: "#fff", padding: 4 }}
+                    />
+                    {logoFile && (
+                      <span style={{ fontSize: ".8rem", color: "#b54708", fontWeight: 600 }}>
+                        Nuevo logo — se subirá al guardar.
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -547,7 +578,7 @@ const Business = () => {
                     width={DEVICES.find((d) => d.id === device).width}
                     height={device === "mobile" ? 700 : device === "tablet" ? 760 : 720}
                   >
-                    <CatalogManager businessData={formData} products={previewProducts} isPreview categories={categories} />
+                    <CatalogManager businessData={{ ...formData, logo_url: logoPreview || formData.logo_url }} products={previewProducts} isPreview categories={categories} />
                   </DevicePreviewFrame>
                 </div>
               </div>
