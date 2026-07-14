@@ -8,7 +8,7 @@ import { useNotification } from "../../components/UI/NotificationProvider";
 import Loading from "../../components/UI/Loading";
 import {
   fetchRootOverview, fetchRootBusinesses, fetchRootSuggestions, updateSuggestionStatus,
-} from "../../services/rootApi";
+} from "../../services/rootApis";
 import styles from "./RootPanel.module.css";
 
 const STATUS_OPTS = [
