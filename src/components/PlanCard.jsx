@@ -2,7 +2,7 @@ import { useState } from "react";
 import styles from "./PlanCard.module.css";
 import PrimaryButton from "./PrimaryButton";
 
-const PlanCard = ({ plan, button }) => {
+const PlanCard = ({ plan, button, showAll: showAllProp, onToggleShowAll }) => {
 
   const FEATURES = [
     "1 catálogo online con enlace propio y código QR personalizado",
@@ -24,9 +24,17 @@ const PlanCard = ({ plan, button }) => {
 
   const VISIBLE = 8;
 
-  const [showAll, setShowAll] = useState(false);
+  // Estado controlado por el padre si envía showAll/onToggleShowAll;
+  // si no, cae a un estado interno (comportamiento anterior).
+  const [showAllLocal, setShowAllLocal] = useState(false);
+  const isControlled = showAllProp !== undefined;
+  const showAll = isControlled ? showAllProp : showAllLocal;
+  const toggle = () => {
+    if (isControlled) onToggleShowAll?.();
+    else setShowAllLocal((v) => !v);
+  };
+
   const visible = showAll ? FEATURES : FEATURES.slice(0, VISIBLE);
-  const hidden = FEATURES.length - VISIBLE;
 
   return (
     <div className={styles.card}>
@@ -49,7 +57,7 @@ const PlanCard = ({ plan, button }) => {
         <button
           type="button"
           className={styles.moreBtn}
-          onClick={() => setShowAll((v) => !v)}
+          onClick={toggle}
           aria-expanded={showAll}
         >
           {showAll ? "Ver menos" : "Ver más"}

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import PaddleCheckoutButton from "../components/PaddleCheckoutButton";
@@ -9,6 +9,8 @@ import styles from "./Payment.module.css";
 
 const Payment = () => {
   const auth = getTokenInfo();
+
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
 
   const { data: plans = [] } = useQuery({
     queryKey: ["plans"],
@@ -62,6 +64,8 @@ const Payment = () => {
                   <PlanCard
                     plan={plan}
                     key={plan.price_id}
+                    showAll={showAllFeatures}
+                    onToggleShowAll={() => setShowAllFeatures((v) => !v)}
                     button={
                       <PaddleCheckoutButton
                         mode="price"

@@ -13,6 +13,7 @@ import CartDrawer from "./CartDrawer";
 import { getCustomerSession, setCustomerSession, getValidCustomerSession, decodeCustomerToken, getCart, cartCount } from "../../services/customerAuthApi";
 import { getFont, getScaleValue, getLogoScaleValue } from "../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../helpers/fontLoader";
+import { loadCustomFonts, resolveFontFamily, isCustomKey } from "../../helpers/customFonts";
 import portal from "./CustomerPortal.module.css";
 import Select from "../Select";
 
@@ -67,10 +68,14 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   const refreshCart = () => setCartCnt(cartCount(getCart(businessId)));
   useEffect(() => { if (businessId) refreshCart(); }, [businessId]); // eslint-disable-line
 
-  // ── Carga de las Google Fonts del negocio (preview y catálogo público) ──
+  // ── Carga de fuentes del negocio (preview y catálogo público) ──
+  // Integradas (Google) por su loader; subidas por el negocio vía FontFace.
   useEffect(() => {
-    loadCatalogFonts([businessData?.fontHeading, businessData?.fontBody]);
-  }, [businessData?.fontHeading, businessData?.fontBody]);
+    loadCatalogFonts(
+      [businessData?.fontHeading, businessData?.fontBody].filter((k) => !isCustomKey(k))
+    );
+    loadCustomFonts(businessData?.custom_fonts);
+  }, [businessData?.fontHeading, businessData?.fontBody, businessData?.custom_fonts]);
 
   useEffect(() => {
     if (isPreview || !businessId) return;
@@ -142,10 +147,12 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   // Variables canónicas que TODOS los templates escuchan
   const palette = parsePalette(businessData?.themePalette);
 
-  // Tipografía: si la fuente es "default" (family vacío) no se setea la variable,
+  // Tipografía: resuelve fuentes integradas (Google) y subidas por el negocio.
+  // Si la key es "default" el family resuelto es "" y NO se setea la variable,
   // así el template usa su tipografía actual (cero cambios para catálogos existentes).
-  const headingFont = getFont(businessData?.fontHeading);
-  const bodyFont = getFont(businessData?.fontBody);
+  const builtinFamily = (key) => getFont(key).family;
+  const headingFamily = resolveFontFamily(businessData?.fontHeading, businessData?.custom_fonts, builtinFamily);
+  const bodyFamily = resolveFontFamily(businessData?.fontBody, businessData?.custom_fonts, builtinFamily);
   const fontScale = getScaleValue(businessData?.fontScale);
   const logoScale = getLogoScaleValue(businessData?.logoScale);
 
@@ -154,8 +161,8 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     "--theme-secondary": palette.secondary,
     "--theme-accent": palette.accent,
     "--theme-background": palette.background,
-    ...(headingFont.family ? { "--font-heading": headingFont.family } : {}),
-    ...(bodyFont.family ? { "--font-body": bodyFont.family } : {}),
+    ...(headingFamily ? { "--font-heading": headingFamily } : {}),
+    ...(bodyFamily ? { "--font-body": bodyFamily } : {}),
     "--font-scale": fontScale,
     "--logo-scale": logoScale,
   };

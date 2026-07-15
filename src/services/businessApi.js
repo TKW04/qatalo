@@ -47,15 +47,21 @@ export const saveBusinessData = async (tenantId, businessData) => {
     themeType: businessData.themeType || "predefined",
     themePalette: businessData.themePalette || null,
     localities: businessData.localities || [],
-    ga_tracking_id: businessData.ga_tracking_id.trim(),
-    meta_pixel_id: businessData.meta_pixel_id.trim(),
+    ga_tracking_id: (businessData.ga_tracking_id || "").trim(),
+    meta_pixel_id: (businessData.meta_pixel_id || "").trim(),
     low_stock_threshold: businessData.low_stock_threshold ?? 5,
     delivery_reminder_enabled: businessData.delivery_reminder_enabled ?? false,
     font_body: businessData.fontBody,
     font_heading: businessData.fontHeading,
     font_scale: businessData.fontScale,
     logo_scale: businessData.logoScale,
-    
+    // Fuentes subidas por el negocio
+    custom_fonts: businessData.custom_fonts || [],
+    // Facturación (el update_business los sobrescribe: hay que enviarlos siempre)
+    rnc: businessData.rnc || "",
+    ncf_enabled: businessData.ncf_enabled ?? false,
+    itbis_rate: businessData.itbis_rate ?? 18,
+    ncf_pool: businessData.ncf_pool || [],
   };
 
   const isUpdating = businessData.business_id && businessData.business_id !== "";
@@ -71,7 +77,7 @@ export const saveBusinessData = async (tenantId, businessData) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
-  });  
+  });
 
   if (!response.ok) throw new Error("Error al guardar la configuración del negocio");
   return await response.json();

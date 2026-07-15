@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -13,6 +14,8 @@ import Footer from "../components/Footer";
 import Button from "../components/PrimaryButton";
 
 const Landing = () => {
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
+
   const { data: plans = [] } = useQuery({
     queryKey: ["plans"],
     queryFn: fetchPlans,
@@ -220,7 +223,12 @@ const Landing = () => {
           </div>
           <div className={styles.grid}>
             {plans.map((plan) => (
-              <PlanCard plan={plan} key={plan.price_id} />
+              <PlanCard
+                plan={plan}
+                key={plan.price_id}
+                showAll={showAllFeatures}
+                onToggleShowAll={() => setShowAllFeatures((v) => !v)}
+              />
             ))}
           </div>
         </section>

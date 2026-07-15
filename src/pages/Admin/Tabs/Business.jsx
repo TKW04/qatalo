@@ -13,6 +13,8 @@ import styles from "./Business.module.css";
 import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
 import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont } from "../../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../../helpers/fontLoader";
+import FontManager from "../../../components/CatalogTemplates/FontManager";
+import { customFontOptions, resolveFontFamily, loadCustomFonts, isCustomKey, customIdFromKey, fontMime } from "../../../helpers/customFonts";
 import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { DEMO_PRODUCTS } from "../../../constants/dummyCatalog";
@@ -53,18 +55,17 @@ const Business = () => {
     ncf_enabled: false,
     itbis_rate: 18,
     ncf_pool: [],
-    // Tipografía (default = no fuerza fuente; se ve como hoy)
     fontHeading: "default",
     fontBody: "default",
     fontScale: "medium",
-    // Tamaño del logo (medium = alto original del template)
     logoScale: "medium",
+    custom_fonts: [],
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
-  const [logoFile, setLogoFile] = useState(null);      // logo en staging (no sube al S3 hasta guardar)
-  const [logoPreview, setLogoPreview] = useState("");  // object URL local para previsualizar
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState("");
   const [localityInput, setLocalityInput] = useState("");
   const [ncfPrefix, setNcfPrefix] = useState("B01");
   const [ncfFrom, setNcfFrom] = useState("");
@@ -93,11 +94,9 @@ const Business = () => {
     retry: false,
   });
 
-  // Si el negocio tiene productos, el preview los usa; si no, muestra data demo.
   const hasOwnProducts = (myProducts || []).length > 0;
   const previewProducts = hasOwnProducts ? myProducts : DEMO_PRODUCTS;
 
-  // Merge defensivo: si el backend no trae tema, conservamos los defaults
   const parsePalette = (p) => {
     if (!p) return null;
     if (typeof p === "string") {
@@ -120,33 +119,31 @@ const Business = () => {
         themeType,
         themePalette: palette,
         localities: businessData.localities || [],
-        // Tipografía con fallback (catálogos existentes no traen estos campos)
         fontHeading: businessData.fontHeading || "default",
         fontBody: businessData.fontBody || "default",
         fontScale: businessData.fontScale || "medium",
         logoScale: businessData.logoScale || "medium",
+        custom_fonts: businessData.custom_fonts || [],
       }));
     }
   }, [businessData]);
 
-  // Cargar las Google Fonts seleccionadas para que el preview las muestre
   useEffect(() => {
-    loadCatalogFonts([formData.fontHeading, formData.fontBody]);
-  }, [formData.fontHeading, formData.fontBody]);
+    loadCatalogFonts([formData.fontHeading, formData.fontBody].filter((k) => !isCustomKey(k)));
+    loadCustomFonts(formData.custom_fonts);
+  }, [formData.fontHeading, formData.fontBody, formData.custom_fonts]);
 
   const mutation = useMutation({
     mutationFn: (data) => saveBusinessData(tenantId, data),
     onSuccess: () => {
       showSuccess("¡Éxito!", "Configuración guardada correctamente");
       queryClient.invalidateQueries(["business", tenantId]);
-      // Limpiar el logo en staging una vez guardado
       setLogoFile(null);
       setLogoPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return ""; });
     },
     onError: () => showError("Error", "No se pudo guardar la configuración"),
   });
 
-  // --- Helpers de tema ---
   const selectPalette = (palette) =>
     setFormData((prev) => ({ ...prev, themeType: "predefined", themePalette: palette.colors }));
 
@@ -169,7 +166,20 @@ const Business = () => {
     formData.themeType === "predefined" &&
     JSON.stringify(palette.colors) === JSON.stringify(formData.themePalette);
 
-  // --- Helpers de localidades ---
+  // Fuentes propias: si se elimina una fuente seleccionada, volvemos a "default".
+  const handleCustomFontsChange = (next) => {
+    setFormData((p) => {
+      const ids = new Set((next || []).map((f) => f.id));
+      const stillValid = (key) => !isCustomKey(key) || ids.has(customIdFromKey(key));
+      return {
+        ...p,
+        custom_fonts: next,
+        fontHeading: stillValid(p.fontHeading) ? p.fontHeading : "default",
+        fontBody: stillValid(p.fontBody) ? p.fontBody : "default",
+      };
+    });
+  };
+
   const addLocality = () => {
     const v = localityInput.trim();
     if (!v) return;
@@ -182,7 +192,6 @@ const Business = () => {
   const removeLocality = (loc) =>
     setFormData((p) => ({ ...p, localities: (p.localities || []).filter((l) => l !== loc) }));
 
-  // --- Helpers de NCF ---
   const ncfPool = formData.ncf_pool || [];
   const ncfAvailable = ncfPool.filter((n) => !n.used).length;
   const ncfUsed = ncfPool.filter((n) => n.used).length;
@@ -231,7 +240,6 @@ const Business = () => {
       return showError("Formato no válido", "El logo debe ser PNG o JPG. Convierte tu imagen antes de subirla.");
     }
 
-    // Solo staging: no se sube al S3 hasta que se guarde la configuración.
     setLogoPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     setLogoFile(file);
   };
@@ -239,14 +247,12 @@ const Business = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.slug) {
-      // Si falta algo obligatorio, lleva al usuario al tab donde está el campo
       setActiveTab("general");
       return showError("Error", "Campos obligatorios faltantes");
     }
 
     let dataToSave = formData;
 
-    // Subir el logo al S3 SOLO ahora (al guardar). Si no hay logo nuevo, se guarda el actual.
     if (logoFile) {
       try {
         setIsLoading(true);
@@ -264,14 +270,50 @@ const Business = () => {
       }
     }
 
+    // Subir fuentes en staging al S3 SOLO ahora (al guardar).
+    const hasPendingFonts = (formData.custom_fonts || []).some((f) => f._pending);
+    if (hasPendingFonts) {
+      try {
+        setIsLoading(true);
+        setLoadingMessage("Subiendo fuentes...");
+        const uploaded = [];
+        for (const f of (dataToSave.custom_fonts || [])) {
+          if (f._pending && f._file) {
+            const mime = fontMime(f.ext);
+            // Forzamos el type para que el Content-Type calce con el presign
+            const typed = new File([f._file], `font${f.ext}`, { type: mime });
+            const { uploadUrl, publicUrl } = await getPresignedUrl(`font_${f.id}`, f.ext, mime);
+            await uploadToS3(uploadUrl, typed);
+            if (f.url && f.url.startsWith("blob:")) URL.revokeObjectURL(f.url);
+            const { _pending, _file, _localUrl, ...clean } = f; // eslint-disable-line no-unused-vars
+            uploaded.push({ ...clean, url: publicUrl });
+          } else {
+            const { _pending, _file, _localUrl, ...clean } = f; // eslint-disable-line no-unused-vars
+            uploaded.push(clean);
+          }
+        }
+        dataToSave = { ...dataToSave, custom_fonts: uploaded };
+        setFormData(dataToSave);
+      } catch {
+        setIsLoading(false);
+        return showError("Error", "Fallo al subir las fuentes");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     mutation.mutate(dataToSave);
   };
 
   if (isFetching) return <Loading message="Cargando configuración..." />;
 
-  // Familias CSS de la fuente elegida (para el mini-preview de tipografía)
-  const headingFamily = getFont(formData.fontHeading).family;
-  const bodyFamily = getFont(formData.fontBody).family;
+  // Familias CSS resueltas (integradas o subidas) para el mini-preview
+  const builtinFamily = (key) => getFont(key).family;
+  const headingFamily = resolveFontFamily(formData.fontHeading, formData.custom_fonts, builtinFamily);
+  const bodyFamily = resolveFontFamily(formData.fontBody, formData.custom_fonts, builtinFamily);
+
+  // Opciones de los selectores = integradas + fuentes propias del negocio
+  const fontSelectOptions = [...FONT_OPTIONS, ...customFontOptions(formData.custom_fonts)];
 
   return (
     <div className={styles.businessContainer}>
@@ -281,7 +323,6 @@ const Business = () => {
         <h1>Configuración del Negocio</h1>
       </div>
 
-      {/* --- NAVEGACIÓN DE TABS --- */}
       <div className={styles.tabNav}>
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -299,7 +340,6 @@ const Business = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* ============================ TAB: GENERAL ============================ */}
         {activeTab === "general" && (
           <div className={styles.tabPanel}>
             <div className={styles.section}>
@@ -350,7 +390,6 @@ const Business = () => {
               </div>
             </div>
 
-            {/* --- LOCALIDADES --- */}
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}><TbMapPin /> Localidades de disponibilidad</h2>
               <p style={{ color: "#667085", fontSize: ".9rem", marginTop: "-.5rem", marginBottom: "1rem" }}>
@@ -382,10 +421,8 @@ const Business = () => {
           </div>
         )}
 
-        {/* ============================ TAB: APARIENCIA ============================ */}
         {activeTab === "appearance" && (
           <div className={styles.tabPanel}>
-            {/* --- ESTILO (TEMPLATE) --- */}
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}><TbLayoutDashboard /> Estilo</h2>
               <div className={styles.templateGrid}>
@@ -401,7 +438,6 @@ const Business = () => {
               </div>
             </div>
 
-            {/* --- COLORES --- */}
             <div className={styles.section}>
               <div className={styles.sectionTitleRow}>
                 <h2 className={styles.sectionTitle}><TbPalette /> Colores</h2>
@@ -468,7 +504,6 @@ const Business = () => {
               )}
             </div>
 
-            {/* --- TIPOGRAFÍA --- */}
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}><TbTypography /> Tipografía</h2>
               <p className={styles.sectionDesc}>
@@ -482,7 +517,7 @@ const Business = () => {
                   <Select
                     value={formData.fontHeading}
                     onChange={(v) => setFormData((p) => ({ ...p, fontHeading: v }))}
-                    options={FONT_OPTIONS}
+                    options={fontSelectOptions}
                     placeholder="Seleccionar fuente"
                   />
                 </div>
@@ -491,8 +526,7 @@ const Business = () => {
                   <Select
                     value={formData.fontBody}
                     onChange={(v) => setFormData({ ...formData, fontBody: v })}
-                    // onClick={() => setFormData({ ...formData, templateId: tpl.id })}
-                    options={FONT_OPTIONS}
+                    options={fontSelectOptions}
                     placeholder="Seleccionar fuente"
                   />
                 </div>
@@ -508,7 +542,6 @@ const Business = () => {
                 </div>
               </div>
 
-              {/* Mini vista previa de la combinación elegida */}
               <div className={styles.fontPreviewCard}>
                 <div className={styles.fontPreviewHeading} style={{ fontFamily: headingFamily || "inherit" }}>
                   Nombre de tu producto
@@ -518,9 +551,13 @@ const Business = () => {
                   combinación de fuentes le da personalidad a tu tienda.
                 </div>
               </div>
+
+              <FontManager
+                customFonts={formData.custom_fonts}
+                onChange={handleCustomFontsChange}
+              />
             </div>
 
-            {/* --- LOGO --- */}
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}><TbPhoto /> Logo</h2>
               <p className={styles.sectionDesc}>
@@ -539,7 +576,6 @@ const Business = () => {
               </div>
             </div>
 
-            {/* --- PREVIEW EN VIVO --- */}
             <div className={styles.previewSection}>
               <div className={styles.previewHeader}>
                 <h2 className={styles.sectionTitle}>Previsualización en tiempo real</h2>
@@ -586,10 +622,8 @@ const Business = () => {
           </div>
         )}
 
-        {/* ============================ TAB: FACTURACIÓN ============================ */}
         {activeTab === "billing" && (
           <div className={styles.tabPanel}>
-            {/* --- DATOS FISCALES --- */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>🧾 Datos fiscales</h3>
               <p className={styles.sectionDesc}>
@@ -622,7 +656,6 @@ const Business = () => {
               </div>
             </div>
 
-            {/* --- NCF --- */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>📄 Comprobantes Fiscales (NCF)</h3>
               <p className={styles.sectionDesc}>
@@ -640,7 +673,6 @@ const Business = () => {
 
               {formData.ncf_enabled && (
                 <div className={styles.ncfSection}>
-                  {/* Resumen del pool */}
                   <div className={styles.ncfStats}>
                     <div className={styles.ncfStat}>
                       <strong>{ncfAvailable}</strong>
@@ -657,7 +689,6 @@ const Business = () => {
                     </p>
                   )}
 
-                  {/* Cargar por rango */}
                   <div className={styles.ncfLoader}>
                     <span className={styles.ncfLoaderTitle}>Cargar secuencia por rango</span>
                     <div className={styles.ncfRangeRow}>
@@ -680,7 +711,6 @@ const Business = () => {
                     </span>
                   </div>
 
-                  {/* Cargar manual */}
                   <div className={styles.ncfLoader}>
                     <span className={styles.ncfLoaderTitle}>O pega una lista manual</span>
                     <textarea
@@ -695,7 +725,6 @@ const Business = () => {
                     </button>
                   </div>
 
-                  {/* Lista del pool */}
                   {ncfPool.length > 0 && (
                     <div className={styles.ncfList}>
                       <span className={styles.ncfLoaderTitle}>NCF cargados ({ncfPool.length})</span>
@@ -719,10 +748,8 @@ const Business = () => {
           </div>
         )}
 
-        {/* ============================ TAB: NOTIFICACIONES ============================ */}
         {activeTab === "notifications" && (
           <div className={styles.tabPanel}>
-            {/* --- ALERTAS DE INVENTARIO --- */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>🔔 Alertas de inventario</h3>
               <p className={styles.sectionDesc}>
@@ -747,7 +774,6 @@ const Business = () => {
               </div>
             </div>
 
-            {/* --- RECORDATORIO DE ENTREGAS --- */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>🗓️ Recordatorio de entregas</h3>
               <p className={styles.sectionDesc}>
@@ -769,7 +795,6 @@ const Business = () => {
               )}
             </div>
 
-            {/* --- MARKETING & ANALYTICS --- */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>📊 Marketing & Analytics</h3>
               <p className={styles.sectionDesc}>
@@ -830,7 +855,6 @@ const Business = () => {
           </div>
         )}
 
-        {/* --- BOTÓN GUARDAR (siempre visible, fuera de los tabs) --- */}
         <div className={styles.saveBar}>
           <PrimaryButton type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? "Guardando..." : "Guardar Cambios"}
