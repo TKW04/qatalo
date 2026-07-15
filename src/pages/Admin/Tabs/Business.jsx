@@ -13,7 +13,7 @@ import styles from "./Business.module.css";
 import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
 import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont } from "../../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../../helpers/fontLoader";
-import FontManager from "../../../components/CatalogTemplates/FontManager";
+import FontManager from "../../../components/CatalogTemplates/FontManagers";
 import { customFontOptions, resolveFontFamily, loadCustomFonts, isCustomKey, customIdFromKey, fontMime } from "../../../helpers/customFonts";
 import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
