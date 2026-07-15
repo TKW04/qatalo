@@ -15,7 +15,7 @@ import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont } from "../../
 import { loadCatalogFonts } from "../../../helpers/fontLoader";
 import FontManager from "../../../components/CatalogTemplates/FontManager";
 import { customFontOptions, resolveFontFamily, loadCustomFonts, isCustomKey, customIdFromKey, fontMime } from "../../../helpers/customFonts";
-import BusinessHoursSettings from "../../../components/BusinessHours/BusinessHoursSettings";
+import BusinessHoursSettings from "../../../components/BusinessHours/BusinessHoursSetting";
 import { defaultBusinessHours } from "../../../helpers/businessHours";
 import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";

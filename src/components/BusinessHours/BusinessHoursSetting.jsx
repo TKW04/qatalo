@@ -52,6 +52,7 @@ const BusinessHoursSettings = ({ business = {}, localities = [], onChange }) => 
                                     onChange={(patch) => setLocality(loc, patch)}
                                 />
                             </div>
+                            
                         );
                     })}
                 </div>
