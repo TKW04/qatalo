@@ -57,6 +57,11 @@ export const saveBusinessData = async (tenantId, businessData) => {
     logo_scale: businessData.logoScale,
     // Fuentes subidas por el negocio
     custom_fonts: businessData.custom_fonts || [],
+    // Horario de atención
+    business_hours_enabled: businessData.business_hours_enabled ?? false,
+    hours_mode: businessData.hours_mode || "inform",
+    business_hours: businessData.business_hours || {},
+    locality_hours: businessData.locality_hours || {},
     // Facturación (el update_business los sobrescribe: hay que enviarlos siempre)
     rnc: businessData.rnc || "",
     ncf_enabled: businessData.ncf_enabled ?? false,

@@ -14,6 +14,7 @@ import { getCustomerSession, setCustomerSession, getValidCustomerSession, decode
 import { getFont, getScaleValue, getLogoScaleValue } from "../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../helpers/fontLoader";
 import { loadCustomFonts, resolveFontFamily, isCustomKey } from "../../helpers/customFonts";
+import { effectiveHours, getHoursStatus } from "../../helpers/businessHours";
 import portal from "./CustomerPortal.module.css";
 import Select from "../Select";
 
@@ -76,6 +77,13 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     );
     loadCustomFonts(businessData?.custom_fonts);
   }, [businessData?.fontHeading, businessData?.fontBody, businessData?.custom_fonts]);
+
+  // Refresca el estado de horario cada minuto (para "cierra en X", cambio de abierto/cerrado)
+  const [hoursTick, setHoursTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setHoursTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (isPreview || !businessId) return;
@@ -190,8 +198,39 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
       });
     };
 
+  // ── Estado de horario según la localidad elegida (usa hoursTick para refrescar) ──
+  void hoursTick;
+  const hoursStatus = getHoursStatus(effectiveHours(businessData, selectedLocality));
+  const hasLocalityOverrides = Object.values(businessData?.locality_hours || {}).some((v) => v && v.enabled);
+  // En "Todas" con overrides no bloqueamos (no sabemos su zona); sí informamos.
+  const blockOrdering = hoursStatus.blocking && !(selectedLocality === "all" && hasLocalityOverrides);
+  const hoursColors = {
+    open: { bg: "#D1FAE5", color: "#065F46" },
+    closing_soon: { bg: "#FEF3C7", color: "#92400E" },
+    closed: { bg: "#FEE4E2", color: "#B42318" },
+  };
+  const hc = hoursColors[hoursStatus.level] || hoursColors.open;
+
   return (
     <div style={{ ...themeStyles, width: "100%", minHeight: "100%" }}>
+      {hoursStatus.enabled && (
+        <div style={{
+          background: hc.bg, color: hc.color,
+          padding: ".6rem 1rem", display: "flex", justifyContent: "center",
+          alignItems: "center", gap: ".5rem", fontSize: ".9rem", fontWeight: 600,
+          textAlign: "center", flexWrap: "wrap",
+        }}>
+          <span style={{
+            width: 9, height: 9, borderRadius: "50%", flexShrink: 0,
+            background: hoursStatus.level === "open" ? "#10B981" : hoursStatus.level === "closing_soon" ? "#F59E0B" : "#EF4444",
+          }} />
+          <span>{hoursStatus.message}</span>
+          {selectedLocality === "all" && hasLocalityOverrides && (
+            <span style={{ fontWeight: 500, opacity: .85 }}>· elige tu localidad para ver su horario</span>
+          )}
+        </div>
+      )}
+
       {localityOptions.length > 0 && (
         <div style={{
           background: "var(--theme-background, #f7fafc)",
@@ -241,6 +280,8 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
         <CartDrawer
           businessId={businessId}
           businessName={businessData?.business_name || businessData?.name}
+          blockOrdering={blockOrdering}
+          hoursMessage={hoursStatus.message}
           onClose={() => { setCartOpen(false); refreshCart(); }}
           onChanged={refreshCart}
           onCheckoutStart={() =>

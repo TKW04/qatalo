@@ -133,7 +133,7 @@ const distributeDiscount = (offer, items, totalDiscount) => {
 
 // -- Componente --
 const CartDrawer = ({
-  businessId, businessName, onClose, onChanged, onCheckoutStart, onPurchase, }) => {
+  businessId, businessName, blockOrdering = false, hoursMessage = "", onClose, onChanged, onCheckoutStart, onPurchase, }) => {
   const { showWarning, showError } = useNotification();
   const [items, setItems] = useState(() => getCart(businessId));
 
@@ -270,6 +270,7 @@ const CartDrawer = ({
   const goCheckout = () => {
     setStockError(null);
     if (!items.length) return showWarning("Aviso", "Tu carrito está vacío");
+    if (blockOrdering) return showWarning("Cerrado", `${hoursMessage || "El negocio está cerrado en este momento."} No puedes completar el pedido ahora.`);
     onCheckoutStart?.();
     const s = getValidCustomerSession(businessId);
     if (s?.token) { setSession(s); setStep("pay"); }
@@ -446,7 +447,15 @@ const CartDrawer = ({
                   <span><strong>Total</strong></span><strong>{cur} {formatted(total)}</strong>
                 </div>
 
-                <button className={styles.primaryBtn} onClick={goCheckout}>Proceder al pago</button>
+                {blockOrdering && (
+                  <div className={styles.stockErrorBanner}>
+                    ⏰ {hoursMessage}. No puedes completar el pedido en este momento.
+                  </div>
+                )}
+
+                <button className={styles.primaryBtn} onClick={goCheckout} disabled={blockOrdering}>
+                  Proceder al pago
+                </button>
                 {stockError && (
                   <div className={styles.stockErrorBanner}>
                     ⚠️ {stockError}

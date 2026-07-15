@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop, TbFileInvoice, TbTypography, TbPhoto } from "react-icons/tb";
+import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop, TbFileInvoice, TbTypography, TbPhoto, TbClock } from "react-icons/tb";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
 import Loading from "../../../components/UI/Loading";
@@ -13,8 +13,10 @@ import styles from "./Business.module.css";
 import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
 import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont } from "../../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../../helpers/fontLoader";
-import FontManager from "../../../components/CatalogTemplates/FontManagers";
+import FontManager from "../../../components/CatalogTemplates/FontManager";
 import { customFontOptions, resolveFontFamily, loadCustomFonts, isCustomKey, customIdFromKey, fontMime } from "../../../helpers/customFonts";
+import BusinessHoursSettings from "../../../components/BusinessHours/BusinessHoursSettings";
+import { defaultBusinessHours } from "../../../helpers/businessHours";
 import { fetchBusinessData, saveBusinessData, getPresignedUrl, uploadToS3 } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { DEMO_PRODUCTS } from "../../../constants/dummyCatalog";
@@ -24,6 +26,7 @@ const TABS = [
   { id: "general", label: "General", icon: TbBuildingStore },
   { id: "appearance", label: "Apariencia", icon: TbPalette },
   { id: "billing", label: "Facturación", icon: TbFileInvoice },
+  { id: "hours", label: "Horario", icon: TbClock },
   { id: "notifications", label: "Notificaciones", icon: TbBell },
 ];
 
@@ -60,6 +63,11 @@ const Business = () => {
     fontScale: "medium",
     logoScale: "medium",
     custom_fonts: [],
+    // Horario de atención
+    business_hours_enabled: false,
+    hours_mode: "inform",
+    business_hours: defaultBusinessHours(),
+    locality_hours: {},
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -124,6 +132,10 @@ const Business = () => {
         fontScale: businessData.fontScale || "medium",
         logoScale: businessData.logoScale || "medium",
         custom_fonts: businessData.custom_fonts || [],
+        business_hours_enabled: businessData.business_hours_enabled ?? false,
+        hours_mode: businessData.hours_mode || "inform",
+        business_hours: businessData.business_hours || defaultBusinessHours(),
+        locality_hours: businessData.locality_hours || {},
       }));
     }
   }, [businessData]);
@@ -618,6 +630,22 @@ const Business = () => {
                   </DevicePreviewFrame>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "hours" && (
+          <div className={styles.tabPanel}>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}><TbClock /> Horario de atención</h2>
+              <p className={styles.sectionDesc}>
+                Define cuándo tu negocio recibe pedidos. Se calcula con la hora de República Dominicana.
+              </p>
+              <BusinessHoursSettings
+                business={formData}
+                localities={formData.localities}
+                onChange={(patch) => setFormData((p) => ({ ...p, ...patch }))}
+              />
             </div>
           </div>
         )}
