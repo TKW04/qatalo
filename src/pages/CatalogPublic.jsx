@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import Loading from "../components/UI/Loading";
 import CatalogManager from "../components/CatalogTemplates/CatalogManager";
+import CatalogUnavailable from "../components/CatalogTemplates/CatalogUnavailable"; // ← nuevo
 import { fetchBusinessBySlug } from "../services/businessApi";
 import { fetchProductsByBusinessId } from "../services/productsApi";
 import { fetchCategoriesByBusinessId } from "../services/categoryApi";
@@ -36,19 +37,23 @@ const CatalogPublic = () => {
     retry: false,
   });
 
+  // Si el dueño no tiene suscripción vigente, el backend devuelve catalog_disabled
+  // con un payload reducido (sin business_id). No hay productos que cargar.
+  const catalogDisabled = !!business?.catalog_disabled;
+
   const businessId = business?.business_id;
 
   const { data: products = [], isLoading: loadingProducts } = useQuery({
     queryKey: ["public-products", businessId],
     queryFn: () => fetchProductsByBusinessId(businessId),
-    enabled: !!businessId,
+    enabled: !!businessId && !catalogDisabled,
     retry: false,
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ["public-categories", businessId],
     queryFn: () => fetchCategoriesByBusinessId(businessId),
-    enabled: !!businessId,
+    enabled: !!businessId && !catalogDisabled,
     retry: false,
   });
 
@@ -67,8 +72,13 @@ const CatalogPublic = () => {
     [products]
   );
 
-  if (loadingBusiness || (businessId && loadingProducts)) {
+  if (loadingBusiness || (businessId && !catalogDisabled && loadingProducts)) {
     return <Loading message="Cargando catálogo..." visible />;
+  }
+
+  // Catálogo oculto por suscripción del dueño (cancelada/pausada): pantalla neutra con la marca.
+  if (catalogDisabled) {
+    return <CatalogUnavailable name={business.name} logoUrl={business.logo_url} />;
   }
 
   if (isError || !business || !isAvailable(business.status)) {

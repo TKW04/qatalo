@@ -161,7 +161,6 @@ const Products = () => {
     if (form.price === "" || isNaN(Number(form.price)) || Number(form.price) < 0) err.price = "El precio debe ser ≥ 0";
     if (!form.category_id) err.category_id = "La categoría es requerida";
     if (!form.currency) err.currency = "La moneda es requerida";
-    if (totalImages < 1) err.images = "Selecciona al menos 1 imagen";
     if (totalImages > MAX_IMAGES) err.images = `Máximo ${MAX_IMAGES} imágenes`;
     if (form.is_customizable && (!form.variants || form.variants.length === 0)) err.variants = "Agrega al menos una variante";
     for (const loc of (form.localities || [])) {
@@ -533,7 +532,10 @@ const Products = () => {
           )}
 
           <div className={styles.formGroup}>
-            <label>Imágenes <span className={styles.required}>*</span> (máx. {MAX_IMAGES})</label>
+            <label>Imágenes (opcional, máx. {MAX_IMAGES})</label>
+            <span style={{ fontSize: ".78rem", color: "#667085", display: "block", marginBottom: ".5rem" }}>
+              Si no agregas imagen, en el catálogo se mostrará el logo de tu negocio.
+            </span>
             <div className={styles.imageRow}>
               {existingUrls.map((url) => (
                 <div key={url} className={styles.thumbBox}>

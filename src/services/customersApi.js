@@ -148,3 +148,14 @@ export const reactivateTransaction = async (customerId, transactionId) => {
   });
   return handle(res);
 };
+
+// Aplicar / quitar un descuento a una orden completa (todas las transacciones del grupo).
+// payload: { offer_id, offer_name, offer_code, items: [{ transaction_id, price, original_price, discount_amount }] }
+// offer_id vacío = quitar el descuento.
+export const applyOfferToOrder = async (customerId, transactionId, payload) => {
+  const res = await fetch(`${API_URL}customers/transactions/apply-offer`, {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({ customer_id: customerId, transaction_id: transactionId, ...payload }),
+  });
+  return handle(res);
+};

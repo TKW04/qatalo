@@ -1,5 +1,6 @@
 import { Search, Share2, UtensilsCrossed } from "lucide-react";
 import styles from "./TemplateFood.module.css";
+import ProductThumb from "./ProductThumb";
 
 /**
  * TemplateFood (Comidas / Dulces)
@@ -99,17 +100,13 @@ export default function TemplateFood({
               }}
             >
               <div className={styles.media}>
-                {product.imagesUrl?.[0]?.image ? (
-                  <img
-                    className={styles.image}
-                    src={product.imagesUrl[0].image}
-                    alt={product.name}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className={styles.imagePlaceholder}></div>
-                )}
-                
+                <ProductThumb
+                  product={product}
+                  business={business}
+                  imgClassName={styles.image}
+                  placeholderClassName={styles.imagePlaceholder}
+                />
+
                 {product.show_quantity && product.quantity > 0 && (
                   <span className={styles.ribbon}>Disp: {product.quantity}</span>
                 )}
@@ -130,8 +127,8 @@ export default function TemplateFood({
                 {product.description && (
                   <p className={styles.productDesc}>{product.description}</p>
                 )}
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={styles.order}
                   onClick={(e) => {
                     e.stopPropagation();

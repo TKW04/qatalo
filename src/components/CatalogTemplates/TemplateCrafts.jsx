@@ -1,6 +1,7 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateCrafts.module.css";
 import { curSymbol } from "../../helpers/utils";
+import ProductThumb from "./ProductThumb";
 
 /**
  * TemplateCrafts (Manualidades)
@@ -93,16 +94,12 @@ export default function TemplateCrafts({
               }}
             >
               <div className={styles.imageWrap}>
-                {product.imagesUrl?.[0]?.image ? (
-                  <img
-                    className={styles.image}
-                    src={product.imagesUrl[0].image}
-                    alt={product.name}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className={styles.imagePlaceholder}></div>
-                )}
+                <ProductThumb
+                  product={product}
+                  business={business}
+                  imgClassName={styles.image}
+                  placeholderClassName={styles.imagePlaceholder}
+                />
 
                 {product.is_available !== "available" && (
                   <span className={styles.soldOutBadge}>Agotado</span>

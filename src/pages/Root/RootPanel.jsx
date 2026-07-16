@@ -8,8 +8,18 @@ import { useNotification } from "../../components/UI/NotificationProvider";
 import Loading from "../../components/UI/Loading";
 import {
   fetchRootOverview, fetchRootBusinesses, fetchRootSuggestions, updateSuggestionStatus,
-} from "../../services/rootApis";
+} from "../../services/rootApi";
 import styles from "./RootPanel.module.css";
+
+// Estados de suscripción de Paddle → etiqueta + colores
+const SUB_STATUS = {
+  active:   { label: "Activa",     bg: "#D1FAE5", color: "#065F46" },
+  trialing: { label: "Prueba",     bg: "#DBEAFE", color: "#1E40AF" },
+  past_due: { label: "Vencida",    bg: "#FEF3C7", color: "#92400E" },
+  paused:   { label: "Pausada",    bg: "#E5E7EB", color: "#374151" },
+  canceled: { label: "Cancelada",  bg: "#FEE2E2", color: "#991B1B" },
+  _none:    { label: "Sin estado", bg: "#F3F4F6", color: "#6B7280" },
+};
 
 const STATUS_OPTS = [
   { value: "nueva", label: "Nueva" },
@@ -239,13 +249,27 @@ const RootPanel = () => {
                       <div className={styles.bizSub}>{b.phone}</div>
                     </td>
                     <td>
-                      {b.subscription && Object.keys(b.subscription).length > 0 ? (
-                        <div className={styles.subChips}>
-                          {Object.entries(b.subscription).map(([k, v]) => (
-                            <span key={k} className={styles.subChip}>{k}: <strong>{v}</strong></span>
-                          ))}
-                        </div>
-                      ) : <span className={styles.bizSub}>—</span>}
+                      {(() => {
+                        const status = b.subscription_status || "";
+                        const meta = SUB_STATUS[status] || SUB_STATUS._none;
+                        // Otros atributos custom (sin repetir transaction_status)
+                        const rest = Object.entries(b.subscription || {})
+                          .filter(([k]) => k !== "transaction_status");
+                        return (
+                          <div className={styles.subCell}>
+                            <span className={styles.subBadge} style={{ background: meta.bg, color: meta.color }}>
+                              {meta.label}
+                            </span>
+                            {rest.length > 0 && (
+                              <div className={styles.subChips}>
+                                {rest.map(([k, v]) => (
+                                  <span key={k} className={styles.subChip}>{k}: <strong>{v}</strong></span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className={styles.num}>{b.products_count ?? "—"}</td>
                     <td className={styles.num}>{b.customers_count ?? "—"}</td>

@@ -12,6 +12,7 @@ import { FaUserSecret } from "react-icons/fa6";
 import { logout } from "../../services/authenticate";
 import { getTokenInfo } from "../../helpers/token";
 import { fetchBusinessData } from "../../services/businessApi";
+import { fetchSubscriptionStatus } from "../../services/subscriptionApi";
 import styles from "./AdminSidebar.module.css";
 import { NavLink } from "react-router-dom";
 
@@ -27,8 +28,21 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     retry: false, // si el negocio aún no existe, fetchBusinessData lanza 404; no reintentamos
   });
 
-  const status = auth?.["custom:transaction_status"];
-  const subscribed = status === "trialing" || status === "active";
+  // Estado de suscripción FRESCO desde el backend (no del token cacheado).
+  // Así, si se canceló/venció, al refrescar la página se bloquea de inmediato.
+  const { data: sub } = useQuery({
+    queryKey: ["subscription-status", tenantId],
+    queryFn: fetchSubscriptionStatus,
+    enabled: !!tenantId,
+    retry: false,
+    refetchOnWindowFocus: true,   // revalida al volver a la pestaña
+    staleTime: 60 * 1000,
+  });
+
+  // Preferimos el estado fresco del backend; si aún no cargó, caemos al del token.
+  const tokenStatus = auth?.["custom:transaction_status"];
+  const status = sub?.transaction_status ?? tokenStatus;
+  const subscribed = sub?.active ?? (status === "trialing" || status === "active");
   const hasBusiness = !!business?.business_id;
 
   const groups = getTokenInfo()?.["cognito:groups"] || [];

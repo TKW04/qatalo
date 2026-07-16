@@ -12,10 +12,13 @@ import { currencies, formatted, getStatusStyle } from "../../../helpers/utils";
 import {
   fetchCustomers, approveTransaction,
   deliveredTransaction, cancelTransaction, emitInvoice,
-  changeOrderPaymentMethod, reactivateTransaction,
+  changeOrderPaymentMethod, reactivateTransaction, applyOfferToOrder,
 } from "../../../services/customersApi";
 import { fetchPaymentMethods } from "../../../services/paymentMethodsApi";
 import { fetchBusinessData } from "../../../services/businessApi";
+import { fetchProducts } from "../../../services/productsApi";
+import { fetchOffers } from "../../../services/offersApi";
+import { isOfferApplicable, calcDiscount, distributeDiscount } from "../../../helpers/offerEngine";
 import Select from "../../../components/Select";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Orders.module.css";
@@ -40,6 +43,7 @@ const STATUS_BAR = [
 const APPROVABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 const CANCELLABLE = (s) => ["Pendiente de pago", "Pendiente de validación", "Aprobada"].includes(s);
 const INVOICEABLE = (s) => ["Aprobada", "Entregada"].includes(s);
+const DISCOUNTABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const sym = (code) => currencies.find(c => c.code === code)?.symbol || code || "";
 
@@ -123,12 +127,34 @@ const Orders = () => {
     retry: false,
   });
 
+  // Productos (para mapear product_id -> category_id, necesario en ofertas por categoría)
+  const { data: products = [] } = useQuery({
+    queryKey: ["products", tenantId],
+    queryFn: fetchProducts,
+    enabled: !!tenantId,
+    retry: false,
+  });
+  const catMap = useMemo(
+    () => Object.fromEntries((products || []).map(p => [p.product_id, p.category_id || ""])),
+    [products]
+  );
+
+  // Ofertas del negocio (para validar el código ingresado)
+  const { data: offers = [] } = useQuery({
+    queryKey: ["offers", tenantId],
+    queryFn: fetchOffers,
+    enabled: !!tenantId,
+    retry: false,
+  });
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewOrder, setViewOrder] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
   const [receiptUrl, setReceiptUrl] = useState(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountErr, setDiscountErr] = useState("");
   const [editingPm, setEditingPm] = useState(false);   // ← modo edición del método de pago
 
   const [invoiceTarget, setInvoiceTarget] = useState(null);
@@ -241,6 +267,96 @@ const Orders = () => {
       }
     },
   });
+
+  // ── Aplicar / quitar descuento a una orden creada ──
+  const applyM = useMutation({
+    mutationFn: ({ customerId, transactionId, payload }) =>
+      applyOfferToOrder(customerId, transactionId, payload),
+    onSuccess: (_res, vars) => {
+      showSuccess(vars.offerId ? "Descuento aplicado" : "Descuento removido",
+        vars.offerId ? "El total de la orden fue actualizado." : "Se restauró el precio original.");
+      // Refleja el cambio en el modal abierto (sin cerrar)
+      const map = Object.fromEntries((vars.distributed || []).map(x => [x.transaction_id, x]));
+      setViewOrder(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map(t => {
+            const u = map[t.transaction_id];
+            return u ? {
+              ...t,
+              price: u.price,
+              original_price: u.original_price,
+              discount_amount: u.discount_amount,
+              offer_id: vars.offerId,
+              offer_name: vars.offerName,
+              offer_code: vars.offerCode,
+            } : t;
+          }),
+        };
+      });
+      setDiscountCode("");
+      setDiscountErr("");
+      invalidate();
+    },
+    onError: (e) => showError("Error", e.message),
+  });
+
+  // Precio base de un item (sin descuento previo)
+  const basePrice = (t) => Number(t.original_price) > 0 ? Number(t.original_price) : Number(t.price);
+
+  const handleApplyDiscount = (order) => {
+    setDiscountErr("");
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return setDiscountErr("Escribe un código.");
+    const offer = (offers || []).find(
+      o => o.trigger === "code" && (o.code || "").toUpperCase() === code
+    );
+    if (!offer) return setDiscountErr("Código no válido o inexistente.");
+
+    const { items, customer } = order;
+    const engineItems = items.map(t => ({
+      transaction_id: t.transaction_id,
+      product_id: t.product_id,
+      category_id: catMap[t.product_id] || "",
+      price: basePrice(t),
+      quantity: Number(t.quantity) || 1,
+    }));
+    const baseSubtotal = engineItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
+
+    if (!isOfferApplicable(offer, engineItems, baseSubtotal))
+      return setDiscountErr("El código no aplica a esta orden (pedido mínimo o productos).");
+    const d = calcDiscount(offer, engineItems);
+    if (d <= 0) return setDiscountErr("El código no genera descuento en esta orden.");
+
+    const distributed = distributeDiscount(offer, engineItems, d).map(x => ({
+      transaction_id: x.transaction_id,
+      price: x.price,
+      original_price: x.original_price,
+      discount_amount: x.discount_amount,
+    }));
+
+    applyM.mutate({
+      customerId: customer.customer_id,
+      transactionId: items[0].transaction_id,
+      payload: { offer_id: offer.offer_id, offer_name: offer.name, offer_code: offer.code || "", items: distributed },
+      distributed, offerId: offer.offer_id, offerName: offer.name, offerCode: offer.code || "",
+    });
+  };
+
+  const handleRemoveDiscount = (order) => {
+    const { items, customer } = order;
+    const distributed = items.map(t => {
+      const base = basePrice(t);
+      return { transaction_id: t.transaction_id, price: base, original_price: base, discount_amount: 0 };
+    });
+    applyM.mutate({
+      customerId: customer.customer_id,
+      transactionId: items[0].transaction_id,
+      payload: { offer_id: "", offer_name: "", offer_code: "", items: distributed },
+      distributed, offerId: "", offerName: "", offerCode: "",
+    });
+  };
 
   const invoiceM = useMutation({
     mutationFn: (payload) => emitInvoice(payload),
@@ -527,6 +643,57 @@ const Orders = () => {
                   <span>Total</span><strong>{cur} {formatted(total)}</strong>
                 </div>
               </div>
+
+              {/* ── Descuento (solo en pendientes) ── */}
+              {DISCOUNTABLE(status) && (
+                <div className={styles.section}>
+                  <div className={styles.sectionTitle}>Descuento</div>
+                  {discountAmt > 0 ? (
+                    <>
+                      <div className={styles.row} style={{ color: "#067647" }}>
+                        <span>🎁 {firstTx?.offer_name || "Descuento aplicado"}{firstTx?.offer_code ? ` (${firstTx.offer_code})` : ""}</span>
+                        <strong>− {cur} {formatted(discountAmt)}</strong>
+                      </div>
+                      <button
+                        className={styles.linkLikeBtn}
+                        style={{ color: "#b42318", marginTop: ".4rem" }}
+                        disabled={applyM.isPending}
+                        onClick={() => handleRemoveDiscount(viewOrder)}
+                      >
+                        {applyM.isPending ? "Quitando…" : "Quitar descuento"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
+                        <input
+                          className="input"
+                          style={{ flex: 1 }}
+                          value={discountCode}
+                          onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountErr(""); }}
+                          onKeyDown={e => e.key === "Enter" && handleApplyDiscount(viewOrder)}
+                          placeholder="Código de descuento"
+                        />
+                        <button
+                          className={styles.btnApprove}
+                          disabled={applyM.isPending}
+                          onClick={() => handleApplyDiscount(viewOrder)}
+                        >
+                          {applyM.isPending ? "Aplicando…" : "Aplicar"}
+                        </button>
+                      </div>
+                      {discountErr && (
+                        <div style={{ color: "#b42318", fontSize: ".82rem", marginTop: ".4rem" }}>{discountErr}</div>
+                      )}
+                      {status === "Pendiente de validación" && (
+                        <div style={{ color: "#92400E", fontSize: ".8rem", marginTop: ".4rem", lineHeight: 1.4 }}>
+                          ⚠️ El cliente ya subió comprobante por el monto anterior. Si aplicas un descuento, avísale del nuevo total.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Pago</div>

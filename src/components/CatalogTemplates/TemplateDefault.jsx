@@ -1,6 +1,7 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateDefault.module.css";
 import { curSymbol } from "../../helpers/utils";
+import ProductThumb from "./ProductThumb";
 
 const TemplateDefault = ({
   business,
@@ -114,22 +115,23 @@ const TemplateDefault = ({
                 aria-label={`Ver detalles de ${product.name}`}
               >
                 <div className={styles.imageContainer}>
-                  <img
-                    src={product.imagesUrl?.[0]?.image || "/placeholder.svg"}
-                    alt={product.name}
-                    className={styles.productImage}
+                  <ProductThumb
+                    product={product}
+                    business={business}
+                    imgClassName={styles.productImage}
+                    placeholderClassName={styles.productImage}
                   />
                   {product.is_available !== "available" && (
                     <span className={styles.badgeUnavailable}>Agotado</span>
                   )}
                 </div>
-                
+
                 <div className={styles.productInfo}>
                   <h3 className={styles.productName}>{product.name}</h3>
                   <div className={styles.productPrice}>
                     {curSymbol(product.currency)} {formatPrice(product.price)}
                   </div>
-                  
+
                   {product.quantity > 0 && product.show_quantity && (
                     <div className={styles.productStock}>
                       Disponible: <strong>{product.quantity}</strong>

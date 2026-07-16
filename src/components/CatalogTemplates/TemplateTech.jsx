@@ -1,6 +1,7 @@
 import { Search, Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateTech.module.css";
 import { curSymbol } from "../../helpers/utils";
+import ProductThumb from "./ProductThumb";
 
 /**
  * TemplateTech (Celulares / Electrónica)
@@ -34,7 +35,7 @@ export default function TemplateTech({
             <Share2 size={20} />
           </button>
         </div>
-        
+
         {logo_url && (
           <img className={styles.logo} src={logo_url} alt={`Logo de ${name}`} />
         )}
@@ -106,17 +107,13 @@ export default function TemplateTech({
               </div>
 
               <div className={styles.stage}>
-                {product.imagesUrl?.[0]?.image ? (
-                  <img
-                    className={styles.image}
-                    src={product.imagesUrl[0].image}
-                    alt={product.name}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className={styles.imagePlaceholder}></div>
-                )}
-                
+                <ProductThumb
+                  product={product}
+                  business={business}
+                  imgClassName={styles.image}
+                  placeholderClassName={styles.imagePlaceholder}
+                />
+
                 {product.is_available !== "available" && (
                   <span className={styles.soldOutBadge}>Agotado</span>
                 )}
@@ -127,8 +124,8 @@ export default function TemplateTech({
                   Desde {curSymbol(product.currency)} {formatPrice(product.price)}
                 </span>
                 <div className={styles.actions}>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className={styles.buy}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -137,8 +134,8 @@ export default function TemplateTech({
                   >
                     Comprar
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className={styles.learn}
                     onClick={(e) => {
                       e.stopPropagation();

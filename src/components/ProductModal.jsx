@@ -234,6 +234,14 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 </>
               )}
             </>
+          ) : business?.logo_url ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#f4f5f7", width: "100%", height: "100%" }}>
+              <img
+                src={business.logo_url}
+                alt={business?.name ? `Logo de ${business.name}` : product.name}
+                style={{ maxWidth: "55%", maxHeight: "55%", objectFit: "contain", opacity: 0.75 }}
+              />
+            </div>
           ) : (<img src="/placeholder.svg" alt={product.name} className={styles.galleryImg} />)}
         </div>
 

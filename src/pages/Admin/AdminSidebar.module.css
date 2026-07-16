@@ -10,6 +10,10 @@
     transition: all 0.3s ease;
     z-index: 100;
     box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    /* permite hacer scroll de todo el sidebar */
+    -webkit-overflow-scrolling: touch;
+    /* scroll suave en iOS */
 }
 
 .logoContainer {
@@ -19,6 +23,8 @@
     align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 1rem;
+    flex-shrink: 0;
+    /* el logo no se comprime al scrollear */
 }
 
 .logo {
@@ -38,8 +44,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    flex-grow: 1;
-    overflow-y: auto;
+    /* se quitaron flex-grow y overflow-y: atrapaban el scroll solo en la lista
+       y dejaban el botón de cerrar sesión fuera del área visible */
 }
 
 .menuItem {
@@ -86,6 +92,10 @@
 .logoutContainer {
     padding: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    /* empuja "Cerrar sesión" al fondo cuando sobra espacio */
+    flex-shrink: 0;
+    /* no se comprime; siempre alcanzable al scrollear */
 }
 
 .logoutButton {
@@ -114,6 +124,11 @@
     .adminSidebar {
         position: fixed;
         transform: translateX(-100%);
+        height: 100vh;
+        height: 100dvh;
+        /* altura real del viewport (evita el corte por la barra del navegador en iOS) */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .adminSidebar.open {
