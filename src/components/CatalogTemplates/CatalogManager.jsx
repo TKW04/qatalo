@@ -15,6 +15,7 @@ import { getFont, getScaleValue, getLogoScaleValue } from "../../constants/catal
 import { loadCatalogFonts } from "../../helpers/fontLoader";
 import { loadCustomFonts, resolveFontFamily, isCustomKey } from "../../helpers/customFonts";
 import { effectiveHours, getHoursStatus } from "../../helpers/businessHours";
+import { applyStockSetting } from "../../helpers/productSettings";
 import portal from "./CustomerPortal.module.css";
 import Select from "../Select";
 
@@ -186,6 +187,12 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     });
   }, [sourceProducts, searchTerm, selectedCategory, selectedLocality]);
 
+  // Aplica la configuración general de productos agotados (al final / ocultar)
+  const visibleProducts = useMemo(
+    () => applyStockSetting(filteredProducts, businessData?.product_settings),
+    [filteredProducts, businessData?.product_settings]
+  );
+
   const SelectedTemplate = Templates[businessData?.templateId] || TemplateDefault;
   const handleProductClick = isPreview
     ? noop
@@ -252,7 +259,7 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
 
       <SelectedTemplate
         business={businessData}
-        products={filteredProducts}
+        products={visibleProducts}
         categories={categories}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}

@@ -62,6 +62,7 @@ export const saveBusinessData = async (tenantId, businessData) => {
     hours_mode: businessData.hours_mode || "inform",
     business_hours: businessData.business_hours || {},
     locality_hours: businessData.locality_hours || {},
+    product_settings: businessData.product_settings || { out_of_stock: "normal" },
     // Facturación (el update_business los sobrescribe: hay que enviarlos siempre)
     rnc: businessData.rnc || "",
     ncf_enabled: businessData.ncf_enabled ?? false,

@@ -16,6 +16,7 @@ import {
 } from "../../../services/productsApi";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Products.module.css";
+import ProductSettings from "./ProductSettings";
 import CurrencySelect from "../../../components/CurrencySelect";
 import Select from "../../../components/Select";
 
@@ -36,6 +37,14 @@ const emptyForm = {
 
 // Convierte código de moneda (DOP) a símbolo (RD$). Si ya es símbolo o no se encuentra, lo deja igual.
 const curSymbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
+
+const tabStyle = (active) => ({
+  padding: ".6rem 1rem", border: "none", background: "transparent", cursor: "pointer",
+  fontSize: ".95rem", fontWeight: active ? 700 : 500,
+  color: active ? "#113f67" : "#667085",
+  borderBottom: active ? "2px solid #113f67" : "2px solid transparent",
+  marginBottom: "-2px",
+});
 
 const Toggle = ({ checked, onChange, label }) => (
   <label className={styles.toggle}>
@@ -78,6 +87,7 @@ const Products = () => {
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterSort, setFilterSort] = useState("orden");
+  const [tab, setTab] = useState("products");
 
   const editingId = form.product_id;
   const categoryName = useMemo(() => (id) => categories.find((c) => c.category_id === id)?.name || "Sin categoría", [categories]);
@@ -365,6 +375,15 @@ const Products = () => {
         <h1>Gestión de Productos</h1>
         <p>Administra tu catálogo de productos</p>
       </div>
+
+      <div style={{ display: "flex", gap: ".25rem", borderBottom: "2px solid #eef0f3", marginBottom: "1.25rem" }}>
+        <button type="button" onClick={() => setTab("products")} style={tabStyle(tab === "products")}>Productos</button>
+        <button type="button" onClick={() => setTab("settings")} style={tabStyle(tab === "settings")}>Configuración</button>
+      </div>
+
+      {tab === "settings" && <ProductSettings business={business} />}
+
+      {tab === "products" && (<>
       {busy && <Loading message={editingId ? "Actualizando producto..." : "Creando producto..."} />}
 
       <div className={styles.card}>
@@ -994,6 +1013,7 @@ const Products = () => {
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 };
