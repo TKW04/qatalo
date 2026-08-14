@@ -5,6 +5,7 @@ import { getTokenInfo } from "../../../helpers/token";
 import { fetchCustomers } from "../../../services/customersApi";
 import SellReport from "../../../components/SellReport";
 import ProductReport from "../../../components/ProductReport";
+import CustomerReport  from "../../../components/Customerreport";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Reports.module.css";
 
@@ -42,13 +43,17 @@ const Reports = () => {
         >
           Por producto
         </button>
+        <button
+          className={`${styles.tab} ${tab === "customer" ? styles.tabActive : ""}`}
+          onClick={() => setTab("customer")}
+        >
+          Clientes
+        </button>
       </div>
 
-      {tab === "general" ? (
-        <SellReport customers={customers} />
-      ) : (
-        <ProductReport customers={customers} />
-      )}
+      {tab === "general" && <SellReport customers={customers} />}
+      {tab === "product" && <ProductReport customers={customers} />}
+      {tab === "customer" && <CustomerReport customers={customers} />}
     </div>
   );
 };

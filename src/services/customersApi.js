@@ -13,7 +13,7 @@ const handle = async (res) => {
 // --- Clientes ---
 export const fetchCustomers = async () => {
   const res = await fetch(`${API_URL}customers`, { method: "GET", headers: authHeaders() });
-  const data = await handle(res);
+  const data = await handle(res);  
   return Array.isArray(data) ? data : [];
 };
 
