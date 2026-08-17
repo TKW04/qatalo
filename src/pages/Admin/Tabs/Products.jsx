@@ -21,13 +21,13 @@ import CurrencySelect from "../../../components/CurrencySelect";
 import Select from "../../../components/Select";
 
 const MAX_IMAGES = 5;
-const emptyVariant = { color: "", size: "", quantity: 0, extra_price: 0 };
+const emptyVariant = { color: "", size: "", quantity: 0, extra_price: 0, size_name: "", price: 0 };
 const emptyForm = {
   product_id: "", name: "", description: "", currency: "", price: "",
   category_id: "", is_available: "available", orden: 0, quantity: 0,
   show_quantity: false, just_one: false, min_age_allow: false, min_age: 0,
   required_delivery_day: false, delivery_start_day: "", terms: "", imagesUrl: [],
-  localities: [], is_customizable: false, variants: [],
+  localities: [], is_customizable: false, variant_type: "clothing", variants: [],
   locality_config: [],
   low_stock_threshold: "",
   itbis_mode: "included",
@@ -152,7 +152,10 @@ const Products = () => {
 
   // ---- Variant helpers ----
   const addOrUpdateVariant = () => {
-    if (!variantForm.color.trim()) { showWarning("Aviso", "El color es requerido"); return; }
+    if (form.variant_type === "size") {
+      if (!variantForm.size_name.trim()) { showWarning("Aviso", "El nombre del tamaño es requerido"); return; }
+      if (Number(variantForm.price) <= 0) { showWarning("Aviso", "El precio del tamaño es requerido"); return; }
+    } else if (!variantForm.color.trim()) { showWarning("Aviso", "El color es requerido"); return; }
     if (editingVariantId) {
       setForm((p) => ({ ...p, variants: p.variants.map((v) => v.variant_id === editingVariantId ? { ...variantForm, variant_id: editingVariantId } : v) }));
     } else {
@@ -161,7 +164,7 @@ const Products = () => {
     setVariantForm(emptyVariant); setEditingVariantId(null);
   };
   const removeVariant = (vid) => setForm((p) => ({ ...p, variants: p.variants.filter((v) => v.variant_id !== vid) }));
-  const startEditVariant = (v) => { setVariantForm({ color: v.color, size: v.size || "", quantity: v.quantity, extra_price: v.extra_price || 0 }); setEditingVariantId(v.variant_id); };
+  const startEditVariant = (v) => { setVariantForm({ color: v.color || "", size: v.size || "", quantity: v.quantity, extra_price: v.extra_price || 0, size_name: v.size_name || "", price: v.price || 0 }); setEditingVariantId(v.variant_id); };
   const cancelEditVariant = () => { setVariantForm(emptyVariant); setEditingVariantId(null); };
 
   // ---- Validation ----
@@ -202,16 +205,23 @@ const Products = () => {
         quantity = Number(form.quantity) || 0;
         is_available = quantity < 1 ? "unavailable" : form.is_available;
       }
+      // Para comida (tamaños), el precio base del producto = el tamaño más barato (para el "Desde $X")
+      const effectivePrice =
+        form.is_customizable && form.variant_type === "size" && (form.variants || []).length > 0
+          ? Math.min(...form.variants.map((v) => Number(v.price) || 0))
+          : Number(form.price) || 0;
+
       const payload = {
         product_id: form.product_id || undefined,
         business_id: business?.business_id,
         name: form.name.trim(), description: form.description, currency: form.currency,
-        price: Number(form.price) || 0, category_id: form.category_id, is_available,
+        price: effectivePrice, category_id: form.category_id, is_available,
         orden: Number(form.orden) || 0, quantity, show_quantity: form.show_quantity,
         just_one: form.just_one, min_age_allow: form.min_age_allow, min_age: Number(form.min_age) || 0,
         required_delivery_day: form.required_delivery_day, delivery_start_day: form.delivery_start_day,
         terms: form.terms, imagesUrl: [...existingUrls, ...uploaded], localities: form.localities || [],
         is_customizable: form.is_customizable,
+        variant_type: form.variant_type || "clothing",
         variants: form.is_customizable ? (form.variants || []) : [],
         locality_config: (form.localities || []).map((loc) => getLocalityConfig(loc)),
         low_stock_threshold: form.low_stock_threshold !== "" ? Number(form.low_stock_threshold) : null,
@@ -277,7 +287,7 @@ const Products = () => {
       show_quantity: !!p.show_quantity, just_one: !!p.just_one, min_age_allow: !!p.min_age_allow,
       min_age: p.min_age ?? 0, required_delivery_day: !!p.required_delivery_day,
       delivery_start_day: p.delivery_start_day || "", terms: p.terms || "", imagesUrl: p.imagesUrl || [],
-      localities: p.localities || [], is_customizable: !!p.is_customizable, variants: p.variants || [],
+      localities: p.localities || [], is_customizable: !!p.is_customizable, variant_type: p.variant_type || "clothing", variants: p.variants || [],
       locality_config: p.locality_config || [],
       low_stock_threshold: p.low_stock_threshold ?? "",
       itbis_mode: p.itbis_mode || "included",
@@ -590,43 +600,96 @@ const Products = () => {
 
           {/* Variantes */}
           <div className={styles.toggleRow}>
-            <Toggle checked={form.is_customizable} onChange={(v) => { setField("is_customizable", v); if (!v) { setVariantForm(emptyVariant); setEditingVariantId(null); } }} label="Producto personalizable (colores / tallas)" />
+            <Toggle checked={form.is_customizable} onChange={(v) => { setField("is_customizable", v); if (!v) { setVariantForm(emptyVariant); setEditingVariantId(null); } }} label="Producto con variantes (colores/tallas o tamaños)" />
           </div>
           {form.is_customizable && (
             <div className={styles.variantSection}>
-              <h4 className={styles.variantTitle}>Variantes</h4>
-              <div className={styles.variantForm}>
-                <div className={styles.variantField}><label>Color <span className={styles.required}>*</span></label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
-                <div className={styles.variantField}><label>Talla</label><input className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
-                <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
-                <div className={styles.variantField}><label>Precio extra {curSymbol(form.currency)}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
-                <div className={styles.variantBtns}>
-                  <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
-                  {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
-                </div>
+              {/* Tipo de variante */}
+              <div className={styles.variantField} style={{ marginBottom: ".75rem" }}>
+                <label>Tipo de variante</label>
+                <Select
+                  value={form.variant_type}
+                  onChange={(v) => { setField("variant_type", v); setVariantForm(emptyVariant); setEditingVariantId(null); }}
+                  options={[
+                    { value: "clothing", label: "Ropa (color / talla)" },
+                    { value: "size", label: "Tamaño / presentación (comida, etc.)" },
+                  ]}
+                  searchable={false}
+                />
               </div>
-              {errors.variants && <span className={styles.err}>{errors.variants}</span>}
-              {(form.variants || []).length > 0 ? (
-                <div className={styles.variantTableWrap}>
-                  <table className={styles.variantTable}>
-                    <thead><tr><th>Color</th><th>Talla</th><th>Stock</th><th>Precio extra</th><th></th></tr></thead>
-                    <tbody>
-                      {(form.variants || []).map((v) => (
-                        <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
-                          <td>{v.color}</td><td>{v.size || "—"}</td>
-                          <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
-                          <td>{v.extra_price ? `+ ${curSymbol(form.currency)} ${formatted(v.extra_price)}` : "—"}</td>
-                          <td className={styles.variantActions}>
-                            <button type="button" className={styles.iconBtn} onClick={() => startEditVariant(v)}><FaPen size={12} /></button>
-                            <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeVariant(v.variant_id)}><FaTrashCan size={12} /></button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <p className={styles.variantSummary}>{(form.variants || []).length} variante(s) · Stock total: <strong>{(form.variants || []).reduce((s, v) => s + (Number(v.quantity) || 0), 0)}</strong></p>
-                </div>
-              ) : (<p className={styles.variantEmpty}>Aún no has agregado variantes.</p>)}
+
+              <h4 className={styles.variantTitle}>{form.variant_type === "size" ? "Tamaños" : "Variantes"}</h4>
+
+              {form.variant_type === "size" ? (
+                <>
+                  <div className={styles.variantForm}>
+                    <div className={styles.variantField}><label>Tamaño <span className={styles.required}>*</span></label><input className="input" placeholder="1 libra (16oz)…" value={variantForm.size_name} onChange={(e) => setVariantForm((f) => ({ ...f, size_name: e.target.value }))} /></div>
+                    <div className={styles.variantField}><label>Precio {curSymbol(form.currency)} <span className={styles.required}>*</span></label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.price} onChange={(e) => setVariantForm((f) => ({ ...f, price: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantBtns}>
+                      <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
+                      {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
+                    </div>
+                  </div>
+                  {errors.variants && <span className={styles.err}>{errors.variants}</span>}
+                  {(form.variants || []).length > 0 ? (
+                    <div className={styles.variantTableWrap}>
+                      <table className={styles.variantTable}>
+                        <thead><tr><th>Tamaño</th><th>Precio</th><th>Stock</th><th></th></tr></thead>
+                        <tbody>
+                          {(form.variants || []).map((v) => (
+                            <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
+                              <td>{v.size_name || "—"}</td>
+                              <td>{curSymbol(form.currency)} {formatted(v.price || 0)}</td>
+                              <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
+                              <td className={styles.variantActions}>
+                                <button type="button" className={styles.iconBtn} onClick={() => startEditVariant(v)}><FaPen size={12} /></button>
+                                <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeVariant(v.variant_id)}><FaTrashCan size={12} /></button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p className={styles.variantSummary}>{(form.variants || []).length} tamaño(s) · Stock total: <strong>{(form.variants || []).reduce((s, v) => s + (Number(v.quantity) || 0), 0)}</strong> · El precio del producto será el del tamaño más barato.</p>
+                    </div>
+                  ) : (<p className={styles.variantEmpty}>Aún no has agregado tamaños.</p>)}
+                </>
+              ) : (
+                <>
+                  <div className={styles.variantForm}>
+                    <div className={styles.variantField}><label>Color <span className={styles.required}>*</span></label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
+                    <div className={styles.variantField}><label>Talla</label><input className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
+                    <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantField}><label>Precio extra {curSymbol(form.currency)}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantBtns}>
+                      <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
+                      {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
+                    </div>
+                  </div>
+                  {errors.variants && <span className={styles.err}>{errors.variants}</span>}
+                  {(form.variants || []).length > 0 ? (
+                    <div className={styles.variantTableWrap}>
+                      <table className={styles.variantTable}>
+                        <thead><tr><th>Color</th><th>Talla</th><th>Stock</th><th>Precio extra</th><th></th></tr></thead>
+                        <tbody>
+                          {(form.variants || []).map((v) => (
+                            <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
+                              <td>{v.color}</td><td>{v.size || "—"}</td>
+                              <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
+                              <td>{v.extra_price ? `+ ${curSymbol(form.currency)} ${formatted(v.extra_price)}` : "—"}</td>
+                              <td className={styles.variantActions}>
+                                <button type="button" className={styles.iconBtn} onClick={() => startEditVariant(v)}><FaPen size={12} /></button>
+                                <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeVariant(v.variant_id)}><FaTrashCan size={12} /></button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p className={styles.variantSummary}>{(form.variants || []).length} variante(s) · Stock total: <strong>{(form.variants || []).reduce((s, v) => s + (Number(v.quantity) || 0), 0)}</strong></p>
+                    </div>
+                  ) : (<p className={styles.variantEmpty}>Aún no has agregado variantes.</p>)}
+                </>
+              )}
             </div>
           )}
 

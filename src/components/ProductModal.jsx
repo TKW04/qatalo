@@ -21,6 +21,7 @@ const toISO = (s) => {
 const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, preselectedLocality = "" }) => {
   const { showWarning } = useNotification();
   const productLocalities = product.localities || [];
+  const isSizeType = product.variant_type === "size";
   const noTerms = !product.terms;
   const images = (product.imagesUrl || []).map((i) => i.image).filter(Boolean);
 
@@ -43,6 +44,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   // Variant state
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
+  const [selectedSizeId, setSelectedSizeId] = useState(""); // comida: variant_id del tamaño
 
   const [sliderRef, instanceRef] = useKeenSlider({
     initial: 0, slideChanged: (s) => setCurrentSlide(s.track.details.rel),
@@ -50,9 +52,15 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const availableColors = useMemo(() => {
-    if (!product.is_customizable || !product.variants) return [];
+    if (!product.is_customizable || isSizeType || !product.variants) return [];
     return [...new Set(product.variants.filter((v) => v.quantity > 0).map((v) => v.color))];
-  }, [product]);
+  }, [product, isSizeType]);
+
+  // Comida: lista de tamaños disponibles (con stock)
+  const availableSizeVariants = useMemo(() => {
+    if (!product.is_customizable || !isSizeType || !product.variants) return [];
+    return product.variants.filter((v) => v.quantity > 0);
+  }, [product, isSizeType]);
 
   const availableSizes = useMemo(() => {
     if (!selectedColor || !product.variants) return [];
@@ -60,19 +68,25 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   }, [selectedColor, product]);
 
   const selectedVariant = useMemo(() => {
-    if (!product.is_customizable || !selectedColor || !product.variants) return null;
+    if (!product.is_customizable || !product.variants) return null;
+    if (isSizeType) return product.variants.find((v) => v.variant_id === selectedSizeId) || null;
+    if (!selectedColor) return null;
     return product.variants.find((v) => v.color === selectedColor && (!v.size || v.size === selectedSize)) || null;
-  }, [selectedColor, selectedSize, product]);
+  }, [selectedColor, selectedSize, selectedSizeId, product, isSizeType]);
 
   const displayPrice = useMemo(() => {
-    if (product.is_customizable && selectedVariant) return Number(product.price) + Number(selectedVariant.extra_price || 0);
+    if (product.is_customizable && selectedVariant) {
+      if (isSizeType) return Number(selectedVariant.price || 0);
+      return Number(product.price) + Number(selectedVariant.extra_price || 0);
+    }
     return Number(product.price);
-  }, [product, selectedVariant]);
+  }, [product, selectedVariant, isSizeType]);
 
   const lowestPrice = useMemo(() => {
     if (!product.is_customizable || !product.variants?.length) return Number(product.price);
+    if (isSizeType) return Math.min(...product.variants.map((v) => Number(v.price || 0)));
     return Math.min(...product.variants.map((v) => Number(product.price) + Number(v.extra_price || 0)));
-  }, [product]);
+  }, [product, isSizeType]);
 
   const variantMaxQty = selectedVariant
     ? selectedVariant.quantity
@@ -119,8 +133,12 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
 
   const addToCart = () => {
     if (product.is_customizable) {
-      if (!selectedColor || availableColors.length === 0) return showWarning("Aviso", "Selecciona un color");
-      if (availableSizes.length > 0 && !selectedSize) return showWarning("Aviso", "Selecciona una talla");
+      if (isSizeType) {
+        if (!selectedSizeId || availableSizeVariants.length === 0) return showWarning("Aviso", "Selecciona un tamaño");
+      } else {
+        if (!selectedColor || availableColors.length === 0) return showWarning("Aviso", "Selecciona un color");
+        if (availableSizes.length > 0 && !selectedSize) return showWarning("Aviso", "Selecciona una talla");
+      }
       if (!selectedVariant) return showWarning("Aviso", "Variante no disponible");
       if (Number(form.quantity) > selectedVariant.quantity) return showWarning("Aviso", `Stock disponible: ${selectedVariant.quantity}`);
     }
@@ -134,7 +152,9 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
 
     const items = getCart(business.business_id);
     const variantLabel = product.is_customizable && selectedVariant
-      ? [selectedVariant.color, selectedVariant.size].filter(Boolean).join(" / ")
+      ? (isSizeType
+          ? (selectedVariant.size_name || "")
+          : [selectedVariant.color, selectedVariant.size].filter(Boolean).join(" / "))
       : "";
     const commentVal = (form.comment || "").trim();
 
@@ -157,7 +177,9 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
         fulfillment_type: form.fulfillment_type || (hasDelivery ? "delivery" : hasTakeout ? "takeout" : ""),
         delivery_price: deliveryPrice,
         ...(product.is_customizable && selectedVariant ? {
-          variant: { variant_id: selectedVariant.variant_id, color: selectedVariant.color, size: selectedVariant.size || "" },
+          variant: isSizeType
+            ? { variant_id: selectedVariant.variant_id, size_name: selectedVariant.size_name || "" }
+            : { variant_id: selectedVariant.variant_id, color: selectedVariant.color, size: selectedVariant.size || "" },
           variant_label: variantLabel,
         } : {}),
         category_id: product.category_id || "",
@@ -193,8 +215,12 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
 
   const canAdd = useMemo(() => {
     if (product.is_customizable) {
-      if (!selectedColor || availableColors.length === 0) return false;
-      if (availableSizes.length > 0 && !selectedSize) return false;
+      if (isSizeType) {
+        if (!selectedSizeId || availableSizeVariants.length === 0) return false;
+      } else {
+        if (!selectedColor || availableColors.length === 0) return false;
+        if (availableSizes.length > 0 && !selectedSize) return false;
+      }
       if (!selectedVariant || selectedVariant.quantity < 1) return false;
     }
     if (localityConfig && hasDelivery && hasTakeout && !form.fulfillment_type) return false;
@@ -204,7 +230,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     if (product.terms && !form.acceptTerms) return false;
     if (!form.quantity || Number(form.quantity) < 1) return false;
     return true;
-  }, [form, product, productLocalities, selectedColor, selectedSize, selectedVariant, availableSizes, availableColors, localityConfig, hasDelivery, hasTakeout]);
+  }, [form, product, productLocalities, selectedColor, selectedSize, selectedSizeId, selectedVariant, availableSizes, availableColors, availableSizeVariants, isSizeType, localityConfig, hasDelivery, hasTakeout]);
 
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
 
@@ -249,7 +275,9 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
         <div className={styles.body}>
           <h2 className={styles.title}>{product.name}</h2>
           <div className={styles.price}>
-            {product.is_customizable && product.variants?.some((v) => v.extra_price > 0)
+            {product.is_customizable && (isSizeType
+              ? (product.variants?.length > 1)
+              : product.variants?.some((v) => v.extra_price > 0))
               ? `Desde ${product.currency} ${formatted(lowestPrice)}`
               : `${product.currency} ${formatted(product.price)}`}
           </div>
@@ -257,7 +285,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           {!product.is_customizable && product.show_quantity && product.quantity > 0 && (
             <div className={styles.stock}>Disponible: <strong>{product.quantity}</strong></div>
           )}
-          {product.is_customizable && <div className={styles.stock}>Selecciona color y talla para ver disponibilidad.</div>}
+          {product.is_customizable && <div className={styles.stock}>{isSizeType ? "Selecciona un tamaño para ver el precio." : "Selecciona color y talla para ver disponibilidad."}</div>}
           {productLocalities.length > 0 && <div className={styles.stock}>Disponible en: <strong>{productLocalities.join(", ")}</strong></div>}
 
           <div className={styles.actions}>
@@ -283,7 +311,26 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           <div className={styles.subModal}>
             <h3>Agregar al carrito</h3>
 
-            {product.is_customizable && (
+            {product.is_customizable && isSizeType && (
+              <div className={styles.variantGroup}>
+                <div className={styles.variantLabel}>Tamaño *</div>
+                {availableSizeVariants.length === 0 ? (
+                  <p className={styles.noStock}>Sin stock disponible</p>
+                ) : (
+                  <div className={styles.pills}>
+                    {availableSizeVariants.map((v) => (
+                      <button type="button" key={v.variant_id}
+                        className={`${styles.pill} ${selectedSizeId === v.variant_id ? styles.pillActive : ""}`}
+                        onClick={() => { setSelectedSizeId(v.variant_id); set("quantity", 1); }}>
+                        {v.size_name} · {product.currency} {formatted(v.price || 0)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {product.is_customizable && !isSizeType && (
               <>
                 <div className={styles.variantGroup}>
                   <div className={styles.variantLabel}>Color *</div>
@@ -318,7 +365,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 {selectedVariant && (
                   <div className={styles.variantInfo}>
                     <span>Disponible: <strong>{selectedVariant.quantity}</strong></span>
-                    {selectedVariant.extra_price > 0 && (
+                    {(isSizeType || selectedVariant.extra_price > 0) && (
                       <span>Precio: <strong>{product.currency} {formatted(displayPrice)}</strong></span>
                     )}
                   </div>
