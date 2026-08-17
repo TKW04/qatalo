@@ -1,4 +1,4 @@
-import { Search, Share2, ShoppingBag } from "lucide-react";
+import { Search, Share2, ShoppingBag, Star } from "lucide-react";
 import styles from "./TemplateDefault.module.css";
 import { curSymbol } from "../../helpers/utils";
 import ProductThumb from "./ProductThumb";
@@ -13,6 +13,9 @@ const TemplateDefault = ({
   onCategoryChange,
   onProductClick,
   onShare,
+  collections = [],
+  showCollections = false,
+  onSelectCollection,
 }) => {
   const formatPrice = (price) =>
     Number(price).toLocaleString("en-US", {
@@ -90,8 +93,42 @@ const TemplateDefault = ({
           </div>
         </div>
 
+        {/* COLECCIONES (solo modo "no mostrar productos") */}
+        {showCollections && (
+          <section className={styles.collections} aria-label="Colecciones">
+            <div className={styles.collectionsGrid}>
+              {collections.map((c) => {
+                const useLogo = c.cover && c.cover === business?.logo_url;
+                return (
+                  <button
+                    key={c.category_id}
+                    type="button"
+                    className={styles.collectionCard}
+                    onClick={() => onSelectCollection?.(c.category_id)}
+                  >
+                    <div className={styles.collectionMedia}>
+                      {c.cover ? (
+                        <img
+                          src={c.cover}
+                          alt={c.name}
+                          loading="lazy"
+                          className={useLogo ? styles.collectionLogo : styles.collectionImg}
+                        />
+                      ) : null}
+                    </div>
+                    <div className={styles.collectionBody}>
+                      <span className={styles.collectionName}>{c.name}</span>
+                      <span className={styles.collectionCount}>{c.count} producto{c.count !== 1 ? "s" : ""}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* GRILLA DE PRODUCTOS */}
-        {products.length === 0 ? (
+        {!(showCollections && products.length === 0) && (products.length === 0 ? (
           <div className={styles.noProducts}>
             <ShoppingBag size={48} className={styles.emptyIcon} />
             <h3>No se encontraron productos</h3>
@@ -121,6 +158,11 @@ const TemplateDefault = ({
                     imgClassName={styles.productImage}
                     placeholderClassName={styles.productImage}
                   />
+                  {product.featured && (
+                    <span className={styles.featuredStar} aria-label="Destacado">
+                      <Star size={16} strokeWidth={2} fill="currentColor" />
+                    </span>
+                  )}
                   {product.is_available !== "available" && (
                     <span className={styles.badgeUnavailable}>Agotado</span>
                   )}
@@ -141,7 +183,7 @@ const TemplateDefault = ({
               </article>
             ))}
           </div>
-        )}
+        ))}
       </main>
     </div>
   );

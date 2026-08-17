@@ -68,6 +68,14 @@ export const updateCustomer = async (customer) => {
   return handle(res);
 };
 
+export const mergeCustomers = async ({ keep_customer_id, remove_customer_id, given_name, family_name, email, phone }) => {
+  const res = await fetch(`${API_URL}customers/merge`, {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({ keep_customer_id, remove_customer_id, given_name, family_name, email, phone }),
+  });
+  return handle(res);
+};
+
 export const deleteCustomer = async (customerId) => {
   const res = await fetch(`${API_URL}customers/${customerId}`, { method: "DELETE", headers: authHeaders() });
   return handle(res);

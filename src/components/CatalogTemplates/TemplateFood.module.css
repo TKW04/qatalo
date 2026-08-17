@@ -116,14 +116,14 @@
   background: transparent;
   width: 100%;
   font-family: inherit;
-  font-size: calc(1.05rem * var(--font-scale, 1));
+  font-size: var(--custom-search-size, calc(1.05rem * var(--font-scale, 1)));
   font-weight: 600;
-  color: var(--secondary-color);
+  color: var(--custom-search-color, var(--secondary-color));
   outline: none;
 }
 
 .searchInput::placeholder {
-  color: color-mix(in srgb, var(--secondary-color) 40%, transparent);
+  color: var(--custom-search-color, color-mix(in srgb, var(--secondary-color) 40%, transparent));
   font-weight: 400;
 }
 
@@ -372,4 +372,95 @@
   .logo {
     height: calc(110px * var(--logo-scale, 1));
   }
+}
+/* ── Colecciones (vista de inicio "no mostrar productos") ── */
+.collections {
+  margin-top: 0.5rem;
+}
+
+.collectionsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.collectionCard {
+  width: 180px;
+  flex: 0 0 auto;
+  border: none;
+  background: white;
+  border-radius: 22px;
+  overflow: hidden;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 30px -20px color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.collectionCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px -20px color-mix(in srgb, var(--secondary-color) 55%, transparent);
+}
+
+.collectionMedia {
+  aspect-ratio: 1 / 1;
+  background: color-mix(in srgb, var(--accent-color) 12%, white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.collectionImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.collectionLogo {
+  max-width: 55%;
+  max-height: 55%;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.collectionBody {
+  padding: 0.9rem 1rem 1.1rem;
+}
+
+.collectionName {
+  font-family: var(--font-heading, "Fraunces", Georgia, serif);
+  font-weight: 700;
+  font-size: calc(1.05rem * var(--font-scale, 1));
+  color: var(--secondary-color);
+  display: block;
+}
+
+.collectionCount {
+  font-size: calc(0.8rem * var(--font-scale, 1));
+  font-weight: 600;
+  color: color-mix(in srgb, var(--secondary-color) 55%, transparent);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+/* ── Estrella de producto destacado ── */
+.featuredStar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: white;
+  color: var(--accent-color);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }

@@ -25,7 +25,7 @@ const emptyVariant = { color: "", size: "", quantity: 0, extra_price: 0, size_na
 const emptyForm = {
   product_id: "", name: "", description: "", currency: "", price: "",
   category_id: "", is_available: "available", orden: 0, quantity: 0,
-  show_quantity: false, just_one: false, min_age_allow: false, min_age: 0,
+  show_quantity: false, just_one: false, featured: false, min_age_allow: false, min_age: 0,
   required_delivery_day: false, delivery_start_day: "", terms: "", imagesUrl: [],
   localities: [], is_customizable: false, variant_type: "clothing", variants: [],
   locality_config: [],
@@ -217,7 +217,7 @@ const Products = () => {
         name: form.name.trim(), description: form.description, currency: form.currency,
         price: effectivePrice, category_id: form.category_id, is_available,
         orden: Number(form.orden) || 0, quantity, show_quantity: form.show_quantity,
-        just_one: form.just_one, min_age_allow: form.min_age_allow, min_age: Number(form.min_age) || 0,
+        just_one: form.just_one, featured: form.featured, min_age_allow: form.min_age_allow, min_age: Number(form.min_age) || 0,
         required_delivery_day: form.required_delivery_day, delivery_start_day: form.delivery_start_day,
         terms: form.terms, imagesUrl: [...existingUrls, ...uploaded], localities: form.localities || [],
         is_customizable: form.is_customizable,
@@ -284,7 +284,7 @@ const Products = () => {
       product_id: p.product_id, name: p.name || "", description: p.description || "",
       currency: currency || "", price: p.price ?? "", category_id: p.category_id || "",
       is_available: p.is_available || "available", orden: p.orden ?? 0, quantity: p.quantity ?? 0,
-      show_quantity: !!p.show_quantity, just_one: !!p.just_one, min_age_allow: !!p.min_age_allow,
+      show_quantity: !!p.show_quantity, just_one: !!p.just_one, featured: !!p.featured, min_age_allow: !!p.min_age_allow,
       min_age: p.min_age ?? 0, required_delivery_day: !!p.required_delivery_day,
       delivery_start_day: p.delivery_start_day || "", terms: p.terms || "", imagesUrl: p.imagesUrl || [],
       localities: p.localities || [], is_customizable: !!p.is_customizable, variant_type: p.variant_type || "clothing", variants: p.variants || [],
@@ -596,6 +596,7 @@ const Products = () => {
           <div className={styles.toggleRow}>
             <Toggle checked={form.show_quantity} onChange={(v) => setField("show_quantity", v)} label="Mostrar cantidad" />
             <Toggle checked={form.just_one} onChange={(v) => setField("just_one", v)} label="Solo uno" />
+            <Toggle checked={form.featured} onChange={(v) => setField("featured", v)} label="Destacado (página de inicio)" />
           </div>
 
           {/* Variantes */}

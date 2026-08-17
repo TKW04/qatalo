@@ -1,4 +1,4 @@
-import { Search, Share2, ShoppingBag } from "lucide-react";
+import { Search, Share2, ShoppingBag, Star } from "lucide-react";
 import styles from "./TemplateCrafts.module.css";
 import { curSymbol } from "../../helpers/utils";
 import ProductThumb from "./ProductThumb";
@@ -18,6 +18,9 @@ export default function TemplateCrafts({
   onCategoryChange,
   onProductClick,
   onShare,
+  collections = [],
+  showCollections = false,
+  onSelectCollection,
 }) {
   const { name = "Taller", description = "", logo_url } = business;
 
@@ -72,7 +75,40 @@ export default function TemplateCrafts({
         </div>
       </header>
 
-      {products.length === 0 ? (
+      {showCollections && (
+        <section className={styles.collections} aria-label="Colecciones">
+          <div className={styles.collectionsGrid}>
+            {collections.map((c) => {
+              const useLogo = c.cover && c.cover === business?.logo_url;
+              return (
+                <button
+                  key={c.category_id}
+                  type="button"
+                  className={styles.collectionCard}
+                  onClick={() => onSelectCollection?.(c.category_id)}
+                >
+                  <div className={styles.collectionMedia}>
+                    {c.cover ? (
+                      <img
+                        src={c.cover}
+                        alt={c.name}
+                        loading="lazy"
+                        className={useLogo ? styles.collectionLogo : styles.collectionImg}
+                      />
+                    ) : null}
+                  </div>
+                  <div className={styles.collectionBody}>
+                    <span className={styles.collectionName}>{c.name}</span>
+                    <span className={styles.collectionCount}>{c.count} producto{c.count !== 1 ? "s" : ""}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {!(showCollections && products.length === 0) && (products.length === 0 ? (
         <div className={styles.emptyState}>
           <ShoppingBag size={48} strokeWidth={1.5} />
           <p>No encontramos creaciones con estos filtros</p>
@@ -101,6 +137,12 @@ export default function TemplateCrafts({
                   placeholderClassName={styles.imagePlaceholder}
                 />
 
+                {product.featured && (
+                  <span className={styles.featuredStar} aria-label="Destacado">
+                    <Star size={16} strokeWidth={2} fill="currentColor" />
+                  </span>
+                )}
+
                 {product.is_available !== "available" && (
                   <span className={styles.soldOutBadge}>Agotado</span>
                 )}
@@ -126,7 +168,7 @@ export default function TemplateCrafts({
             </article>
           ))}
         </section>
-      )}
+      ))}
     </main>
   );
 }

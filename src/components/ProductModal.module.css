@@ -79,8 +79,7 @@
     height: 40px;
     border-radius: 50%;
     border: none;
-    /* background: rgba(255, 255, 255, .9); */
-    background: var(--theme-accent, #34699a);
+    background: rgba(255, 255, 255, .9);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -139,7 +138,8 @@
 }
 
 .description {
-    color: color-mix(in srgb, var(--theme-secondary, #475467) 85%, transparent);
+    color: var(--custom-desc-color, color-mix(in srgb, var(--theme-secondary, #475467) 85%, transparent));
+    font-size: var(--custom-desc-size, calc(1rem * var(--font-scale, 1)));
     line-height: 1.5;
     word-break: break-word;
 }

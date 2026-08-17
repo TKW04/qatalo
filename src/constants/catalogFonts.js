@@ -45,9 +45,10 @@ export const CATALOG_FONTS = [
 
 // Escala global de tamaño de fuente (multiplicador)
 export const FONT_SCALES = [
-  { id: "small",  name: "Pequeña", value: 0.92 },
-  { id: "medium", name: "Mediana", value: 1.0 },
-  { id: "large",  name: "Grande",  value: 1.12 },
+  { id: "small",  name: "Pequeña",      value: 0.92 },
+  { id: "medium", name: "Mediana",      value: 1.0 },
+  { id: "large",  name: "Grande",       value: 1.12 },
+  { id: "xlarge", name: "Extra grande", value: 1.28 },
 ];
 
 // Helpers de búsqueda
@@ -83,3 +84,27 @@ export const LOGO_SCALE_OPTIONS = LOGO_SCALES.map((s) => ({
   value: s.id,
   label: s.name,
 }));
+
+// ── Tamaño de texto independiente (buscador / descripción del modal) ──
+// "theme" = no forzar nada (hereda el tamaño actual del template).
+// small/medium/large = tamaños fijos en px. custom = el que indique el dueño.
+export const TEXT_SIZE_PRESETS_PX = { small: 14, medium: 16, large: 19 };
+
+export const TEXT_SIZE_MODE_OPTIONS = [
+  { value: "theme", label: "Igual que el tema (por defecto)" },
+  { value: "small", label: "Pequeño (14px)" },
+  { value: "medium", label: "Mediano (16px)" },
+  { value: "large", label: "Grande (19px)" },
+  { value: "custom", label: "Personalizado (px)" },
+];
+
+// Devuelve el tamaño en px a aplicar, o "" si debe heredar el del tema (sin forzar nada).
+export const resolveTextSizePx = (mode, customPx) => {
+  if (!mode || mode === "theme") return "";
+  if (mode === "custom") {
+    const n = Number(customPx);
+    return n > 0 ? `${n}px` : "";
+  }
+  const preset = TEXT_SIZE_PRESETS_PX[mode];
+  return preset ? `${preset}px` : "";
+};

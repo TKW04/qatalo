@@ -11,7 +11,7 @@ import Select from "../../../components/Select";
 import adminStyles from "../AdminDashboard.module.css";
 import styles from "./Business.module.css";
 import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
-import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont } from "../../../constants/catalogFonts";
+import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont, TEXT_SIZE_MODE_OPTIONS } from "../../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../../helpers/fontLoader";
 import FontManager from "../../../components/CatalogTemplates/FontManager";
 import { customFontOptions, resolveFontFamily, loadCustomFonts, isCustomKey, customIdFromKey, fontMime } from "../../../helpers/customFonts";
@@ -63,6 +63,10 @@ const Business = () => {
     fontScale: "medium",
     logoScale: "medium",
     custom_fonts: [],
+    custom_style: {
+      search_color: "", search_size_mode: "theme", search_size_px: "",
+      modal_desc_color: "", modal_desc_size_mode: "theme", modal_desc_size_px: "",
+    },
     // Horario de atención
     business_hours_enabled: false,
     hours_mode: "inform",
@@ -132,6 +136,11 @@ const Business = () => {
         fontScale: businessData.fontScale || "medium",
         logoScale: businessData.logoScale || "medium",
         custom_fonts: businessData.custom_fonts || [],
+        custom_style: {
+          search_color: "", search_size_mode: "theme", search_size_px: "",
+          modal_desc_color: "", modal_desc_size_mode: "theme", modal_desc_size_px: "",
+          ...(businessData.custom_style || {}),
+        },
         business_hours_enabled: businessData.business_hours_enabled ?? false,
         hours_mode: businessData.hours_mode || "inform",
         business_hours: businessData.business_hours || defaultBusinessHours(),
@@ -191,6 +200,9 @@ const Business = () => {
       };
     });
   };
+
+  const updateCustomStyle = (key, value) =>
+    setFormData((p) => ({ ...p, custom_style: { ...p.custom_style, [key]: value } }));
 
   const addLocality = () => {
     const v = localityInput.trim();
@@ -586,6 +598,75 @@ const Business = () => {
                   searchable={false}
                 />
               </div>
+            </div>
+
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}><TbTypography /> Buscador y descripción del producto</h2>
+              <p className={styles.sectionDesc}>
+                Personaliza el color y tamaño del texto del buscador y de la descripción que se muestra
+                al abrir un producto. Si no configuras nada, se usa el estilo normal del tema.
+              </p>
+
+              {[
+                { prefix: "search", title: "Texto del buscador" },
+                { prefix: "modal_desc", title: "Descripción dentro del modal de producto" },
+              ].map(({ prefix, title }) => {
+                const colorKey = `${prefix}_color`;
+                const modeKey = `${prefix}_size_mode`;
+                const pxKey = `${prefix}_size_px`;
+                const cs = formData.custom_style || {};
+                return (
+                  <div key={prefix} style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ margin: "0 0 .6rem", fontSize: ".95rem", color: "#344054" }}>{title}</h4>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup} style={{ maxWidth: 260 }}>
+                        <label>Color (opcional)</label>
+                        <div className={styles.colorInputs}>
+                          <input
+                            type="color"
+                            value={cs[colorKey] || "#000000"}
+                            onChange={(e) => updateCustomStyle(colorKey, e.target.value)}
+                          />
+                          <input
+                            className="input"
+                            value={cs[colorKey] || ""}
+                            onChange={(e) => updateCustomStyle(colorKey, e.target.value)}
+                            placeholder="Igual que el tema"
+                          />
+                          {cs[colorKey] && (
+                            <button type="button" className={styles.resetBtn} onClick={() => updateCustomStyle(colorKey, "")}>
+                              Quitar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.formGroup} style={{ maxWidth: 220 }}>
+                        <label>Tamaño</label>
+                        <Select
+                          value={cs[modeKey] || "theme"}
+                          onChange={(v) => updateCustomStyle(modeKey, v)}
+                          options={TEXT_SIZE_MODE_OPTIONS}
+                          searchable={false}
+                        />
+                      </div>
+                      {cs[modeKey] === "custom" && (
+                        <div className={styles.formGroup} style={{ maxWidth: 140 }}>
+                          <label>Tamaño en px</label>
+                          <input
+                            type="number"
+                            min="10"
+                            max="40"
+                            className="input"
+                            value={cs[pxKey] || ""}
+                            onChange={(e) => updateCustomStyle(pxKey, e.target.value)}
+                            placeholder="16"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div className={styles.previewSection}>

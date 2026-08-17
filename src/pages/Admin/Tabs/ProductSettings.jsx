@@ -6,7 +6,7 @@ import { getTokenInfo } from "../../../helpers/token";
 import { saveBusinessData } from "../../../services/businessApi";
 import PrimaryButton from "../../../components/PrimaryButton";
 import Select from "../../../components/Select";
-import { OUT_OF_STOCK_OPTIONS } from "../../../helpers/productSettings";
+import { OUT_OF_STOCK_OPTIONS, HOME_MODE_OPTIONS } from "../../../helpers/productSettings";
 import styles from "./Products.module.css";
 
 // Configuración general de productos (por negocio).
@@ -21,17 +21,21 @@ const ProductSettings = ({ business }) => {
   const [outOfStock, setOutOfStock] = useState(
     business?.product_settings?.out_of_stock || "normal"
   );
+  const [homeMode, setHomeMode] = useState(
+    business?.product_settings?.home_mode || "all"
+  );
 
   // Si el negocio carga después, sincroniza el valor inicial.
   useEffect(() => {
     setOutOfStock(business?.product_settings?.out_of_stock || "normal");
-  }, [business?.product_settings?.out_of_stock]);
+    setHomeMode(business?.product_settings?.home_mode || "all");
+  }, [business?.product_settings?.out_of_stock, business?.product_settings?.home_mode]);
 
   const saveM = useMutation({
     mutationFn: () =>
       saveBusinessData(tenantId, {
         ...business, // negocio completo → no se borran otros campos
-        product_settings: { ...(business?.product_settings || {}), out_of_stock: outOfStock },
+        product_settings: { ...(business?.product_settings || {}), out_of_stock: outOfStock, home_mode: homeMode },
       }),
     onSuccess: () => {
       showSuccess("Guardado", "Configuración de productos actualizada.");
@@ -56,6 +60,23 @@ const ProductSettings = ({ business }) => {
       <p className={styles.requiredNote}>
         Estas opciones aplican a todo tu catálogo público.
       </p>
+
+      <div className={styles.formGroup}>
+        <label>Al entrar al catálogo, mostrar</label>
+        <Select
+          value={homeMode}
+          onChange={setHomeMode}
+          options={HOME_MODE_OPTIONS}
+          searchable={false}
+        />
+        <span style={{ fontSize: ".8rem", color: "#667085", marginTop: ".35rem", display: "block", lineHeight: 1.5 }}>
+          {homeMode === "all"
+            ? "Se muestran todos los productos al entrar (comportamiento normal)."
+            : homeMode === "featured"
+              ? "Al entrar solo se ven los productos marcados como destacados, más las colecciones. Al tocar una colección se ven sus productos."
+              : "Al entrar no se muestran productos, solo las colecciones. Al tocar una colección se ven sus productos."}
+        </span>
+      </div>
 
       <div className={styles.formGroup}>
         <label>Productos agotados</label>

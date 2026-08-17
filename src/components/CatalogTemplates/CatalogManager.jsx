@@ -11,7 +11,7 @@ import CustomerAuthModal from "./CustomerAuthModal";
 import CustomerOrders from "./CustomerOrders";
 import CartDrawer from "./CartDrawer";
 import { getCustomerSession, setCustomerSession, getValidCustomerSession, decodeCustomerToken, getCart, cartCount } from "../../services/customerAuthApi";
-import { getFont, getScaleValue, getLogoScaleValue } from "../../constants/catalogFonts";
+import { getFont, getScaleValue, getLogoScaleValue, resolveTextSizePx } from "../../constants/catalogFonts";
 import { loadCatalogFonts } from "../../helpers/fontLoader";
 import { loadCustomFonts, resolveFontFamily, isCustomKey } from "../../helpers/customFonts";
 import { effectiveHours, getHoursStatus } from "../../helpers/businessHours";
@@ -165,6 +165,14 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   const fontScale = getScaleValue(businessData?.fontScale);
   const logoScale = getLogoScaleValue(businessData?.logoScale);
 
+  // Color/tamaño personalizados del buscador y de la descripción dentro del modal.
+  // Si no se configuran, no se setea la variable → el template usa su estilo actual (cero regresión).
+  const cs = businessData?.custom_style || {};
+  const searchColor = cs.search_color || "";
+  const searchSizePx = resolveTextSizePx(cs.search_size_mode, cs.search_size_px);
+  const descColor = cs.modal_desc_color || "";
+  const descSizePx = resolveTextSizePx(cs.modal_desc_size_mode, cs.modal_desc_size_px);
+
   const themeStyles = {
     "--theme-primary": palette.primary,
     "--theme-secondary": palette.secondary,
@@ -174,6 +182,10 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     ...(bodyFamily ? { "--font-body": bodyFamily } : {}),
     "--font-scale": fontScale,
     "--logo-scale": logoScale,
+    ...(searchColor ? { "--custom-search-color": searchColor } : {}),
+    ...(searchSizePx ? { "--custom-search-size": searchSizePx } : {}),
+    ...(descColor ? { "--custom-desc-color": descColor } : {}),
+    ...(descSizePx ? { "--custom-desc-size": descSizePx } : {}),
   };
 
   const filteredProducts = useMemo(() => {
@@ -188,10 +200,35 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   }, [sourceProducts, searchTerm, selectedCategory, selectedLocality]);
 
   // Aplica la configuración general de productos agotados (al final / ocultar)
-  const visibleProducts = useMemo(
+  const stockAdjusted = useMemo(
     () => applyStockSetting(filteredProducts, businessData?.product_settings),
     [filteredProducts, businessData?.product_settings]
   );
+
+  // Modo de inicio del catálogo: all | featured | none
+  const homeMode = businessData?.product_settings?.home_mode || "all";
+  // En la vista de inicio (sin categoría ni búsqueda) aplicamos el modo.
+  const isHomeView = selectedCategory === "all" && !searchTerm.trim();
+  const showCollections = homeMode === "none" && isHomeView && !usingDummy;
+
+  const visibleProducts = useMemo(() => {
+    if (homeMode === "all" || !isHomeView) return stockAdjusted;
+    if (homeMode === "featured") return stockAdjusted.filter((p) => p.featured);
+    return []; // "none": sin productos en el inicio
+  }, [stockAdjusted, homeMode, isHomeView]);
+
+  // Colecciones (categorías) con portada = 1ra imagen de un producto suyo, o el logo.
+  const collectionCards = useMemo(() => {
+    if (!showCollections) return [];
+    return categories.map((cat) => {
+      const prod = sourceProducts.find(
+        (p) => p.category_id === cat.category_id && (p.imagesUrl?.[0]?.image)
+      );
+      const cover = prod?.imagesUrl?.[0]?.image || businessData?.logo_url || "";
+      const count = sourceProducts.filter((p) => p.category_id === cat.category_id).length;
+      return { ...cat, cover, count };
+    }).filter((c) => c.count > 0);
+  }, [showCollections, categories, sourceProducts, businessData?.logo_url]);
 
   const SelectedTemplate = Templates[businessData?.templateId] || TemplateDefault;
   const handleProductClick = isPreview
@@ -267,6 +304,9 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
         onCategoryChange={setSelectedCategory}
         onProductClick={handleProductClick}
         onShare={noop}
+        collections={collectionCards}
+        showCollections={showCollections}
+        onSelectCollection={setSelectedCategory}
       />
 
       {!isPreview && selectedProduct && (

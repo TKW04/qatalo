@@ -14,7 +14,7 @@ import { fetchBusinessData } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { fetchPaymentMethods } from "../../../services/paymentMethodsApi";
 import {
-  fetchCustomers, createCustomer, updateCustomer, deleteCustomer,
+  fetchCustomers, createCustomer, updateCustomer, deleteCustomer, mergeCustomers,
   addTransaction, updateTransaction, deleteTransaction,
   approveTransaction, deliveredTransaction, cancelTransaction,
 } from "../../../services/customersApi";
@@ -63,11 +63,29 @@ const Customers = () => {
   const [delCustomer, setDelCustomer] = useState(null);
   const [delTx, setDelTx] = useState(null);              // { customer, tx }
 
+  // ---- Fusión de clientes ----
+  const [mergeSelection, setMergeSelection] = useState([]);   // hasta 2 customer_id
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
+  const [mergeChoices, setMergeChoices] = useState({ name: "A", email: "A", phone: "A" });
+
   const editingCustomer = !!cForm.customer_id;
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["customers", tenantId] });
   const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
   const txCurrency = (t) => symbol(t.payment_method?.currency);
   const toggle = (id) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
+
+  const toggleMergeSelect = (id) => {
+    setMergeSelection((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) { showWarning("Aviso", "Solo puedes seleccionar 2 clientes para fusionar"); return prev; }
+      return [...prev, id];
+    });
+  };
+  const clearMergeSelection = () => setMergeSelection([]);
+  const openMergeModal = () => { setMergeChoices({ name: "A", email: "A", phone: "A" }); setMergeModalOpen(true); };
+  const closeMergeModal = () => setMergeModalOpen(false);
+  const mergeA = customers.find((c) => c.customer_id === mergeSelection[0]) || null;
+  const mergeB = customers.find((c) => c.customer_id === mergeSelection[1]) || null;
 
   const filteredCustomers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -96,6 +114,26 @@ const Customers = () => {
   const delCustomerM = useMutation({
     mutationFn: (id) => deleteCustomer(id),
     onSuccess: () => { showSuccess("Eliminado", "Cliente eliminado"); invalidate(); setDelCustomer(null); },
+    onError: (e) => showError("Error", e.message),
+  });
+  const mergeM = useMutation({
+    mutationFn: () => {
+      const pick = (field, aVal, bVal) => (mergeChoices[field] === "A" ? aVal : bVal);
+      return mergeCustomers({
+        keep_customer_id: mergeA.customer_id,
+        remove_customer_id: mergeB.customer_id,
+        given_name: pick("name", mergeA.given_name, mergeB.given_name),
+        family_name: pick("name", mergeA.family_name, mergeB.family_name),
+        email: pick("email", mergeA.email, mergeB.email),
+        phone: pick("phone", mergeA.phone, mergeB.phone),
+      });
+    },
+    onSuccess: () => {
+      showSuccess("¡Fusionados!", "Los clientes se combinaron correctamente");
+      invalidate();
+      closeMergeModal();
+      clearMergeSelection();
+    },
     onError: (e) => showError("Error", e.message),
   });
   const saveTx = useMutation({
@@ -231,7 +269,28 @@ const Customers = () => {
       {/* Listado */}
       <div className={styles.listHeader}>
         <h2>Clientes existentes</h2>
-        <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
+        <div style={{ display: "flex", gap: ".6rem", alignItems: "center" }}>
+          {mergeSelection.length > 0 && (
+            <>
+              <span style={{ fontSize: ".85rem", color: "#667085" }}>
+                {mergeSelection.length} de 2 seleccionados para fusionar
+              </span>
+              <button type="button" className={styles.btnOutline} onClick={clearMergeSelection}>
+                Cancelar selección
+              </button>
+              <button
+                type="button"
+                className={styles.refreshBtn}
+                disabled={mergeSelection.length !== 2}
+                onClick={openMergeModal}
+                style={{ opacity: mergeSelection.length === 2 ? 1 : .5, cursor: mergeSelection.length === 2 ? "pointer" : "not-allowed" }}
+              >
+                Fusionar clientes
+              </button>
+            </>
+          )}
+          <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
+        </div>
       </div>
 
       <div className={styles.filters}>
@@ -267,10 +326,19 @@ const Customers = () => {
             return (
               <div key={c.customer_id} className={styles.customerCard}>
                 <div className={styles.customerHead}>
-                  <div className={styles.customerInfo}>
-                    <span className={styles.customerName}>{c.full_name}</span>
-                    <span className={styles.customerMeta}>{c.email}</span>
-                    {c.phone && <a className={styles.waLink} href={wa} target="_blank" rel="noreferrer">{c.phone} <FaWhatsapp color="#25D366" /></a>}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: ".5rem", flex: 1, minWidth: 0 }}>
+                    <label style={{ display: "flex", alignItems: "flex-start", cursor: "pointer", paddingTop: "2px", flexShrink: 0 }} title="Seleccionar para fusionar">
+                      <input
+                        type="checkbox"
+                        checked={mergeSelection.includes(c.customer_id)}
+                        onChange={() => toggleMergeSelect(c.customer_id)}
+                      />
+                    </label>
+                    <div className={styles.customerInfo}>
+                      <span className={styles.customerName}>{c.full_name}</span>
+                      <span className={styles.customerMeta}>{c.email}</span>
+                      {c.phone && <a className={styles.waLink} href={wa} target="_blank" rel="noreferrer">{c.phone} <FaWhatsapp color="#25D366" /></a>}
+                    </div>
                   </div>
                   <div className={styles.customerActions}>
                     <button className={styles.iconBtn} onClick={() => openAddTx(c)} aria-label="Agregar transacción"><FaPlus /></button>
@@ -444,6 +512,55 @@ const Customers = () => {
             <h3>Recibo de pago</h3>
             <img src={receiptUrl} alt="Recibo" className={styles.receiptImg} />
             <div className={styles.modalActions}><button className={styles.btnOutline} onClick={() => setReceiptUrl(null)}>Cerrar</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal fusionar clientes */}
+      {mergeModalOpen && mergeA && mergeB && (
+        <div className={styles.modalOverlay} onClick={closeMergeModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3>Fusionar clientes</h3>
+            <p style={{ fontSize: ".88rem", color: "#667085", marginTop: "-.5rem" }}>
+              Elige qué dato usar de cada cliente. Las transacciones de ambos se combinarán en un solo cliente;
+              el otro registro se eliminará. Esta acción no se puede deshacer.
+            </p>
+
+            {[
+              { key: "name", label: "Nombre", aVal: `${mergeA.given_name} ${mergeA.family_name}`, bVal: `${mergeB.given_name} ${mergeB.family_name}` },
+              { key: "email", label: "Correo", aVal: mergeA.email, bVal: mergeB.email },
+              { key: "phone", label: "Teléfono", aVal: mergeA.phone, bVal: mergeB.phone },
+            ].map((f) => (
+              <div key={f.key} style={{ marginBottom: "1rem" }}>
+                <label style={{ fontWeight: 600, fontSize: ".9rem", display: "block", marginBottom: ".4rem" }}>{f.label}</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".9rem", cursor: "pointer" }}>
+                    <input type="radio" name={`merge-${f.key}`} checked={mergeChoices[f.key] === "A"}
+                      onChange={() => setMergeChoices((p) => ({ ...p, [f.key]: "A" }))} />
+                    {f.aVal || <em style={{ color: "#98a2b3" }}>(vacío)</em>}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".9rem", cursor: "pointer" }}>
+                    <input type="radio" name={`merge-${f.key}`} checked={mergeChoices[f.key] === "B"}
+                      onChange={() => setMergeChoices((p) => ({ ...p, [f.key]: "B" }))} />
+                    {f.bVal || <em style={{ color: "#98a2b3" }}>(vacío)</em>}
+                  </label>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ background: "#f4f6f8", borderRadius: "8px", padding: ".75rem 1rem", fontSize: ".85rem", color: "#344054", marginBottom: "1rem" }}>
+              Se moverán <strong>{(mergeB.transactions || []).length}</strong> transacción(es) de{" "}
+              <strong>{mergeB.given_name} {mergeB.family_name}</strong> hacia el cliente combinado, y ese registro se eliminará.
+              <br />
+              Total de órdenes tras la fusión: <strong>{(mergeA.transactions || []).length + (mergeB.transactions || []).length}</strong>.
+            </div>
+
+            <div className={styles.modalActions}>
+              <button className={styles.btnOutline} onClick={closeMergeModal}>Cancelar</button>
+              <button className={styles.btnDanger} disabled={mergeM.isPending} onClick={() => mergeM.mutate()}>
+                {mergeM.isPending ? "Fusionando..." : "Sí, fusionar clientes"}
+              </button>
+            </div>
           </div>
         </div>
       )}

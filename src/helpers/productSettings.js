@@ -27,3 +27,9 @@ export const OUT_OF_STOCK_OPTIONS = [
   { value: "end", label: "Mostrar al final del catálogo" },
   { value: "hide", label: "Ocultar del catálogo" },
 ];
+
+export const HOME_MODE_OPTIONS = [
+  { value: "all", label: "Mostrar todos los productos" },
+  { value: "featured", label: "Mostrar solo los destacados" },
+  { value: "none", label: "No mostrar productos (solo colecciones)" },
+];
