@@ -102,7 +102,7 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
           {groups.length === 0 && <p className={styles.empty}>Aún no tienes órdenes.</p>}
 
           {groups.map((g) => {
-            const cur = symbol(g.pm.currency);
+            const cur = symbol(g.ref.currency || g.pm.currency);
             const open = expanded === g.key;
             const isBank = g.pm.payment_type === "bank_transfer";
             const payable = g.status === "Pendiente de pago";

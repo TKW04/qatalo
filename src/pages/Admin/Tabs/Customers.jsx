@@ -71,7 +71,8 @@ const Customers = () => {
   const editingCustomer = !!cForm.customer_id;
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["customers", tenantId] });
   const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
-  const txCurrency = (t) => symbol(t.payment_method?.currency);
+  const productCurrency = (productId) => products.find((p) => p.product_id === productId)?.currency || "";
+  const txCurrency = (t) => symbol(t.currency || t.payment_method?.currency || productCurrency(t.product_id));
   const toggle = (id) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
 
   const toggleMergeSelect = (id) => {
@@ -360,7 +361,11 @@ const Customers = () => {
                           <span className={styles.txProduct}>{t.product_name}</span>
                           <span>x{t.quantity}</span>
                           <span>{txCurrency(t)} {formatted(t.price)}</span>
-                          <span className={styles.txTotal}>{txCurrency(t)} {formatted(t.price * t.quantity)}</span>
+                          <span className={styles.txTotal}>{txCurrency(t)} {formatted(
+                            (Number(t.price) || 0) * (Number(t.quantity) || 1)
+                            + (Number(t.delivery_price) || 0)
+                            - (Number(t.discount_amount) || 0)
+                          )}</span>
                           <span style={getStatusStyle(t.status)}>{STATUS_LABEL[t.status] || t.status}</span>
                           <span className={styles.txActions}>
                             <button className={styles.iconBtn} onClick={() => setViewTx({ customer: c, tx: t })} aria-label="Ver"><FaEye /></button>
@@ -466,7 +471,17 @@ const Customers = () => {
               <ul className={styles.detailList}>
                 <li><span>Cantidad</span><strong>{tx.quantity}</strong></li>
                 <li><span>Precio</span><strong>{cur} {formatted(tx.price)}</strong></li>
-                <li><span>Total</span><strong>{cur} {formatted(tx.price * tx.quantity)}</strong></li>
+                {Number(tx.delivery_price) > 0 && (
+                  <li><span>🛵 Delivery</span><strong>{cur} {formatted(tx.delivery_price)}</strong></li>
+                )}
+                {Number(tx.discount_amount) > 0 && (
+                  <li><span>🎁 Descuento</span><strong style={{ color: "#067647" }}>− {cur} {formatted(tx.discount_amount)}</strong></li>
+                )}
+                <li><span>Total</span><strong>{cur} {formatted(
+                  (Number(tx.price) || 0) * (Number(tx.quantity) || 1)
+                  + (Number(tx.delivery_price) || 0)
+                  - (Number(tx.discount_amount) || 0)
+                )}</strong></li>
                 {tx.delivery_day && <li><span>Entrega</span><strong>{tx.delivery_day}</strong></li>}
                 {tx.delivery_address && (
                   <li><span>Dirección de entrega</span><strong>{tx.delivery_address}</strong></li>

@@ -207,7 +207,7 @@ const CartDrawer = ({
     onSuccess: () => {
       onPurchase?.({
         total,
-        currency: items[0]?.payment_method?.currency || "",
+        currency: items[0]?.currency || items[0]?.payment_method?.currency || "",
       }); clearCart(businessId); onChanged?.();
       setStep(isPaymentLink ? "successLink" : "success");
     },

@@ -5,7 +5,6 @@ import {
 } from "recharts";
 import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
-import CurrencySelect from "./CurrencySelect";
 import styles from "./SellReport.module.css";
 import Select from "./Select";
 
@@ -27,11 +26,12 @@ const flatten = (customers) => {
       rows.push({
         product_id: t.product_id,
         full_name: c.full_name || `${c.given_name} ${c.family_name}`,
-        product_name: t.product_name.trim() || "—",
+        product_name: (t.product_name || "").trim() || "—",
         quantity: Number(t.quantity) || 0,
         price: Number(t.price) || 0,
         total: (Number(t.price) || 0) * (Number(t.quantity) || 0),
-        currency: t.payment_method?.currency || "",
+        // Priorizar t.currency (moneda elegida por el cliente) sobre la del método de pago
+        currency: t.currency || t.payment_method?.currency || "",
         status: t.status,
         date: (t.create_date || "").slice(0, 10),
         delivery_day: t.delivery_day || "",
@@ -51,18 +51,21 @@ const SellReport = ({ customers = [] }) => {
   const currencyCodes = useMemo(() => [...new Set(allRows.map((r) => r.currency).filter(Boolean))], [allRows]);
   const localityCodes = useMemo(() => [...new Set(allRows.map((r) => r.locality).filter(Boolean))], [allRows]);
   const hasLocalities = localityCodes.length > 0;
+  const hasMultiCurrency = currencyCodes.length > 1;
 
-  const [currency, setCurrency] = useState(currencyCodes[0] || "");
+  // Si hay múltiples monedas, empezar en "all"; si hay una, filtrar directo
+  const [currency, setCurrency] = useState(currencyCodes.length === 1 ? currencyCodes[0] : "all");
   const [locality, setLocality] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [offerFilter, setOfferFilter] = useState("all");
 
-  const symbol = currencies.find((c) => c.code === currency)?.symbol || currency || "";
+  const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
+  const curSym = currency === "all" ? "" : symbol(currency);
 
   const rows = useMemo(
     () => allRows.filter((r) =>
-      (!currency || r.currency === currency) &&
+      (currency === "all" || r.currency === currency) &&
       (locality === "all" || (r.locality || NO_LOC) === locality) &&
       (!from || r.date >= from) &&
       (!to || r.date <= to) &&
@@ -73,9 +76,12 @@ const SellReport = ({ customers = [] }) => {
 
   const stats = useMemo(() => {
     const paid = rows.filter((r) => PAID.includes(r.status));
-    const revenue = paid.reduce((s, r) => s + r.total, 0);
     const delivered = rows.filter((r) => r.status === "Entregada").length;
     const cancelled = rows.filter((r) => r.status === "Cancelada").length;
+
+    // Ingresos por moneda
+    const revByCur = {};
+    paid.forEach((r) => { revByCur[r.currency] = (revByCur[r.currency] || 0) + r.total; });
 
     const byStatusMap = {};
     rows.forEach((r) => { byStatusMap[r.status] = (byStatusMap[r.status] || 0) + 1; });
@@ -103,8 +109,7 @@ const SellReport = ({ customers = [] }) => {
     const byLocality = Object.values(locMap).sort((a, b) => b.revenue - a.revenue);
 
     return {
-      revenue, orders: rows.length, paidOrders: paid.length, delivered, cancelled,
-      avgTicket: paid.length ? revenue / paid.length : 0,
+      revByCur, orders: rows.length, paidOrders: paid.length, delivered, cancelled,
       conversion: rows.length ? Math.round((delivered / rows.length) * 100) : 0,
       cancellation: rows.length ? Math.round((cancelled / rows.length) * 100) : 0,
       byStatus, byDay, topProducts, byLocality,
@@ -119,16 +124,13 @@ const SellReport = ({ customers = [] }) => {
 
   const exportToExcel = async () => {
     const XLSX = await import("xlsx-js-style");
-    const header = ["Cliente", "Producto", "Cantidad", "Precio", "Total", "Estado", "Fecha"];
-    header.push("Oferta", "Descuento");
-
-    if (hasLocalities) header.splice(6, 0, "Localidad");
+    const header = ["Cliente", "Producto", "Cantidad", "Moneda", "Precio", "Total", "Estado", "Fecha", "Oferta", "Descuento"];
+    if (hasLocalities) header.splice(7, 0, "Localidad");
     const wsData = [
       header,
       ...rows.map((r) => {
-        const base = [r.full_name, r.product_name, r.quantity, r.price, r.total, r.status, r.date];
-        base.push(r.offer_code || r.offer_name || "", r.discount_amount || 0);
-        if (hasLocalities) base.splice(6, 0, r.locality || NO_LOC);
+        const base = [r.full_name, r.product_name, r.quantity, r.currency, r.price, r.total, r.status, r.date, r.offer_code || r.offer_name || "", r.discount_amount || 0];
+        if (hasLocalities) base.splice(7, 0, r.locality || NO_LOC);
         return base;
       }),
     ];
@@ -141,41 +143,31 @@ const SellReport = ({ customers = [] }) => {
     saveAs(new Blob([buffer], { type: "application/octet-stream" }), "Ventas.xlsx");
   };
 
-  const colSpan = hasLocalities ? 8 : 7;
+  const colSpan = hasLocalities ? 9 : 8;
 
   return (
     <div>
       <div className={styles.filters}>
-        {currencyCodes.length > 1 && (
+        {(currencyCodes.length > 0) && (
           <label className={styles.filter}>Moneda
-            <CurrencySelect
-              value={currency}
-              onChange={(code) => setCurrency(code)}
-            />
+            <Select value={currency} onChange={setCurrency}
+              options={[
+                ...(hasMultiCurrency ? [{ value: "all", label: "Todas las monedas" }] : []),
+                ...currencyCodes.map((c) => ({ value: c, label: c })),
+              ]} searchable={false} />
           </label>
         )}
         {hasLocalities && (
           <label className={styles.filter}>Localidad
-            <Select
-              value={locality}
-              onChange={(code) => setLocality(code)}
-              options={[
-                { value: "all", label: "Todas" },
-                ...localityCodes.map(l => ({ value: l, label: l })),
-              ]}
+            <Select value={locality} onChange={setLocality}
+              options={[{ value: "all", label: "Todas" }, ...localityCodes.map(l => ({ value: l, label: l }))]}
             />
           </label>
         )}
         {offerOptions.length > 0 && (
-          <label className={styles.filter}>
-            Oferta
-            <Select
-              value={offerFilter}
-              onChange={(code) => setOfferFilter(code)}
-              options={[
-                { value: "all", label: "Todas" },
-                ...offerOptions.map(n => ({ value: n, label: n })),
-              ]}
+          <label className={styles.filter}>Oferta
+            <Select value={offerFilter} onChange={setOfferFilter}
+              options={[{ value: "all", label: "Todas" }, ...offerOptions.map(n => ({ value: n, label: n }))]}
             />
           </label>
         )}
@@ -184,30 +176,32 @@ const SellReport = ({ customers = [] }) => {
         <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
       </div>
 
+      {/* KPIs: ingresos separados por moneda */}
       <div className={styles.kpis}>
-        <div className={styles.kpi}><span>Ingresos (cobrados)</span><strong>{symbol} {formatted(stats.revenue)}</strong></div>
+        {Object.entries(stats.revByCur).map(([cur, val]) => (
+          <div key={cur} className={styles.kpi}>
+            <span>Ingresos {cur} (cobrados)</span>
+            <strong>{symbol(cur)} {formatted(val)}</strong>
+          </div>
+        ))}
         <div className={styles.kpi}><span>Órdenes</span><strong>{stats.orders}</strong></div>
-        <div className={styles.kpi}><span>Ticket promedio</span><strong>{symbol} {formatted(stats.avgTicket)}</strong></div>
         <div className={styles.kpi}><span>Conversión (entregadas)</span><strong>{stats.conversion}%</strong></div>
         <div className={styles.kpi}><span>Cancelación</span><strong>{stats.cancellation}%</strong></div>
       </div>
       {stats.totalDiscounted > 0 && (
-        <div className={styles.kpi}><span>Total descontado</span><strong style={{ color: "#067647" }}>- {symbol} {formatted(stats.totalDiscounted)}</strong></div>
-      )}
-      {stats.txsWithOffer > 0 && (
-        <div className={styles.kpi}><span>Ventas con oferta</span><strong>{stats.txsWithOffer}</strong></div>
+        <div className={styles.kpi}><span>Total descontado</span><strong style={{ color: "#067647" }}>- {curSym} {formatted(stats.totalDiscounted)}</strong></div>
       )}
 
       <div className={styles.chartsGrid}>
         <div className={styles.chartCard}>
-          <h3>Ingresos por día</h3>
+          <h3>Ingresos por día{hasMultiCurrency && currency === "all" ? " (todas las monedas sumadas)" : curSym ? ` (${currency})` : ""}</h3>
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={stats.byDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34699A" stopOpacity={0.6} /><stop offset="95%" stopColor="#34699A" stopOpacity={0} /></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
               <XAxis dataKey="date" fontSize={11} />
               <YAxis fontSize={11} />
-              <Tooltip formatter={(v) => `${symbol} ${formatted(v)}`} />
+              <Tooltip formatter={(v) => `${curSym || ""} ${formatted(v)}`} />
               <Area type="monotone" dataKey="total" stroke="#113F67" fill="url(#rev)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -220,8 +214,7 @@ const SellReport = ({ customers = [] }) => {
               <Pie data={stats.byStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
                 {stats.byStatus.map((s) => (<Cell key={s.name} fill={STATUS_COLORS[s.name] || "#6B7280"} />))}
               </Pie>
-              <Tooltip />
-              <Legend fontSize={11} />
+              <Tooltip /><Legend fontSize={11} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -233,7 +226,7 @@ const SellReport = ({ customers = [] }) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
               <XAxis type="number" fontSize={11} />
               <YAxis type="category" dataKey="name" width={140} fontSize={11} />
-              <Tooltip formatter={(v) => `${symbol} ${formatted(v)}`} />
+              <Tooltip formatter={(v) => `${curSym || ""} ${formatted(v)}`} />
               <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
                 {stats.topProducts.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
               </Bar>
@@ -249,7 +242,7 @@ const SellReport = ({ customers = [] }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
                 <XAxis type="number" fontSize={11} />
                 <YAxis type="category" dataKey="name" width={140} fontSize={11} />
-                <Tooltip formatter={(v, n) => n === "revenue" ? `${symbol} ${formatted(v)}` : v} />
+                <Tooltip formatter={(v, n) => n === "revenue" ? `${curSym || ""} ${formatted(v)}` : v} />
                 <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
                   {stats.byLocality.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
                 </Bar>
@@ -274,17 +267,15 @@ const SellReport = ({ customers = [] }) => {
               {rows.map((r, i) => (
                 <tr key={i}>
                   <td>{r.full_name}</td><td>{r.product_name}</td><td>{r.quantity}</td>
-                  <td>{symbol} {formatted(r.price)}</td><td>{symbol} {formatted(r.total)}</td>
+                  <td>{symbol(r.currency)} {formatted(r.price)}</td>
+                  <td>{symbol(r.currency)} {formatted(r.total)}</td>
                   <td><span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>{r.status}</span></td>
                   {hasLocalities && <td>{r.locality || NO_LOC}</td>}
                   <td>{new Date(r.date).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
-
                   <td>{r.offer_code || r.offer_name || "—"}</td>
                   <td style={{ color: (r.discount_amount || 0) > 0 ? "#067647" : "inherit" }}>
-                    {(r.discount_amount || 0) > 0 ? `− ${symbol} ${formatted(r.discount_amount)}` : "—"}
+                    {(r.discount_amount || 0) > 0 ? `− ${symbol(r.currency)} ${formatted(r.discount_amount)}` : "—"}
                   </td>
-
-
                 </tr>
               ))}
               {rows.length === 0 && <tr><td colSpan={colSpan} className={styles.tableEmpty}>Sin ventas en el rango seleccionado.</td></tr>}

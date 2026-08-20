@@ -197,7 +197,7 @@ const Orders = () => {
       return;
     }
     const total = orderTotal(items);
-    const cur = sym(items[0]?.payment_method?.currency || "");
+    const cur = sym(items[0]?.currency || items[0]?.payment_method?.currency || "");
     const nombre = customer.given_name || customer.full_name || "";
     const orderRef = String(order.order_id).slice(0, 8).toUpperCase();
     const msg =
@@ -450,7 +450,7 @@ const Orders = () => {
             const { customer, items, create_date, order_id } = order;
             const firstTx = items[0];
             const status = firstTx?.status || "";
-            const cur = sym(firstTx?.payment_method?.currency || "");
+            const cur = sym(firstTx?.currency || firstTx?.payment_method?.currency || "");
             const total = orderTotal(items);
             const delivDay = items.map(t => t.delivery_day).filter(Boolean).sort()[0] || null;
             const ds = deliveryStatus(delivDay, status);
@@ -566,7 +566,7 @@ const Orders = () => {
         const { customer, items } = viewOrder;
         const firstTx = items[0];
         const status = firstTx?.status || "";
-        const cur = sym(firstTx?.payment_method?.currency || "");
+        const cur = sym(firstTx?.currency || firstTx?.payment_method?.currency || "");
         const subtotal = items.reduce((s, t) => s + (Number(t.price) || 0) * (Number(t.quantity) || 1), 0);
         const deliveryAmt = items.reduce((s, t) => s + (Number(t.delivery_price) || 0), 0);
         const discountAmt = items.reduce((s, t) => s + (Number(t.discount_amount) || 0), 0);

@@ -188,6 +188,16 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
       return showWarning("Aviso", "Excede el inventario disponible");
  
     const items = getCart(business.business_id);
+ 
+    // Bloquear mezcla de monedas en el mismo carrito
+    const cartCurrency = items[0]?.currency;
+    if (cartCurrency && cartCurrency !== displayCurrency) {
+      return showWarning(
+        "Monedas distintas",
+        `Tu carrito ya tiene productos en ${cartCurrency}. Para agregar este producto en ${displayCurrency} primero vacía el carrito, o elige la misma moneda.`
+      );
+    }
+ 
     const variantLabel = product.is_customizable && selectedVariant
       ? (isSizeType
           ? (selectedVariant.size_name || "")

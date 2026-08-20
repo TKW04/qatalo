@@ -27,15 +27,15 @@ const flattenWithVariants = (customers) => {
       rows.push({
         product_id: t.product_id,
         full_name: c.full_name || `${c.given_name || ""} ${c.family_name || ""}`.trim(),
-        product_name: t.product_name.trim() || "—",
-        // listo para variantes: cuando el backend envíe t.variant, aparecen solas
+        product_name: (t.product_name || "").trim() || "—",
         variant_label: t.variant
           ? [t.variant.color, t.variant.size].filter(Boolean).join(" / ")
           : "",
         quantity: Number(t.quantity) || 0,
         price: Number(t.price) || 0,
         total: (Number(t.price) || 0) * (Number(t.quantity) || 0),
-        currency: t.payment_method?.currency || "",
+        // Priorizar t.currency (moneda elegida por el cliente) sobre la del método de pago
+        currency: t.currency || t.payment_method?.currency || "",
         status: t.status || "",
         date: (t.create_date || "").slice(0, 10),
         locality: t.locality || "",
@@ -47,6 +47,8 @@ const flattenWithVariants = (customers) => {
   );
   return rows;
 };
+
+const symbolOf = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
 const ProductReport = ({ customers = [] }) => {
   const allRows = useMemo(() => flattenWithVariants(customers), [customers]);
@@ -63,14 +65,15 @@ const ProductReport = ({ customers = [] }) => {
     () => [...new Set(allRows.map((r) => r.locality).filter(Boolean))],
     [allRows]
   );
+  const hasMultiCurrency = currencyCodes.length > 1;
 
   const [selectedProduct, setSelectedProduct] = useState("all");
-  const [currency, setCurrency] = useState(currencyCodes[0] || "");
+  // Si hay varias monedas, arrancar en "all" para ver el desglose completo
+  const [currency, setCurrency] = useState(currencyCodes.length === 1 ? currencyCodes[0] : "all");
   const [locality, setLocality] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  const symbol = currencies.find((c) => c.code === currency)?.symbol || currency || "";
   const hasLocalities = localityCodes.length > 0;
 
   const rows = useMemo(
@@ -78,7 +81,7 @@ const ProductReport = ({ customers = [] }) => {
       allRows.filter(
         (r) =>
           (selectedProduct === "all" || r.product_name.trim() === selectedProduct.trim()) &&
-          (!currency || r.currency === currency) &&
+          (currency === "all" || r.currency === currency) &&
           (locality === "all" || (r.locality || NO_LOC) === locality) &&
           (!from || r.date >= from) &&
           (!to || r.date <= to)
@@ -86,13 +89,15 @@ const ProductReport = ({ customers = [] }) => {
     [allRows, selectedProduct, currency, locality, from, to]
   );
   const paidRows = useMemo(() => rows.filter((r) => PAID.includes(r.status)), [rows]);
-  // Tabla agrupada por producto + variante
+
+  // Tabla agrupada por producto + variante + MONEDA (para no mezclar montos de distintas divisas)
   const grouped = useMemo(() => {
     const map = {};
     paidRows.forEach((r) => {
       const vk = r.variant_label || NO_VAR;
-      const key = `${r.product_name.trim()}||${vk}`;
-      if (!map[key]) map[key] = { product_name: r.product_name.trim(), variant: vk, units: 0, revenue: 0, totalDiscount: 0 };
+      const cur = r.currency || "—";
+      const key = `${r.product_name.trim()}||${vk}||${cur}`;
+      if (!map[key]) map[key] = { product_name: r.product_name.trim(), variant: vk, currency: cur, units: 0, revenue: 0, totalDiscount: 0 };
       map[key].units += r.quantity;
       map[key].revenue += r.total;
       map[key].totalDiscount += r.discount_amount || 0;
@@ -100,23 +105,30 @@ const ProductReport = ({ customers = [] }) => {
     return Object.values(map).sort((a, b) => b.revenue - a.revenue);
   }, [paidRows]);
 
-
   const hasVariants = useMemo(() => paidRows.some((r) => r.variant_label), [paidRows]);
   const hasDiscounts = useMemo(() => grouped.some(g => g.totalDiscount > 0), [grouped]);
-  // KPIs
+
+  // KPIs: ingresos separados por moneda, unidades y órdenes sí se pueden sumar (son cantidades, no dinero)
   const stats = useMemo(() => {
-    const revenue = paidRows.reduce((s, r) => s + r.total, 0);
+    const revByCur = {};
+    paidRows.forEach((r) => {
+      const cur = r.currency || "—";
+      revByCur[cur] = (revByCur[cur] || 0) + r.total;
+    });
     const units = paidRows.reduce((s, r) => s + r.quantity, 0);
     const distinctProducts = new Set(paidRows.map((r) => r.product_name.trim())).size;
+    // Precio promedio: solo tiene sentido si estamos viendo una sola moneda
+    const singleCur = Object.keys(revByCur).length === 1 ? Object.keys(revByCur)[0] : null;
+    const avgPrice = singleCur && units ? revByCur[singleCur] / units : null;
     return {
-      revenue, units, orders: rows.length, paidOrders: paidRows.length,
-      distinctProducts, avgPrice: units ? revenue / units : 0,
+      revByCur, units, orders: rows.length, paidOrders: paidRows.length,
+      distinctProducts, avgPrice, avgCur: singleCur,
     };
   }, [rows, paidRows]);
 
+  // Datos del gráfico: si hay multi-moneda y vista "Todos", usar unidades (comparable); si no, usar ingresos
+  const useUnitsForChart = hasMultiCurrency && currency === "all";
 
-
-  // Datos del gráfico según selección
   const { chartData, chartTitle, chartKey } = useMemo(() => {
     if (selectedProduct !== "all" && hasVariants) {
       const map = {};
@@ -144,23 +156,35 @@ const ProductReport = ({ customers = [] }) => {
       map[r.product_id].units += r.quantity;
       map[r.product_id].revenue += r.total;
     });
-    return { chartData: Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 10), chartTitle: "Ingresos por producto", chartKey: "revenue" };
-  }, [paidRows, selectedProduct, hasVariants]);
+    const key = useUnitsForChart ? "units" : "revenue";
+    return {
+      chartData: Object.values(map).sort((a, b) => b[key] - a[key]).slice(0, 10),
+      chartTitle: useUnitsForChart ? "Unidades por producto (todas las monedas)" : "Ingresos por producto",
+      chartKey: key,
+    };
+  }, [paidRows, selectedProduct, hasVariants, useUnitsForChart]);
 
   const exportToExcel = async () => {
     const XLSX = await import("xlsx-js-style");
     const hStyle = { font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 }, fill: { fgColor: { rgb: "113F67" } }, alignment: { horizontal: "center" } };
     const applyHeader = (ws, headers) => headers.forEach((_, c) => { const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]; if (cell) cell.s = hStyle; });
 
-    // Hoja 1: Resumen por producto (+ variante si hay)
-    const sumH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Unidades", "Precio prom.", "Ingresos", (hasDiscounts ? ["Descuento"] : [])];
-    const sumRows = grouped.map((g) => [g.product_name.trim(), ...(hasVariants ? [g.variant] : []), g.units, g.units ? g.revenue / g.units : 0, g.revenue, (hasDiscounts ? [g.totalDiscount || 0] : [])]);
+    // Hoja 1: Resumen por producto + variante + moneda
+    const sumH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Moneda", "Unidades", "Precio prom.", "Ingresos", ...(hasDiscounts ? ["Descuento"] : [])];
+    const sumRows = grouped.map((g) => [
+      g.product_name.trim(), ...(hasVariants ? [g.variant] : []), g.currency,
+      g.units, g.units ? g.revenue / g.units : 0, g.revenue,
+      ...(hasDiscounts ? [g.totalDiscount || 0] : []),
+    ]);
     const wsSummary = XLSX.utils.aoa_to_sheet([sumH, ...sumRows]);
     applyHeader(wsSummary, sumH);
 
     // Hoja 2: Detalle completo
-    const detH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Cant.", "Precio", "Total", "Estado", ...(hasLocalities ? ["Localidad"] : []), "Fecha"];
-    const detRows = rows.map((r) => [r.product_name.trim(), ...(hasVariants ? [r.variant_label || NO_VAR] : []), r.quantity, r.price, r.total, r.status, ...(hasLocalities ? [r.locality || NO_LOC] : []), r.date]);
+    const detH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Moneda", "Cant.", "Precio", "Total", "Estado", ...(hasLocalities ? ["Localidad"] : []), "Fecha"];
+    const detRows = rows.map((r) => [
+      r.product_name.trim(), ...(hasVariants ? [r.variant_label || NO_VAR] : []), r.currency,
+      r.quantity, r.price, r.total, r.status, ...(hasLocalities ? [r.locality || NO_LOC] : []), r.date,
+    ]);
     const wsDetail = XLSX.utils.aoa_to_sheet([detH, ...detRows]);
     applyHeader(wsDetail, detH);
 
@@ -170,7 +194,12 @@ const ProductReport = ({ customers = [] }) => {
     saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/octet-stream" }), "Reporte_Productos.xlsx");
   };
 
-  const grandTotal = grouped.reduce((s, g) => s + g.revenue, 0);
+  // Totales por moneda (no se mezclan)
+  const grandTotalsByCur = useMemo(() => {
+    const map = {};
+    grouped.forEach((g) => { map[g.currency] = (map[g.currency] || 0) + g.revenue; });
+    return map;
+  }, [grouped]);
   const grandUnits = grouped.reduce((s, g) => s + g.units, 0);
 
   return (
@@ -188,12 +217,17 @@ const ProductReport = ({ customers = [] }) => {
             ]}
           />
         </label>
-        {currencyCodes.length > 1 && (
+        {currencyCodes.length > 0 && (
           <label className={styles.filter}>
             Moneda
-            <CurrencySelect
+            <Select
               value={currency}
-              onChange={(code) => setCurrency(code)}
+              onChange={setCurrency}
+              options={[
+                ...(hasMultiCurrency ? [{ value: "all", label: "Todas las monedas" }] : []),
+                ...currencyCodes.map((c) => ({ value: c, label: c })),
+              ]}
+              searchable={false}
             />
           </label>
         )}
@@ -204,7 +238,7 @@ const ProductReport = ({ customers = [] }) => {
               value={locality}
               onChange={setLocality}
               options={[
-                // { value: "all", label: "Todas" },
+                { value: "all", label: "Todas" },
                 ...localityCodes.map(l => ({ value: l, label: l })),
                 { value: NO_LOC, label: "Sin especificar" },
               ]}
@@ -216,13 +250,20 @@ const ProductReport = ({ customers = [] }) => {
         <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs: ingresos por moneda, separados */}
       <div className={styles.kpis}>
-        <div className={styles.kpi}><span>Ingresos cobrados</span><strong>{symbol} {formatted(stats.revenue)}</strong></div>
+        {Object.entries(stats.revByCur).map(([cur, val]) => (
+          <div key={cur} className={styles.kpi}>
+            <span>Ingresos {cur !== "—" ? cur : ""} cobrados</span>
+            <strong>{symbolOf(cur)} {formatted(val)}</strong>
+          </div>
+        ))}
         <div className={styles.kpi}><span>Unidades vendidas</span><strong>{stats.units}</strong></div>
         <div className={styles.kpi}><span>Órdenes totales</span><strong>{stats.orders}</strong></div>
         {selectedProduct === "all" && <div className={styles.kpi}><span>Productos distintos</span><strong>{stats.distinctProducts}</strong></div>}
-        <div className={styles.kpi}><span>Precio promedio</span><strong>{symbol} {formatted(stats.avgPrice)}</strong></div>
+        {stats.avgPrice !== null && (
+          <div className={styles.kpi}><span>Precio promedio</span><strong>{symbolOf(stats.avgCur)} {formatted(stats.avgPrice)}</strong></div>
+        )}
       </div>
 
       {/* Gráfico */}
@@ -233,9 +274,9 @@ const ProductReport = ({ customers = [] }) => {
             <ResponsiveContainer width="100%" height={Math.max(220, chartData.length * 44)}>
               <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
-                <XAxis type="number" fontSize={11} tickFormatter={(v) => chartKey === "revenue" ? `${symbol} ${formatted(v)}` : String(v)} />
+                <XAxis type="number" fontSize={11} tickFormatter={(v) => chartKey === "revenue" ? `${symbolOf(currency !== "all" ? currency : "")} ${formatted(v)}` : String(v)} />
                 <YAxis type="category" dataKey="name" width={160} fontSize={11} />
-                <Tooltip formatter={(v) => chartKey === "revenue" ? `${symbol} ${formatted(v)}` : `${v} uds.`} />
+                <Tooltip formatter={(v) => chartKey === "revenue" ? `${symbolOf(currency !== "all" ? currency : "")} ${formatted(v)}` : `${v} uds.`} />
                 <Bar dataKey={chartKey} radius={[0, 6, 6, 0]}>
                   {chartData.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
                 </Bar>
@@ -245,7 +286,7 @@ const ProductReport = ({ customers = [] }) => {
         </div>
       )}
 
-      {/* Tabla resumen agrupada */}
+      {/* Tabla resumen agrupada (por producto + variante + moneda) */}
       <div className={styles.tableCard}>
         <h3>Resumen por producto{hasVariants ? " y variante" : ""} (órdenes cobradas)</h3>
         <div className={styles.tableWrap}>
@@ -254,6 +295,7 @@ const ProductReport = ({ customers = [] }) => {
               <tr>
                 <th>Producto</th>
                 {hasVariants && <th>Variante</th>}
+                {hasMultiCurrency && <th>Moneda</th>}
                 <th>Unidades</th>
                 <th>Precio prom.</th>
                 <th>Ingresos</th>
@@ -265,25 +307,30 @@ const ProductReport = ({ customers = [] }) => {
                 <tr key={i}>
                   <td>{g.product_name.trim()}</td>
                   {hasVariants && <td>{g.variant.trim()}</td>}
+                  {hasMultiCurrency && <td>{g.currency}</td>}
                   <td>{g.units}</td>
-                  <td>{symbol} {formatted(g.units ? g.revenue / g.units : 0)}</td>
-                  <td><strong>{symbol} {formatted(g.revenue)}</strong></td>
+                  <td>{symbolOf(g.currency)} {formatted(g.units ? g.revenue / g.units : 0)}</td>
+                  <td><strong>{symbolOf(g.currency)} {formatted(g.revenue)}</strong></td>
                   {hasDiscounts && (
                     <td style={{ color: g.totalDiscount > 0 ? "#067647" : "inherit" }}>
-                      {g.totalDiscount > 0 ? `− ${symbol} ${formatted(g.totalDiscount)}` : "—"}
+                      {g.totalDiscount > 0 ? `− ${symbolOf(g.currency)} ${formatted(g.totalDiscount)}` : "—"}
                     </td>
                   )}
                 </tr>
               ))}
               {grouped.length === 0 && (
-                <tr><td colSpan={hasVariants ? 5 : 4} className={styles.tableEmpty}>Sin órdenes cobradas en el rango seleccionado.</td></tr>
+                <tr><td colSpan={hasVariants ? 6 : 5} className={styles.tableEmpty}>Sin órdenes cobradas en el rango seleccionado.</td></tr>
               )}
               {grouped.length > 0 && (
                 <tr style={{ background: "#f0f7ff", fontWeight: 700 }}>
-                  <td colSpan={hasVariants ? 2 : 1}>Total</td>
+                  <td colSpan={(hasVariants ? 1 : 0) + (hasMultiCurrency ? 2 : 1)}>Total</td>
                   <td>{grandUnits}</td>
                   <td></td>
-                  <td>{symbol} {formatted(grandTotal)}</td>
+                  <td>
+                    {Object.entries(grandTotalsByCur).map(([cur, val]) => (
+                      <div key={cur}>{symbolOf(cur)} {formatted(val)}</div>
+                    ))}
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -311,8 +358,8 @@ const ProductReport = ({ customers = [] }) => {
                   <td>{r.product_name.trim()}</td>
                   {hasVariants && <td>{r.variant_label.trim()}</td>}
                   <td>{r.quantity}</td>
-                  <td>{symbol} {formatted(r.price)}</td>
-                  <td>{symbol} {formatted(r.total)}</td>
+                  <td>{symbolOf(r.currency)} {formatted(r.price)}</td>
+                  <td>{symbolOf(r.currency)} {formatted(r.total)}</td>
                   <td>
                     <span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>
                       {r.status}
