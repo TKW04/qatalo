@@ -272,6 +272,16 @@ const CartDrawer = ({
                         <div className={styles.productName}>{it.product_name}</div>
                         {it.variant_label && <div className={styles.variantTag}>{it.variant_label}</div>}
                         {it.comment && <div className={styles.variantTag}>✏️ {it.comment}</div>}
+                        {(it.customization || []).length > 0 && (
+                          <div className={styles.variantTag}>
+                            📐 {it.customization.map((c) => `${c.label}: ${c.value}${c.type === "measurement" ? (c.unit || "") : ""}`).join(" · ")}
+                          </div>
+                        )}
+                        {Number(it.delivery_days_after_payment || 0) > 0 && (
+                          <div className={styles.variantTag}>
+                            🚚 Entrega en {it.delivery_days_after_payment} día{Number(it.delivery_days_after_payment) !== 1 ? "s" : ""} tras el pago
+                          </div>
+                        )}
                         {it.fulfillment_type && (
                           <div className={styles.fulfillmentTag}>
                             {it.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}

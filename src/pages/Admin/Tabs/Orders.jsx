@@ -618,11 +618,24 @@ const Orders = () => {
                           )}
                         </div>
                       )}
+                      {!t.delivery_day && Number(t.delivery_days_after_payment || 0) > 0 && (
+                        <div className={styles.itemSub}>
+                          🚚 Entrega en {t.delivery_days_after_payment} día{Number(t.delivery_days_after_payment) !== 1 ? "s" : ""} tras confirmar el pago
+                          {status !== "Aprobada" && status !== "Entregada" && (
+                            <span style={{ marginLeft: ".4rem", color: "#98a2b3" }}>(se calcula al aprobar)</span>
+                          )}
+                        </div>
+                      )}
                       {t.delivery_address && (
                         <div className={styles.itemSub}>📍 {t.delivery_address}</div>
                       )}
                       {t.comment && (
                         <div className={styles.itemSub}>✏️ {t.comment}</div>
+                      )}
+                      {(t.customization || []).length > 0 && (
+                        <div className={styles.itemSub}>
+                          📐 {t.customization.map((c) => `${c.label}: ${c.value}${c.type === "measurement" ? (c.unit || "") : ""}`).join(" · ")}
+                        </div>
                       )}
                       {(t.discount_amount > 0) && (
                         <div className={styles.itemDiscount}>

@@ -32,8 +32,14 @@ const emptyForm = {
   low_stock_threshold: "",
   itbis_mode: "included",
   allow_comment: false, comment_required: false, comment_label: "",
-
+  alt_prices: [],
+  delivery_days_after_payment: "",
+  customization_fields: [],
 };
+
+const emptyAltPrice = { currency: "", price: 0 };
+const emptyCustomField = { type: "measurement", label: "", unit: "cm", required: false, options: [] };
+const emptyColorOption = { name: "", hex: "#000000" };
 
 // Convierte código de moneda (DOP) a símbolo (RD$). Si ya es símbolo o no se encuentra, lo deja igual.
 const curSymbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
@@ -46,9 +52,9 @@ const tabStyle = (active) => ({
   marginBottom: "-2px",
 });
 
-const Toggle = ({ checked, onChange, label }) => (
-  <label className={styles.toggle}>
-    <input type="checkbox" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
+const Toggle = ({ checked, onChange, label, disabled = false }) => (
+  <label className={styles.toggle} style={disabled ? { opacity: .5, cursor: "not-allowed" } : undefined}>
+    <input type="checkbox" checked={!!checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
     <span className={styles.track}><span className={styles.thumb} /></span>
     {label && <span className={styles.toggleLabel}>{label}</span>}
   </label>
@@ -74,6 +80,16 @@ const Products = () => {
   const [viewing, setViewing] = useState(null);
   const [variantForm, setVariantForm] = useState(emptyVariant);
   const [editingVariantId, setEditingVariantId] = useState(null);
+
+  // ---- Monedas alternas ----
+  const [altPriceForm, setAltPriceForm] = useState(emptyAltPrice);
+
+  // ---- Campos de personalización (medida / color) ----
+  const [fieldForm, setFieldForm] = useState(emptyCustomField);
+  const [editingFieldId, setEditingFieldId] = useState(null);
+  const [colorOptionForm, setColorOptionForm] = useState(emptyColorOption);
+  const [fieldOptions, setFieldOptions] = useState([]); // opciones de color separadas del fieldForm
+  const [fieldStep, setFieldStep] = useState(1); // 1=definir campo, 2=agregar colores (solo color)
   const [importOpen, setImportOpen] = useState(false);
   const [importStep, setImportStep] = useState("upload");   // upload | preview | importing | done
   const [importRows, setImportRows] = useState([]);
@@ -96,6 +112,7 @@ const Products = () => {
   const resetForm = () => {
     setForm(emptyForm); setNewFiles([]); setToDeleteUrls([]); setErrors({});
     setVariantForm(emptyVariant); setEditingVariantId(null);
+    setAltPriceForm(emptyAltPrice); setFieldForm(emptyCustomField); setEditingFieldId(null); setColorOptionForm(emptyColorOption); setFieldOptions([]); setFieldStep(1); setFieldOptions([]);
   };
   const resetImport = () => {
     setImportOpen(false);
@@ -107,16 +124,27 @@ const Products = () => {
   };
 
   // ---- Locality config helpers ----
+  const updateLocalityDeliveryPrice = (loc, currency, price) =>
+    setForm((p) => {
+      const cfg = p.locality_config || [];
+      const idx = cfg.findIndex((c) => c.locality === loc);
+      const base = idx >= 0 ? cfg[idx] : { locality: loc, delivery: false, takeout: true, delivery_price: 0, delivery_prices: {} };
+      const updated = { ...base, delivery_prices: { ...(base.delivery_prices || {}), [currency]: price } };
+      // Si es la moneda base del producto, actualizar también delivery_price para compatibilidad
+      const next = idx >= 0 ? cfg.map((c, i) => i === idx ? updated : c) : [...cfg, updated];
+      return { ...p, locality_config: next };
+    });
+
   const getLocalityConfig = (loc) =>
     (form.locality_config || []).find((c) => c.locality === loc) ||
-    { locality: loc, delivery: false, takeout: true, delivery_price: 0 };
+    { locality: loc, delivery: false, takeout: true, delivery_price: 0, delivery_prices: {} };
 
   const updateLocalityConfig = (loc, field, value) => {
     setForm((p) => {
       const cfg = p.locality_config || [];
       const idx = cfg.findIndex((c) => c.locality === loc);
       if (idx >= 0) return { ...p, locality_config: cfg.map((c, i) => i === idx ? { ...c, [field]: value } : c) };
-      return { ...p, locality_config: [...cfg, { locality: loc, delivery: false, takeout: true, delivery_price: 0, [field]: value }] };
+      return { ...p, locality_config: [...cfg, { locality: loc, delivery: false, takeout: true, delivery_price: 0, delivery_prices: {}, [field]: value }] };
     });
   };
 
@@ -166,6 +194,72 @@ const Products = () => {
   const removeVariant = (vid) => setForm((p) => ({ ...p, variants: p.variants.filter((v) => v.variant_id !== vid) }));
   const startEditVariant = (v) => { setVariantForm({ color: v.color || "", size: v.size || "", quantity: v.quantity, extra_price: v.extra_price || 0, size_name: v.size_name || "", price: v.price || 0 }); setEditingVariantId(v.variant_id); };
   const cancelEditVariant = () => { setVariantForm(emptyVariant); setEditingVariantId(null); };
+
+  // ---- Monedas alternas: helpers ----
+  const addAltPrice = () => {
+    if (!altPriceForm.currency) { showWarning("Aviso", "Selecciona una moneda"); return; }
+    if (altPriceForm.currency === form.currency) { showWarning("Aviso", "Esa es la moneda base del producto"); return; }
+    if ((form.alt_prices || []).some((a) => a.currency === altPriceForm.currency)) {
+      showWarning("Aviso", "Esa moneda ya fue agregada"); return;
+    }
+    if (Number(altPriceForm.price) <= 0) { showWarning("Aviso", "El precio debe ser mayor a 0"); return; }
+    setForm((p) => ({ ...p, alt_prices: [...(p.alt_prices || []), { ...altPriceForm }] }));
+    setAltPriceForm(emptyAltPrice);
+  };
+  const removeAltPrice = (currency) =>
+    setForm((p) => ({ ...p, alt_prices: (p.alt_prices || []).filter((a) => a.currency !== currency) }));
+
+  // ---- Campos de personalización: helpers ----
+  const addColorOptionToField = () => {
+    if (!colorOptionForm.name.trim()) { showWarning("Aviso", "El nombre del color es requerido"); return; }
+    const hex = /^#[0-9a-fA-F]{6}$/.test(colorOptionForm.hex) ? colorOptionForm.hex : "#000000";
+    const name = colorOptionForm.name.trim();
+    // Validar duplicados: mismo nombre o mismo código hex
+    const nameDup = fieldOptions.some((o) => o.name.toLowerCase() === name.toLowerCase());
+    const hexDup = fieldOptions.some((o) => o.hex.toLowerCase() === hex.toLowerCase());
+    if (nameDup) { showWarning("Aviso", `Ya existe un color con el nombre "${name}"`); return; }
+    if (hexDup) { showWarning("Aviso", `Ya existe un color con el código ${hex}`); return; }
+    setFieldOptions((prev) => [...prev, { name, hex }]);
+    setColorOptionForm(emptyColorOption);
+  };
+  const removeColorOptionFromField = (idx) =>
+    setFieldOptions((prev) => prev.filter((_, i) => i !== idx));
+
+  const addOrUpdateField = () => {
+    if (!fieldForm.label.trim()) { showWarning("Aviso", "La etiqueta del campo es requerida"); return; }
+    if (fieldForm.type === "color" && fieldOptions.length === 0) {
+      showWarning("Aviso", "Agrega al menos un color a la paleta de este campo"); return;
+    }
+    // Construye el campo final combinando el form con las options del estado separado.
+    // fieldOptions siempre refleja el estado actual (no depende del closure de fieldForm).
+    const fieldToSave = {
+      field_id: editingFieldId || crypto.randomUUID(),
+      type: fieldForm.type,
+      label: fieldForm.label.trim(),
+      unit: fieldForm.unit || "cm",
+      required: fieldForm.required,
+      options: fieldOptions,   // siempre desde el estado independiente
+    };
+    if (editingFieldId) {
+      setForm((p) => ({
+        ...p,
+        customization_fields: p.customization_fields.map((cfld) =>
+          cfld.field_id === editingFieldId ? fieldToSave : cfld
+        ),
+      }));
+    } else {
+      setForm((p) => ({
+        ...p,
+        customization_fields: [...(p.customization_fields || []), fieldToSave],
+      }));
+    }
+    setFieldForm(emptyCustomField); setEditingFieldId(null);
+    setColorOptionForm(emptyColorOption); setFieldOptions([]); setFieldStep(1);
+  };
+  const removeField = (fieldId) =>
+    setForm((p) => ({ ...p, customization_fields: p.customization_fields.filter((cfld) => cfld.field_id !== fieldId) }));
+  const startEditField = (cfld) => { setFieldForm({ ...cfld, options: [] }); setFieldOptions(cfld.options || []); setEditingFieldId(cfld.field_id); setFieldStep(cfld.type === "color" ? 2 : 1); };
+  const cancelEditField = () => { setFieldForm(emptyCustomField); setEditingFieldId(null); setColorOptionForm(emptyColorOption); setFieldOptions([]); setFieldStep(1); };
 
   // ---- Validation ----
   const validate = () => {
@@ -229,6 +323,9 @@ const Products = () => {
         allow_comment: form.allow_comment,
         comment_required: form.allow_comment ? form.comment_required : false,
         comment_label: form.allow_comment ? (form.comment_label || "").trim() : "",
+        alt_prices: form.alt_prices || [],
+        delivery_days_after_payment: form.required_delivery_day ? 0 : (Number(form.delivery_days_after_payment) || 0),
+        customization_fields: form.customization_fields || [],
       };
       return form.product_id ? updateProduct(payload) : createProduct(payload);
     },
@@ -294,8 +391,12 @@ const Products = () => {
       allow_comment: !!p.allow_comment,
       comment_required: !!p.comment_required,
       comment_label: p.comment_label || "",
+      alt_prices: p.alt_prices || [],
+      delivery_days_after_payment: p.delivery_days_after_payment || "",
+      customization_fields: p.customization_fields || [],
     });
     setNewFiles([]); setToDeleteUrls([]); setErrors({}); setVariantForm(emptyVariant); setEditingVariantId(null);
+    setAltPriceForm(emptyAltPrice); setFieldForm(emptyCustomField); setEditingFieldId(null); setColorOptionForm(emptyColorOption); setFieldOptions([]); setFieldStep(1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -442,6 +543,52 @@ const Products = () => {
               </span>
             </div>
           </div>
+
+          {(
+            <div className={styles.variantSection}>
+              <h4 className={styles.variantTitle}>Otras monedas (opcional)</h4>
+              <p style={{ fontSize: ".8rem", color: "#667085", margin: "-.3rem 0 .75rem" }}>
+                Define un precio fijo en otra(s) moneda(s). El cliente podrá elegir en cuál pagar.
+              </p>
+              <div className={styles.variantForm}>
+                <div className={styles.variantField}>
+                  <label>Moneda</label>
+                  <CurrencySelect
+                    value={altPriceForm.currency}
+                    onChange={(code) => setAltPriceForm((f) => ({ ...f, currency: code }))}
+                  />
+                </div>
+                <div className={styles.variantField}>
+                  <label>Precio {curSymbol(altPriceForm.currency)}</label>
+                  <input type="number" min="0" step="0.01" className="input" placeholder="0"
+                    value={altPriceForm.price}
+                    onChange={(e) => setAltPriceForm((f) => ({ ...f, price: Number(e.target.value) }))} />
+                </div>
+                <div className={styles.variantBtns}>
+                  <button type="button" className={styles.btnSmall} onClick={addAltPrice}><FaPlus size={11} /> Agregar</button>
+                </div>
+              </div>
+              {(form.alt_prices || []).length > 0 ? (
+                <div className={styles.variantTableWrap}>
+                  <table className={styles.variantTable}>
+                    <thead><tr><th>Moneda</th><th>Precio</th><th></th></tr></thead>
+                    <tbody>
+                      {form.alt_prices.map((a) => (
+                        <tr key={a.currency}>
+                          <td>{a.currency}</td>
+                          <td>{curSymbol(a.currency)} {formatted(a.price)}</td>
+                          <td className={styles.variantActions}>
+                            <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeAltPrice(a.currency)}><FaTrashCan size={12} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (<p className={styles.variantEmpty}>Sin monedas adicionales. El producto solo se venderá en {form.currency || "su moneda base"}.</p>)}
+            </div>
+          )}
+
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>Categoría <span className={styles.required}>*</span></label>
@@ -536,14 +683,31 @@ const Products = () => {
                               🛵 Delivery
                             </label>
                             {cfg.delivery && (
-                              <div className={styles.deliveryPriceRow}>
-                                <span className={styles.deliveryPriceLabel}>Precio {curSymbol(form.currency)}</span>
-                                <input type="number" min="0" step="0.01" className="input"
-                                  style={{ width: "110px" }} placeholder="0"
-                                  value={cfg.delivery_price}
-                                  onChange={(e) => updateLocalityConfig(loc, "delivery_price", Number(e.target.value))} />
-                                {Number(cfg.delivery_price) === 0 && <span className={styles.freeTag}>Gratis</span>}
-                              </div>
+                              <>
+                                {/* Moneda base */}
+                                <div className={styles.deliveryPriceRow}>
+                                  <span className={styles.deliveryPriceLabel}>Precio {curSymbol(form.currency)} ({form.currency})</span>
+                                  <input type="number" min="0" step="0.01" className="input"
+                                    style={{ width: "110px" }} placeholder="0"
+                                    value={cfg.delivery_price}
+                                    onChange={(e) => updateLocalityConfig(loc, "delivery_price", Number(e.target.value))} />
+                                  {Number(cfg.delivery_price) === 0 && <span className={styles.freeTag}>Gratis</span>}
+                                </div>
+                                {/* Monedas alternas */}
+                                {(form.alt_prices || []).map((ap) => {
+                                  const altPrice = (cfg.delivery_prices || {})[ap.currency] ?? "";
+                                  return (
+                                    <div key={ap.currency} className={styles.deliveryPriceRow}>
+                                      <span className={styles.deliveryPriceLabel}>Precio {curSymbol(ap.currency)} ({ap.currency})</span>
+                                      <input type="number" min="0" step="0.01" className="input"
+                                        style={{ width: "110px" }} placeholder="0"
+                                        value={altPrice}
+                                        onChange={(e) => updateLocalityDeliveryPrice(loc, ap.currency, Number(e.target.value))} />
+                                      {Number(altPrice) === 0 && <span className={styles.freeTag}>Gratis</span>}
+                                    </div>
+                                  );
+                                })}
+                              </>
                             )}
                             <label className={styles.localityOption}>
                               <input type="checkbox" checked={!!cfg.takeout}
@@ -694,6 +858,190 @@ const Products = () => {
             </div>
           )}
 
+          {/* Campos de personalización avanzada (medidas / color de paleta) */}
+          <div className={styles.variantSection}>
+            <h4 className={styles.variantTitle}>Personalización avanzada (medidas / color)</h4>
+            <p style={{ fontSize: ".8rem", color: "#667085", margin: "-.3rem 0 .75rem" }}>
+              Define los datos que el cliente debe llenar al pedir (tallas, colores, etc.).
+              Se guardan en la orden para que puedas producir a la medida exacta.
+            </p>
+
+            {/* Indicador de paso */}
+            <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: "1rem" }}>
+              {[
+                { n: 1, label: "Definir campo" },
+                { n: 2, label: fieldForm.type === "color" ? "Agregar colores" : "Confirmar" },
+              ].map(({ n, label }, i) => (
+                <div key={n} style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                  {i > 0 && <div style={{ width: 28, height: 1, background: fieldStep >= n ? "#113f67" : "#d0d5dd" }} />}
+                  <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
+                    <span style={{
+                      width: 22, height: 22, borderRadius: "50%", fontSize: ".72rem", fontWeight: 700,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      background: fieldStep >= n ? "#113f67" : "#f2f4f7",
+                      color: fieldStep >= n ? "#fff" : "#98a2b3",
+                    }}>{n}</span>
+                    <span style={{ fontSize: ".78rem", fontWeight: fieldStep === n ? 700 : 400, color: fieldStep >= n ? "#113f67" : "#98a2b3" }}>{label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* PASO 1: Definir tipo, etiqueta, unidad, obligatorio */}
+            {fieldStep === 1 && (
+              <>
+                <div className={styles.variantForm}>
+                  <div className={styles.variantField}>
+                    <label>Tipo de campo</label>
+                    <Select
+                      value={fieldForm.type}
+                      onChange={(v) => { setFieldForm((f) => ({ ...f, type: v })); setFieldOptions([]); setFieldStep(1); }}
+                      options={[{ value: "measurement", label: "📐 Medida (cm / pulgadas)" }, { value: "color", label: "🎨 Color (de una paleta)" }]}
+                      searchable={false}
+                    />
+                  </div>
+                  <div className={styles.variantField}>
+                    <label>Nombre del campo <span className={styles.required}>*</span></label>
+                    <input className="input" placeholder={fieldForm.type === "color" ? "Ej. Color del vestido…" : "Ej. Busto, Cadera, Espalda…"}
+                      value={fieldForm.label} onChange={(e) => setFieldForm((f) => ({ ...f, label: e.target.value }))} />
+                  </div>
+                  {fieldForm.type === "measurement" && (
+                    <div className={styles.variantField}>
+                      <label>Unidad</label>
+                      <Select
+                        value={fieldForm.unit}
+                        onChange={(v) => setFieldForm((f) => ({ ...f, unit: v }))}
+                        options={[{ value: "cm", label: "Centímetros (cm)" }, { value: "in", label: "Pulgadas (in)" }]}
+                        searchable={false}
+                      />
+                    </div>
+                  )}
+                  <div className={styles.variantField}>
+                    <label>&nbsp;</label>
+                    <Toggle checked={fieldForm.required} onChange={(v) => setFieldForm((f) => ({ ...f, required: v }))} label="Obligatorio" />
+                  </div>
+                </div>
+                <div className={styles.variantBtns}>
+                  {fieldForm.type === "measurement" ? (
+                    <button type="button" className={styles.btnSmall} onClick={addOrUpdateField}>
+                      <FaPlus size={11} /> {editingFieldId ? "Actualizar campo" : "Agregar campo"}
+                    </button>
+                  ) : (
+                    <button type="button" className={styles.btnSmall}
+                      onClick={() => { if (!fieldForm.label.trim()) { showWarning("Aviso", "Escribe el nombre del campo primero"); return; } setFieldStep(2); }}>
+                      Continuar → Agregar colores
+                    </button>
+                  )}
+                  {editingFieldId && <button type="button" className={styles.btnOutline} onClick={cancelEditField}>Cancelar</button>}
+                </div>
+              </>
+            )}
+
+            {/* PASO 2: Paleta de colores (solo tipo "color") */}
+            {fieldStep === 2 && fieldForm.type === "color" && (
+              <>
+                <div style={{ background: "#f9fafb", borderRadius: 10, padding: "1rem", marginBottom: ".75rem", border: "1px solid #eef0f3" }}>
+                  <div style={{ marginBottom: ".75rem" }}>
+                    <span style={{ fontWeight: 700, color: "#113f67", fontSize: ".9rem" }}>Campo: "{fieldForm.label}"</span>
+                    <span style={{ fontSize: ".78rem", color: "#667085", marginLeft: ".5rem" }}>({fieldForm.required ? "Obligatorio" : "Opcional"})</span>
+                    <button type="button" onClick={() => setFieldStep(1)}
+                      style={{ marginLeft: "auto", display: "block", fontSize: ".78rem", color: "#667085", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                      ← Editar nombre
+                    </button>
+                  </div>
+
+                  <p style={{ fontSize: ".82rem", color: "#667085", margin: "0 0 .75rem" }}>
+                    Agrega los colores que el cliente puede elegir. Usa el selector o escribe el código hex.
+                  </p>
+
+                  <div style={{ display: "flex", gap: ".5rem", alignItems: "center", flexWrap: "wrap", marginBottom: ".75rem" }}>
+                    <input type="color"
+                      value={/^#[0-9a-fA-F]{6}$/.test(colorOptionForm.hex) ? colorOptionForm.hex : "#000000"}
+                      onChange={(e) => setColorOptionForm((c) => ({ ...c, hex: e.target.value }))}
+                      style={{ width: 40, height: 34, padding: 0, border: "1px solid #d0d5dd", borderRadius: 6, cursor: "pointer" }}
+                      title="Abre el selector de color" />
+                    <input className="input" style={{ maxWidth: 90, fontFamily: "monospace", fontSize: ".85rem" }}
+                      placeholder="#FFFFFF"
+                      value={colorOptionForm.hex}
+                      onChange={(e) => setColorOptionForm((c) => ({ ...c, hex: e.target.value.trim() }))}
+                      onBlur={(e) => { if (!/^#[0-9a-fA-F]{6}$/.test(e.target.value.trim())) setColorOptionForm((c) => ({ ...c, hex: "#000000" })); }} />
+                    <input className="input" style={{ maxWidth: 170 }}
+                      placeholder="Nombre (ej. Rojo vino)"
+                      value={colorOptionForm.name}
+                      onChange={(e) => setColorOptionForm((c) => ({ ...c, name: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && addColorOptionToField()} />
+                    <button type="button" className={styles.btnSmall} onClick={addColorOptionToField}>
+                      <FaPlus size={11} /> Agregar
+                    </button>
+                  </div>
+
+                  {fieldOptions.length > 0 ? (
+                    <>
+                      <p style={{ fontSize: ".78rem", color: "#344054", fontWeight: 600, margin: "0 0 .4rem" }}>
+                        Colores en la paleta ({fieldOptions.length}):
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                        {fieldOptions.map((opt, idx) => (
+                          <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: "#fff", border: "1px solid #d0d5dd", borderRadius: 999, padding: ".3rem .75rem .3rem .4rem", fontSize: ".82rem" }}>
+                            <span style={{ width: 18, height: 18, borderRadius: "50%", background: opt.hex, border: "1px solid rgba(0,0,0,.12)", display: "inline-block", flexShrink: 0 }} />
+                            <span style={{ fontWeight: 500 }}>{opt.name}</span>
+                            <span style={{ fontFamily: "monospace", color: "#98a2b3", fontSize: ".75rem" }}>{opt.hex}</span>
+                            <button type="button" onClick={() => removeColorOptionFromField(idx)}
+                              style={{ border: "none", background: "transparent", cursor: "pointer", color: "#98a2b3", padding: 0, lineHeight: 1, marginLeft: ".2rem" }}>×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: ".8rem", color: "#98a2b3", margin: 0 }}>
+                      Aún no has agregado colores. Agrega al menos uno para continuar.
+                    </p>
+                  )}
+                </div>
+
+                <div className={styles.variantBtns}>
+                  <button type="button" className={styles.btnOutline} onClick={() => setFieldStep(1)}>← Volver</button>
+                  <button type="button" className={styles.btnSmall} onClick={addOrUpdateField} disabled={fieldOptions.length === 0}>
+                    <FaPlus size={11} /> {editingFieldId ? "Actualizar campo" : "Agregar campo con esta paleta"}
+                  </button>
+                  {editingFieldId && <button type="button" className={styles.btnOutline} onClick={cancelEditField}>Cancelar</button>}
+                </div>
+              </>
+            )}
+
+            {(form.customization_fields || []).length > 0 ? (
+              <div className={styles.variantTableWrap} style={{ marginTop: "1rem" }}>
+                <table className={styles.variantTable}>
+                  <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Oblig.</th><th></th></tr></thead>
+                  <tbody>
+                    {form.customization_fields.map((cfld) => (
+                      <tr key={cfld.field_id} className={editingFieldId === cfld.field_id ? styles.variantEditing : ""}>
+                        <td>{cfld.label}</td>
+                        <td>{cfld.type === "measurement" ? "📐 Medida" : "🎨 Color"}</td>
+                        <td>
+                          {cfld.type === "measurement"
+                            ? (cfld.unit === "in" ? "Pulgadas" : "Centímetros")
+                            : (cfld.options || []).length > 0
+                              ? <div style={{ display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
+                                  {cfld.options.map((o, i) => (
+                                    <span key={i} title={`${o.name} ${o.hex}`} style={{ width: 16, height: 16, borderRadius: "50%", background: o.hex, border: "1px solid rgba(0,0,0,.15)", display: "inline-block" }} />
+                                  ))}
+                                </div>
+                              : "Sin colores"}
+                        </td>
+                        <td>{cfld.required ? "Sí" : "No"}</td>
+                        <td className={styles.variantActions}>
+                          <button type="button" className={styles.iconBtn} onClick={() => startEditField(cfld)}><FaPen size={12} /></button>
+                          <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeField(cfld.field_id)}><FaTrashCan size={12} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (<p className={styles.variantEmpty}>Aún no has agregado campos de personalización.</p>)}
+          </div>
+
           {/* Comentario / personalización del cliente */}
           <div className={styles.toggleRow}>
             <Toggle
@@ -738,9 +1086,40 @@ const Products = () => {
             )}
           </div>
           <div className={styles.toggleRow}>
-            <Toggle checked={form.required_delivery_day} onChange={(v) => setField("required_delivery_day", v)} label="Requiere fecha de entrega" />
+            <Toggle
+              checked={form.required_delivery_day}
+              onChange={(v) => { setField("required_delivery_day", v); if (v) setField("delivery_days_after_payment", ""); }}
+              label="Requiere fecha de entrega"
+              disabled={!!form.delivery_days_after_payment}
+            />
             {form.required_delivery_day && (<input type="date" className="input" style={{ maxWidth: 200 }} value={form.delivery_start_day} onChange={(e) => setField("delivery_start_day", e.target.value)} />)}
           </div>
+          <div className={styles.toggleRow}>
+            <Toggle
+              checked={!!form.delivery_days_after_payment}
+              onChange={(v) => {
+                if (v) { setField("delivery_days_after_payment", "5"); setField("required_delivery_day", false); }
+                else setField("delivery_days_after_payment", "");
+              }}
+              label="Entrega X días después de confirmar el pago"
+              disabled={form.required_delivery_day}
+            />
+            {!!form.delivery_days_after_payment && (
+              <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+                <input
+                  type="number" min="1" max="90" className="input" style={{ maxWidth: 90 }}
+                  value={form.delivery_days_after_payment}
+                  onChange={(e) => setField("delivery_days_after_payment", e.target.value)}
+                />
+                <span style={{ fontSize: ".85rem", color: "#667085" }}>días</span>
+              </div>
+            )}
+          </div>
+          {(form.required_delivery_day || !!form.delivery_days_after_payment) && (
+            <p style={{ fontSize: ".78rem", color: "#667085", margin: "-.5rem 0 1rem" }}>
+              Estas dos opciones son excluyentes: usa una fecha fija <strong>o</strong> un plazo tras el pago, no ambas.
+            </p>
+          )}
           <div className={styles.formGroup}>
             <label>Términos y condiciones (opcional)</label>
             <textarea className="input" rows={4} value={form.terms} onChange={(e) => setField("terms", e.target.value)} />

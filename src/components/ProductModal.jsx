@@ -10,6 +10,7 @@ import Select from "./Select";
 import { formatted } from "../helpers/utils";
 import styles from "./ProductModal.module.css";
 
+
 const toISO = (s) => {
   if (!s) return "";
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -17,14 +18,32 @@ const toISO = (s) => {
   if (m) { let [, mm, dd, yy] = m; if (yy.length === 2) yy = "20" + yy; return `${yy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`; }
   return "";
 };
-
+ 
 const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, preselectedLocality = "" }) => {
   const { showWarning } = useNotification();
   const productLocalities = product.localities || [];
   const isSizeType = product.variant_type === "size";
   const noTerms = !product.terms;
   const images = (product.imagesUrl || []).map((i) => i.image).filter(Boolean);
-
+ 
+  // Monedas alternas (solo para productos sin variantes/tamaños)
+  const hasAltCurrencies = (product.alt_prices || []).length > 0;
+  const [selectedCurrency, setSelectedCurrency] = useState(product.currency);
+  const currencySymbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
+  const priceForCurrency = (code) => {
+    if (code === product.currency) return Number(product.price);
+    const alt = (product.alt_prices || []).find((a) => a.currency === code);
+    return alt ? Number(alt.price) : Number(product.price);
+  };
+ 
+  // Entrega en X días tras el pago (excluyente con required_delivery_day)
+  const deliversAfterPayment = Number(product.delivery_days_after_payment || 0) > 0;
+ 
+  // Campos de personalización (medida / color de paleta)
+  const customizationFields = product.customization_fields || [];
+  const [customValues, setCustomValues] = useState({}); // { [field_id]: value }
+  const setCustomValue = (fieldId, value) => setCustomValues((p) => ({ ...p, [fieldId]: value }));
+ 
   const [form, setForm] = useState({
     quantity: 1, delivery_day: "", acceptTerms: noTerms, comment: "",
     locality: (() => {
@@ -34,89 +53,103 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     })(),
     fulfillment_type: "",
   });
-
+ 
   // null | "cart" | "added"
   const [step, setStep] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [lastAdded, setLastAdded] = useState(null); // { name, qty, variantLabel }
-
+ 
   // Variant state
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedSizeId, setSelectedSizeId] = useState(""); // comida: variant_id del tamaño
-
+ 
   const [sliderRef, instanceRef] = useKeenSlider({
     initial: 0, slideChanged: (s) => setCurrentSlide(s.track.details.rel),
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
+ 
   const availableColors = useMemo(() => {
     if (!product.is_customizable || isSizeType || !product.variants) return [];
     return [...new Set(product.variants.filter((v) => v.quantity > 0).map((v) => v.color))];
   }, [product, isSizeType]);
-
+ 
   // Comida: lista de tamaños disponibles (con stock)
   const availableSizeVariants = useMemo(() => {
     if (!product.is_customizable || !isSizeType || !product.variants) return [];
     return product.variants.filter((v) => v.quantity > 0);
   }, [product, isSizeType]);
-
+ 
   const availableSizes = useMemo(() => {
     if (!selectedColor || !product.variants) return [];
     return product.variants.filter((v) => v.color === selectedColor && v.quantity > 0).map((v) => v.size).filter(Boolean);
   }, [selectedColor, product]);
-
+ 
   const selectedVariant = useMemo(() => {
     if (!product.is_customizable || !product.variants) return null;
     if (isSizeType) return product.variants.find((v) => v.variant_id === selectedSizeId) || null;
     if (!selectedColor) return null;
     return product.variants.find((v) => v.color === selectedColor && (!v.size || v.size === selectedSize)) || null;
   }, [selectedColor, selectedSize, selectedSizeId, product, isSizeType]);
-
+ 
   const displayPrice = useMemo(() => {
+    // Si eligió una moneda alterna (no la base), mostramos el precio fijo en esa moneda.
+    if (hasAltCurrencies && selectedCurrency !== product.currency)
+      return priceForCurrency(selectedCurrency);
+    // Moneda base: precio normal (con variante si aplica).
     if (product.is_customizable && selectedVariant) {
       if (isSizeType) return Number(selectedVariant.price || 0);
       return Number(product.price) + Number(selectedVariant.extra_price || 0);
     }
     return Number(product.price);
-  }, [product, selectedVariant, isSizeType]);
-
+  }, [product, selectedVariant, isSizeType, hasAltCurrencies, selectedCurrency]);
+ 
+  // Moneda efectiva a mostrar/usar (la elegida si hay monedas alternas, si no la base del producto)
+  const displayCurrency = hasAltCurrencies ? selectedCurrency : product.currency;
+ 
   const lowestPrice = useMemo(() => {
     if (!product.is_customizable || !product.variants?.length) return Number(product.price);
     if (isSizeType) return Math.min(...product.variants.map((v) => Number(v.price || 0)));
     return Math.min(...product.variants.map((v) => Number(product.price) + Number(v.extra_price || 0)));
   }, [product, isSizeType]);
-
+ 
   const variantMaxQty = selectedVariant
     ? selectedVariant.quantity
     : (!product.is_customizable ? (product.quantity ?? 9999) : 9999);
-
+ 
   const localityConfig = useMemo(() => {
     if (!form.locality || !product.locality_config?.length) return null;
     return product.locality_config.find((c) => c.locality === form.locality) || null;
   }, [form.locality, product]);
-
+ 
   const hasDelivery = !!localityConfig?.delivery;
   const hasTakeout = !!localityConfig?.takeout;
-  const deliveryPrice = form.fulfillment_type === "delivery" ? (Number(localityConfig?.delivery_price) || 0) : 0;
-
+  const deliveryPrice = useMemo(() => {
+    if (form.fulfillment_type !== "delivery" || !localityConfig) return 0;
+    const prices = localityConfig.delivery_prices || {};
+    // Usar selectedCurrency directamente (es el estado reactivo real, displayCurrency es derivada)
+    const cur = hasAltCurrencies ? selectedCurrency : product.currency;
+    if (cur && cur in prices) return Number(prices[cur] ?? 0);
+    return Number(localityConfig.delivery_price) || 0;
+  }, [form.fulfillment_type, localityConfig, selectedCurrency, hasAltCurrencies, product.currency]);
+ 
   // Etiqueta del comentario/personalización (fallback si el dueño no puso una)
   const commentLabel = (product.comment_label || "").trim() || "Personalización";
-
+ 
   useEffect(() => {
     if (!localityConfig) { set("fulfillment_type", ""); return; }
     if (hasDelivery && !hasTakeout) set("fulfillment_type", "delivery");
     else if (!hasDelivery && hasTakeout) set("fulfillment_type", "takeout");
     else set("fulfillment_type", "");
   }, [localityConfig]); // eslint-disable-line
-
+ 
   const openWhatsApp = (who) => {
     const saludo = who ? `soy ${who}, ` : "";
     const msg = `Hola, ${saludo}estoy interesad@ en "${product.name}". Lo vi en tu catálogo: ${window.location.href}`;
     window.open(`https://wa.me/${(business.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
   };
-
+ 
   const handleWhatsApp = async () => {
     const s = getValidCustomerSession(business.business_id);
     if (!s?.token) return openWhatsApp("");
@@ -130,7 +163,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     }
     openWhatsApp(name);
   };
-
+ 
   const addToCart = () => {
     if (product.is_customizable) {
       if (isSizeType) {
@@ -146,10 +179,14 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     if (product.required_delivery_day && !form.delivery_day) return showWarning("Aviso", "Selecciona la fecha de entrega");
     if (product.allow_comment && product.comment_required && !form.comment.trim())
       return showWarning("Aviso", `${commentLabel} es obligatorio`);
+    for (const cfld of customizationFields) {
+      if (cfld.required && !String(customValues[cfld.field_id] || "").trim())
+        return showWarning("Aviso", `${cfld.label} es obligatorio`);
+    }
     if (product.terms && !form.acceptTerms) return showWarning("Aviso", "Debes aceptar los términos");
     if (!product.is_customizable && product.quantity != null && Number(form.quantity) > product.quantity)
       return showWarning("Aviso", "Excede el inventario disponible");
-
+ 
     const items = getCart(business.business_id);
     const variantLabel = product.is_customizable && selectedVariant
       ? (isSizeType
@@ -157,9 +194,16 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           : [selectedVariant.color, selectedVariant.size].filter(Boolean).join(" / "))
       : "";
     const commentVal = (form.comment || "").trim();
-
-    const matchKey = `${product.product_id}|${variantLabel}|${form.locality}|${form.delivery_day}|${commentVal}`;
-    const idx = items.findIndex((i) => `${i.product_id}|${i.variant_label || ""}|${i.locality}|${i.delivery_day}|${i.comment || ""}` === matchKey);
+    const customizationArr = customizationFields.map((cfld) => ({
+      field_id: cfld.field_id,
+      label: cfld.label,
+      type: cfld.type,
+      unit: cfld.unit || "",
+      value: customValues[cfld.field_id] || "",
+    }));
+ 
+    const matchKey = `${product.product_id}|${variantLabel}|${form.locality}|${form.delivery_day}|${commentVal}|${JSON.stringify(customizationArr)}`;
+    const idx = items.findIndex((i) => `${i.product_id}|${i.variant_label || ""}|${i.locality}|${i.delivery_day}|${i.comment || ""}|${JSON.stringify(i.customization || [])}` === matchKey);
     if (idx >= 0) {
       items[idx].quantity = Number(items[idx].quantity || 0) + Number(form.quantity || 1);
     } else {
@@ -167,12 +211,14 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
         product_id: product.product_id,
         product_name: product.name,
         price: displayPrice,
-        currency: product.currency,
+        currency: displayCurrency,
         quantity: Number(form.quantity) || 1,
         locality: form.locality,
         delivery_day: form.delivery_day,
         accept_terms: !!form.acceptTerms,
         comment: commentVal,
+        customization: customizationArr,
+        delivery_days_after_payment: Number(product.delivery_days_after_payment || 0),
         image: images[0] || "",
         fulfillment_type: form.fulfillment_type || (hasDelivery ? "delivery" : hasTakeout ? "takeout" : ""),
         delivery_price: deliveryPrice,
@@ -185,34 +231,34 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
         category_id: product.category_id || "",
       });
     }
-
+ 
     setCart(business.business_id, items);
     onAdded?.();
-
+ 
     // Guardar qué se agregó para mostrarlo en el feedback
     setLastAdded({
       name: product.name,
       qty: Number(form.quantity) || 1,
       variantLabel,
     });
-
+ 
     // Ir al step de confirmación en vez de cerrar
     setStep("added");
   };
-
+ 
   // "Seguir comprando" — vuelve a la vista del producto
   const keepShopping = () => {
     setStep(null);
     // Reset del form para poder agregar otra variante/cantidad si quieren
     setForm(f => ({ ...f, quantity: 1, comment: "" }));
   };
-
+ 
   // "Ver carrito" — cierra el modal y abre el carrito
   const goToCart = () => {
     onClose();
     onOpenCart?.();
   };
-
+ 
   const canAdd = useMemo(() => {
     if (product.is_customizable) {
       if (isSizeType) {
@@ -227,18 +273,19 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     if (productLocalities.length > 0 && !form.locality) return false;
     if (product.required_delivery_day && !form.delivery_day) return false;
     if (product.allow_comment && product.comment_required && !form.comment.trim()) return false;
+    if (customizationFields.some((cfld) => cfld.required && !String(customValues[cfld.field_id] || "").trim())) return false;
     if (product.terms && !form.acceptTerms) return false;
     if (!form.quantity || Number(form.quantity) < 1) return false;
     return true;
-  }, [form, product, productLocalities, selectedColor, selectedSize, selectedSizeId, selectedVariant, availableSizes, availableColors, availableSizeVariants, isSizeType, localityConfig, hasDelivery, hasTakeout]);
-
+  }, [form, product, productLocalities, selectedColor, selectedSize, selectedSizeId, selectedVariant, availableSizes, availableColors, availableSizeVariants, isSizeType, localityConfig, hasDelivery, hasTakeout, customizationFields, customValues]);
+ 
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
-
+ 
   return (
     <div className={styles.overlay} onClick={overlay}>
       <div className={styles.modal}>
         <button className={styles.close} onClick={onClose} aria-label="Cerrar">✕</button>
-
+ 
         {/* Gallery */}
         <div className={styles.gallery}>
           {images.length > 0 ? (
@@ -270,7 +317,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
             </div>
           ) : (<img src="/placeholder.svg" alt={product.name} className={styles.galleryImg} />)}
         </div>
-
+ 
         {/* Product info */}
         <div className={styles.body}>
           <h2 className={styles.title}>{product.name}</h2>
@@ -279,15 +326,36 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
               ? (product.variants?.length > 1)
               : product.variants?.some((v) => v.extra_price > 0))
               ? `Desde ${product.currency} ${formatted(lowestPrice)}`
-              : `${product.currency} ${formatted(product.price)}`}
+              : `${displayCurrency} ${formatted(displayPrice)}`}
           </div>
+ 
+          {hasAltCurrencies && (
+            <div className={styles.pills} style={{ marginBottom: ".5rem" }}>
+              {[product.currency, ...product.alt_prices.map((a) => a.currency)].map((code) => (
+                <button
+                  type="button"
+                  key={code}
+                  className={`${styles.pill} ${selectedCurrency === code ? styles.pillActive : ""}`}
+                  onClick={() => setSelectedCurrency(code)}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
+          )}
+ 
           {product.description && <p className={styles.description}>{product.description}</p>}
           {!product.is_customizable && product.show_quantity && product.quantity > 0 && (
             <div className={styles.stock}>Disponible: <strong>{product.quantity}</strong></div>
           )}
           {product.is_customizable && <div className={styles.stock}>{isSizeType ? "Selecciona un tamaño para ver el precio." : "Selecciona color y talla para ver disponibilidad."}</div>}
           {productLocalities.length > 0 && <div className={styles.stock}>Disponible en: <strong>{productLocalities.join(", ")}</strong></div>}
-
+          {deliversAfterPayment && (
+            <div className={styles.stock}>
+              🚚 Se entrega <strong>{product.delivery_days_after_payment} día{Number(product.delivery_days_after_payment) !== 1 ? "s" : ""}</strong> después de confirmar tu pago.
+            </div>
+          )}
+ 
           <div className={styles.actions}>
             {product.is_available === "available" ? (
               <>
@@ -304,13 +372,13 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           </div>
         </div>
       </div>
-
+ 
       {/* ── Step: formulario de carrito ── */}
       {step === "cart" && (
         <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
           <div className={styles.subModal}>
             <h3>Agregar al carrito</h3>
-
+ 
             {product.is_customizable && isSizeType && (
               <div className={styles.variantGroup}>
                 <div className={styles.variantLabel}>Tamaño *</div>
@@ -329,7 +397,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 )}
               </div>
             )}
-
+ 
             {product.is_customizable && !isSizeType && (
               <>
                 <div className={styles.variantGroup}>
@@ -372,7 +440,43 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 )}
               </>
             )}
-
+ 
+            {customizationFields.length > 0 && (
+              <>
+                {customizationFields.map((cfld) => (
+                  <div className={styles.field} key={cfld.field_id}>
+                    <label>{cfld.label}{cfld.required ? " *" : " (opcional)"}</label>
+                    {cfld.type === "measurement" ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        className={styles.input}
+                        value={customValues[cfld.field_id] || ""}
+                        onChange={(e) => setCustomValue(cfld.field_id, e.target.value)}
+                        placeholder={cfld.unit === "in" ? "Pulgadas" : "Centímetros"}
+                      />
+                    ) : (
+                      <div className={styles.pills}>
+                        {(cfld.options || []).map((opt) => (
+                          <button
+                            type="button"
+                            key={opt.name}
+                            className={`${styles.pill} ${customValues[cfld.field_id] === opt.name ? styles.pillActive : ""}`}
+                            style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}
+                            onClick={() => setCustomValue(cfld.field_id, opt.name)}
+                          >
+                            <span style={{ width: 12, height: 12, borderRadius: "50%", background: opt.hex, display: "inline-block", border: "1px solid rgba(0,0,0,.15)" }} />
+                            {opt.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+ 
             {product.allow_comment && (
               <div className={styles.field}>
                 <label>
@@ -388,7 +492,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 />
               </div>
             )}
-
+ 
             {productLocalities.length > 0 && (
               <div className={styles.field}>
                 <label>Localidad</label>
@@ -403,7 +507,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 />
               </div>
             )}
-
+ 
             {localityConfig && (hasDelivery || hasTakeout) && (
               <div className={styles.field}>
                 <label>Tipo de entrega</label>
@@ -413,7 +517,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                       <input type="radio" name="fulfillment" value="delivery"
                         checked={form.fulfillment_type === "delivery"}
                         onChange={() => set("fulfillment_type", "delivery")} />
-                      <span>🛵 Delivery {Number(localityConfig.delivery_price) > 0 ? `(+${product.currency} ${formatted(localityConfig.delivery_price)})` : "(gratis)"}</span>
+                      <span>🛵 Delivery {deliveryPrice > 0 ? `(+${displayCurrency} ${formatted(deliveryPrice)})` : "(gratis)"}</span>
                     </label>
                     <label className={`${styles.fulfillmentOption} ${form.fulfillment_type === "takeout" ? styles.fulfillmentActive : ""}`}>
                       <input type="radio" name="fulfillment" value="takeout"
@@ -425,13 +529,13 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 ) : (
                   <div className={styles.fulfillmentInfo}>
                     {hasDelivery
-                      ? `🛵 Delivery ${Number(localityConfig.delivery_price) > 0 ? `(+${product.currency} ${formatted(localityConfig.delivery_price)})` : "(gratis)"}`
+                      ? `🛵 Delivery ${deliveryPrice > 0 ? `(+${displayCurrency} ${formatted(deliveryPrice)})` : "(gratis)"}`
                       : "🏪 Recoger en tienda"}
                   </div>
                 )}
               </div>
             )}
-
+ 
             <div className={styles.field}>
               <label>Cantidad {product.show_quantity && !product.is_customizable && <span>({product.quantity} disponibles)</span>}
                 {product.is_customizable && selectedVariant && <span>({selectedVariant.quantity} disponibles)</span>}
@@ -445,21 +549,21 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                   set("quantity", v);
                 }} />
             </div>
-
+ 
             {product.required_delivery_day && (
               <div className={styles.field}>
                 <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })})</span>}</label>
                 <input type="date" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(e) => set("delivery_day", e.target.value)} />
               </div>
             )}
-
+ 
             {product.terms && (
               <div className={styles.terms}>
                 <button type="button" className={styles.termsLink} onClick={() => setShowTerms(true)}>Términos y condiciones</button>
                 <label className={styles.checkbox}><input type="checkbox" checked={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.checked)} /> Acepto</label>
               </div>
             )}
-
+ 
             <div className={styles.subActions}>
               <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(null)}>Cancelar</button>
               <button className={`${styles.btn} ${styles.btnPrimary}`} disabled={!canAdd} onClick={addToCart}>
@@ -469,7 +573,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           </div>
         </div>
       )}
-
+ 
       {/* ── Step: confirmación "agregado" ── */}
       {step === "added" && lastAdded && (
         <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
@@ -482,7 +586,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
               <strong>{lastAdded.qty}×</strong> {lastAdded.name}
               {lastAdded.variantLabel && <span className={styles.addedVariant}> · {lastAdded.variantLabel}</span>}
             </p>
-
+ 
             <div className={styles.addedActions}>
               <button className={`${styles.btn} ${styles.btnGhost}`} onClick={keepShopping}>
                 <ShoppingCart size={16} /> Seguir comprando
@@ -494,7 +598,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           </div>
         </div>
       )}
-
+ 
       {showTerms && (
         <div className={styles.subOverlay} onClick={(e) => { e.stopPropagation(); setShowTerms(false); }}>
           <div className={styles.subModal} onClick={(e) => e.stopPropagation()}>
@@ -507,5 +611,5 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
     </div>
   );
 };
-
+ 
 export default ProductModal;
