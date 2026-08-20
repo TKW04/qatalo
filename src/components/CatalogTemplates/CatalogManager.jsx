@@ -28,6 +28,19 @@ const Templates = {
   accessory: TemplateAccessory,
 };
 
+// Fuente por defecto de cada plantilla (la misma que cada Template*.module.css
+// trae hardcodeada como fallback). Se usa cuando el negocio no eligió una
+// fuente propia, para que TODO lo que viva fuera del template (ej. ProductModal)
+// también reciba la tipografía correcta vía --font-heading/--font-body.
+const TEMPLATE_DEFAULT_FONTS = {
+  default: { heading: `'Roboto', sans-serif`, body: `'Roboto', sans-serif` },
+  fashion: { heading: `'Cormorant Garamond', Georgia, serif`, body: `'Jost', system-ui, sans-serif` },
+  tech: { heading: `ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif`, body: `ui-sans-serif, "SF Pro Display", "Inter var", system-ui, -apple-system, sans-serif` },
+  crafts: { heading: `'Quicksand', system-ui, sans-serif`, body: `'Quicksand', system-ui, sans-serif` },
+  food: { heading: `'Fraunces', Georgia, serif`, body: `'Nunito Sans', system-ui, sans-serif` },
+  accessory: { heading: `'Archivo', system-ui, sans-serif`, body: `'Archivo', system-ui, sans-serif` },
+};
+
 const noop = () => { };
 
 const parsePalette = (raw) => {
@@ -157,11 +170,13 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   const palette = parsePalette(businessData?.themePalette);
 
   // Tipografía: resuelve fuentes integradas (Google) y subidas por el negocio.
-  // Si la key es "default" el family resuelto es "" y NO se setea la variable,
-  // así el template usa su tipografía actual (cero cambios para catálogos existentes).
+  // Si el negocio no eligió fuente propia ("default"), usamos la fuente por
+  // defecto de LA PLANTILLA ACTIVA (no la dejamos sin definir), para que
+  // cualquier elemento fuera del template (ej. ProductModal) también la reciba.
   const builtinFamily = (key) => getFont(key).family;
-  const headingFamily = resolveFontFamily(businessData?.fontHeading, businessData?.custom_fonts, builtinFamily);
-  const bodyFamily = resolveFontFamily(businessData?.fontBody, businessData?.custom_fonts, builtinFamily);
+  const templateDefaults = TEMPLATE_DEFAULT_FONTS[businessData?.templateId] || TEMPLATE_DEFAULT_FONTS.default;
+  const headingFamily = resolveFontFamily(businessData?.fontHeading, businessData?.custom_fonts, builtinFamily) || templateDefaults.heading;
+  const bodyFamily = resolveFontFamily(businessData?.fontBody, businessData?.custom_fonts, builtinFamily) || templateDefaults.body;
   const fontScale = getScaleValue(businessData?.fontScale);
   const logoScale = getLogoScaleValue(businessData?.logoScale);
 
@@ -178,8 +193,8 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
     "--theme-secondary": palette.secondary,
     "--theme-accent": palette.accent,
     "--theme-background": palette.background,
-    ...(headingFamily ? { "--font-heading": headingFamily } : {}),
-    ...(bodyFamily ? { "--font-body": bodyFamily } : {}),
+    "--font-heading": headingFamily,
+    "--font-body": bodyFamily,
     "--font-scale": fontScale,
     "--logo-scale": logoScale,
     ...(searchColor ? { "--custom-search-color": searchColor } : {}),

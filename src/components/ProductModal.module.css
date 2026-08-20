@@ -23,6 +23,7 @@
     grid-template-columns: 1fr 1fr;
     box-sizing: border-box;
     border: 1px solid color-mix(in srgb, var(--theme-primary, #113f67) 12%, transparent);
+    font-family: var(--font-body, inherit);
 }
 
 .close {
@@ -69,6 +70,7 @@
     max-height: 60dvh;
     object-fit: contain;
     margin: 0 auto;
+    border-radius: 12px;
 }
 
 .arrow {
@@ -129,6 +131,7 @@
     font-size: 1.6rem;
     color: var(--theme-primary, #113f67);
     word-break: break-word;
+    font-family: var(--font-heading, inherit);
 }
 
 .price {
@@ -229,6 +232,7 @@
 .subModal h3 {
     margin: 0 0 1rem;
     color: var(--theme-primary, #113f67);
+    font-family: var(--font-heading, inherit);
 }
 
 .field {
@@ -431,6 +435,7 @@
     font-weight: 700;
     color: var(--theme-primary, #113f67);
     margin: 0 0 .5rem;
+    font-family: var(--font-heading, inherit);
 }
 
 .addedDesc {
@@ -475,6 +480,7 @@
     .galleryImg {
         max-height: 40vh;
         max-height: 40dvh;
+        border-radius: 12px;
     }
 
     .body { padding: 1.2rem; }
