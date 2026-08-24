@@ -109,8 +109,13 @@ const RootPanel = () => {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const overview = useQuery({ queryKey: ["root-overview"], queryFn: fetchRootOverview, retry: false });
+  // console.log(overview);
+  
   const businesses = useQuery({ queryKey: ["root-businesses"], queryFn: fetchRootBusinesses, retry: false, enabled: tab === "clients" });
+  
   const suggestions = useQuery({ queryKey: ["root-suggestions"], queryFn: fetchRootSuggestions, retry: false, enabled: tab === "suggestions" });
+  // console.log(suggestions);
+  
 
   const statusM = useMutation({
     mutationFn: updateSuggestionStatus,

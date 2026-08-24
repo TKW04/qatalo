@@ -1,6 +1,6 @@
 /* El panel no depende del fondo del admin: trae su propio contenedor claro */
 .wrap {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   background: #f6f7f9;
   border-radius: 16px;
