@@ -189,7 +189,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
       if (minDay && toISO(form.delivery_day) < minDay) {
         return showWarning(
           "Fecha inválida",
-          `La fecha de entrega no puede ser anterior al ${new Date(product.delivery_start_day).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}.`
+          `La fecha de entrega no puede ser anterior al ${fmtDeliveryStart(product.delivery_start_day)}.`
         );
       }
     }
@@ -575,7 +575,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                       <input type="radio" name="fulfillment" value="delivery"
                         checked={form.fulfillment_type === "delivery"}
                         onChange={() => set("fulfillment_type", "delivery")} />
-                      <span className={styles.fulfillmentText}><Bike size={16} aria-hidden="true" /> Delivery {deliveryPrice > 0 ? `(+${sym(displayCurrency)} ${formatted(deliveryPrice)})` : "(gratis)"}</span>
+                      <span className={styles.fulfillmentText}><Bike size={16} aria-hidden="true" /> A domicilio {deliveryPrice > 0 ? `(+${sym(displayCurrency)} ${formatted(deliveryPrice)})` : "(gratis)"}</span>
                     </label>
                     <label className={`${styles.fulfillmentOption} ${form.fulfillment_type === "takeout" ? styles.fulfillmentActive : ""}`}>
                       <input type="radio" name="fulfillment" value="takeout"
@@ -587,7 +587,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                 ) : (
                   <div className={styles.fulfillmentInfo}>
                     {hasDelivery
-                      ? <><Bike size={16} aria-hidden="true" /> {`Delivery ${deliveryPrice > 0 ? `(+${sym(displayCurrency)} ${formatted(deliveryPrice)})` : "(gratis)"}`}</>
+                      ? <><Bike size={16} aria-hidden="true" /> {`A domicilio ${deliveryPrice > 0 ? `(+${sym(displayCurrency)} ${formatted(deliveryPrice)})` : "(gratis)"}`}</>
                       : <><Store size={16} aria-hidden="true" /> Recoger en tienda</>}
                   </div>
                 )}

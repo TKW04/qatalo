@@ -1,4 +1,4 @@
-import { formatDate } from "../../helpers/utils";
+import { Link } from "react-router-dom";
 import styles from "./TermsAndConditions.module.css";
 import Navbar from "../Navbar";
 import Footer from "../../components/Footer";
@@ -23,7 +23,7 @@ const TermsAndConditions = () => {
             <h1 className={styles.title}>Términos de Servicio</h1>
 
             <p>
-              Última actualización: <strong>[{formatDate(new Date())}]</strong>. Bienvenido a
+              Última actualización: <strong>7 de octubre de 2026</strong>. Bienvenido a
               Qatalo.online. Al acceder y utilizar nuestra plataforma, aceptas
               cumplir con los presentes Términos de Servicio. Si no estás de
               acuerdo con ellos, te recomendamos no utilizar nuestros servicios.
@@ -80,31 +80,38 @@ const TermsAndConditions = () => {
               <li>No se realizarán reembolsos salvo que la legislación aplicable lo exija.</li>
             </ul>
 
-            <h2>8. Enlaces a Terceros</h2>
+            <h2>8. Eliminación de Cuenta</h2>
+            <ul>
+              <li>El usuario puede eliminar su cuenta en cualquier momento desde la app de iOS (Ajustes &gt; Eliminar cuenta) o escribiendo a <strong>info@qatalo.online</strong>.</li>
+              <li>Al eliminarla, el catálogo se desactiva de inmediato y la suscripción se cancela, sin reembolso del periodo en curso.</li>
+              <li>Los datos de la cuenta se eliminan en un plazo máximo de 30 días, salvo los comprobantes fiscales que deban conservarse por obligación legal, según se detalla en la <Link to="/privacypolicy">Política de Privacidad</Link>.</li>
+            </ul>
+
+            <h2>9. Enlaces a Terceros</h2>
             <p>
               La plataforma puede contener enlaces a sitios externos.
               Qatalo.online no controla ni asume responsabilidad por el contenido
               o prácticas de dichos sitios.
             </p>
 
-            <h2>9. Modificaciones</h2>
+            <h2>10. Modificaciones</h2>
             <p>
               Qatalo.online podrá modificar los presentes Términos de Servicio en
               cualquier momento. Los cambios se publicarán en esta página y
               entrarán en vigor inmediatamente después de su publicación.
             </p>
 
-            <h2>10. Legislación Aplicable</h2>
+            <h2>11. Legislación Aplicable</h2>
             <p>
               Estos Términos de Servicio se regirán por las leyes de la República
               Dominicana. Cualquier disputa se someterá a los tribunales
               competentes de Santo Domingo.
             </p>
 
-            <h2>11. Contacto</h2>
+            <h2>12. Contacto</h2>
             <p>
               Si tienes preguntas sobre estos Términos de Servicio, puedes
-              escribirnos a: <strong>correo@qatalo.online</strong>
+              escribirnos a: <strong>info@qatalo.online</strong>
             </p>
           </div>
         </div>

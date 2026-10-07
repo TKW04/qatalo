@@ -25,7 +25,10 @@ export const getStatusStyle = (status) => {
 
 export const formatDate = (dateString) => {
   const options = { year: "numeric", month: "2-digit", day: "2-digit" };
-  return new Date(dateString).toLocaleDateString("es-ES", options);
+  // "YYYY-MM-DD" se parsea como fecha local (new Date("YYYY-MM-DD") es UTC y en RD muestra el día anterior)
+  const m = typeof dateString === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString.trim());
+  const date = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(dateString);
+  return date.toLocaleDateString("es-ES", options);
 };
 export const formatTextDate = (dateString) => {
   const dates = dateString.split("/");

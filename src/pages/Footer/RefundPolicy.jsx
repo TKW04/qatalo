@@ -1,4 +1,3 @@
-import { formatDate } from "../../helpers/utils";
 import Navbar from "../Navbar";
 import Footer from "../../components/Footer";
 import styles from "./TermsAndConditions.module.css";
@@ -23,7 +22,7 @@ const RefundPolicy = () => {
             <h1 className={styles.title}>Política de Reembolso</h1>
             
             <p>
-              Última actualización: <strong>[{formatDate(new Date())}]</strong>
+              Última actualización: <strong>7 de octubre de 2026</strong>
             </p>
             <p>
               En <strong>qatalo.online</strong> buscamos ofrecerte un servicio confiable y

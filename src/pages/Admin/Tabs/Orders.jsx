@@ -21,7 +21,7 @@ import { isOfferApplicable, calcDiscount, distributeDiscount } from "../../../he
 import Select from "../../../components/Select";
 import { Bike, Store, CalendarDays, Clock, AlertTriangle, Siren, Pencil, Gift, Receipt, Truck, MapPin, MessageSquare, Ruler, FileText, X, ClipboardList, SearchX } from "lucide-react";
 import { PageHeader, StatusBadge, OrderStepper, SkeletonList, EmptyState, Button } from "../../../components/admin";
-import DatePicker from "../../../components/DatePicker";
+import DatePicker, { parseLocalDateTime } from "../../../components/DatePicker";
 import styles from "./Orders.module.css";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -125,8 +125,8 @@ const DeliveryIcon = ({ type }) => {
 };
 
 const formatDate = (s) => {
-  if (!s) return "—";
-  const d = new Date(s);
+  const d = parseLocalDateTime(s);
+  if (!d) return s ? String(s) : "—";
   const tod = new Date(); tod.setHours(0, 0, 0, 0);
   const yest = new Date(tod); yest.setDate(yest.getDate() - 1);
   const time = d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
@@ -598,7 +598,7 @@ const Orders = () => {
                     <span className={styles.orderProducts}>{preview || "—"}</span>
                     {(hasDelivery || hasTakeout || locality) && (
                       <span className={styles.orderFulfillment}>
-                        {hasDelivery ? <><Bike size={14} aria-hidden="true" /> Delivery</> : hasTakeout ? <><Store size={14} aria-hidden="true" /> Take out</> : ""}
+                        {hasDelivery ? <><Bike size={14} aria-hidden="true" /> A domicilio</> : hasTakeout ? <><Store size={14} aria-hidden="true" /> Recoger en tienda</> : ""}
                         {locality ? ` · ${locality}` : ""}
                       </span>
                     )}
@@ -722,7 +722,7 @@ const Orders = () => {
                         x{t.quantity} · {cur} {formatted(t.price)} c/u
                         {t.fulfillment_type && (
                           <span style={{ marginLeft: ".4rem" }}>
-                            {t.fulfillment_type === "delivery" ? <Bike size={14} aria-label="Delivery" /> : <Store size={14} aria-label="Take out" />}
+                            {t.fulfillment_type === "delivery" ? <Bike size={14} aria-label="A domicilio" /> : <Store size={14} aria-label="Recoger en tienda" />}
                           </span>
                         )}
                       </div>
@@ -806,7 +806,7 @@ const Orders = () => {
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Totales</div>
                 <div className={styles.row}><span>Subtotal</span><strong>{cur} {formatted(subtotal)}</strong></div>
-                {deliveryAmt > 0 && <div className={styles.row}><span className={styles.iconLabel}><Bike size={14} aria-hidden="true" /> Delivery</span><strong>{cur} {formatted(deliveryAmt)}</strong></div>}
+                {deliveryAmt > 0 && <div className={styles.row}><span className={styles.iconLabel}><Bike size={14} aria-hidden="true" /> Envío</span><strong>{cur} {formatted(deliveryAmt)}</strong></div>}
                 {discountAmt > 0 && <div className={styles.row} style={{ color: "var(--color-success-fg)" }}><span className={styles.iconLabel}><Gift size={14} aria-hidden="true" /> Descuento</span><strong>− {cur} {formatted(discountAmt)}</strong></div>}
                 <div className={styles.row} style={{ fontWeight: 800, borderTop: "1px solid var(--color-line-strong)", paddingTop: ".5rem", marginTop: ".25rem" }}>
                   <span>Total</span><strong>{cur} {formatted(total)}</strong>

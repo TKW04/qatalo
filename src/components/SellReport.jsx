@@ -7,7 +7,7 @@ import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
 import styles from "./SellReport.module.css";
 import Select from "./Select";
-import DatePicker from "./DatePicker";
+import DatePicker, { parseISODate } from "./DatePicker";
 import { Download } from "lucide-react";
 import { Button, StatusBadge, statusColor, useChartAnimation, useAnimatedNumber, SortableHeader, useSortableData } from "./admin";
 
@@ -306,7 +306,7 @@ const SellReport = ({ customers = [] }) => {
                   <td>{symbol(r.currency)} {formatted(r.total)}</td>
                   <td><StatusBadge status={r.status} /></td>
                   {hasLocalities && <td>{r.locality || NO_LOC}</td>}
-                  <td>{new Date(r.date).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
+                  <td>{parseISODate(r.date)?.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) ?? "—"}</td>
                   <td>{r.offer_code || r.offer_name || "—"}</td>
                   <td className={(r.discount_amount || 0) > 0 ? styles.positive : undefined}>
                     {(r.discount_amount || 0) > 0 ? `− ${symbol(r.currency)} ${formatted(r.discount_amount)}` : "—"}

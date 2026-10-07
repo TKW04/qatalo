@@ -314,8 +314,8 @@ const CartDrawer = ({
                         {it.fulfillment_type && (
                           <div className={styles.fulfillmentTag}>
                             {it.fulfillment_type === "delivery"
-                              ? <><Bike size={12} aria-hidden="true" /> Delivery</>
-                              : <><Store size={12} aria-hidden="true" /> Take out</>}
+                              ? <><Bike size={12} aria-hidden="true" /> A domicilio</>
+                              : <><Store size={12} aria-hidden="true" /> Recoger en tienda</>}
                             {it.delivery_price > 0 && ` (+${cur} ${formatted(it.delivery_price)})`}
                           </div>
                         )}
@@ -370,7 +370,7 @@ const CartDrawer = ({
                   </div>
                 )}
                 {deliverySubtotal > 0 && (
-                  <div className={styles.cartTotal}><span><Bike size={16} aria-hidden="true" /> Delivery</span><strong>{cur} {formatted(deliverySubtotal)}</strong></div>
+                  <div className={styles.cartTotal}><span><Bike size={16} aria-hidden="true" /> Envío</span><strong>{cur} {formatted(deliverySubtotal)}</strong></div>
                 )}
                 <div className={`${styles.cartTotal} ${styles.grandTotal}`}>
                   <span><strong>Total</strong></span><strong>{cur} {formatted(total)}</strong>

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
 import { buildCustomerReport, fmtDate, timeAgo } from "../helpers/customerReport";
+import { parseLocalDateTime } from "./DatePicker/dateUtils";
 import styles from "./SellReport.module.css";
 import Select from "./Select";
 import { Download } from "lucide-react";
@@ -76,7 +77,7 @@ const CustomerReport = ({ customers = [] }) => {
     const now = Date.now();
     const inactive = rows.filter((r) => {
       if (!r.last_sale) return true;
-      const d = new Date(r.last_sale).getTime();
+      const d = parseLocalDateTime(r.last_sale)?.getTime() ?? NaN;
       return isNaN(d) || (now - d) / 86400000 > 60;
     }).length;
     return { total, withPurchase, ltvByCur, inactive };

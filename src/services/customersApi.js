@@ -88,7 +88,7 @@ export const addTransaction = async (customerId, t) => {
     body: JSON.stringify({
       customer_id: customerId, delivery_day: t.delivery_day, price: t.price,
       quantity: t.quantity, product_id: t.product_id, product_name: t.product_name,
-      payment_method: t.payment_method,
+      payment_method: t.payment_method, locality: t.locality,
     }),
   });
   return handle(res);
@@ -100,7 +100,7 @@ export const updateTransaction = async (customerId, t) => {
     body: JSON.stringify({
       customer_id: customerId, transaction_id: t.transaction_id, delivery_day: t.delivery_day,
       price: t.price, quantity: t.quantity, product_id: t.product_id,
-      product_name: t.product_name, payment_method: t.payment_method,
+      product_name: t.product_name, payment_method: t.payment_method, locality: t.locality,
     }),
   });
   return handle(res);

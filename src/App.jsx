@@ -15,6 +15,7 @@ import ResetPassword from "./pages/User/ResetPassword";
 import TermsAndConditions from "./pages/Footer/TermsAndConditions";
 import PrivacyNotice from "./pages/Footer/PrivacyNotice";
 import RefundPolicy from "./pages/Footer/RefundPolicy";
+import Support from "./pages/Footer/Support";
 import { NotificationProvider } from "./components/UI/NotificationProvider";
 import NotFoundPage from "./pages/NotFoundPage";
 import RootPanel from "./pages/Root/RootPanel";
@@ -45,6 +46,7 @@ function App() {
             element={<PrivacyNotice />}
           />
           <Route path="/refundpolicy" element={<RefundPolicy />} />
+          <Route path="/soporte" element={<Support />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/register" element={<Register />} />

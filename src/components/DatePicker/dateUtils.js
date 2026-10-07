@@ -21,6 +21,21 @@ export const parseISODate = (value) => {
   return date;
 };
 
+/**
+ * Fecha/hora del backend → Date LOCAL o null.
+ *  - "YYYY-MM-DD" (solo día) → medianoche local (no UTC: evita el "día anterior" en RD).
+ *  - "YYYY-MM-DD HH:MM[:SS]" sin zona → hora local (el espacio se normaliza a "T"; Safari no acepta el espacio).
+ *  - ISO con zona (Z / ±HH:MM) o Date → tal cual.
+ */
+export const parseLocalDateTime = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const s = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return parseISODate(s);
+  const d = new Date(/^\d{4}-\d{2}-\d{2} \d/.test(s) ? s.replace(" ", "T") : s);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
 const pad = (n) => String(n).padStart(2, "0");
 
 /** Date local → "YYYY-MM-DD". */

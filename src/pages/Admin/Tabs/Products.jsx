@@ -269,7 +269,7 @@ const Products = () => {
     for (const loc of (form.localities || [])) {
       const cfg = getLocalityConfig(loc);
       if (!cfg.delivery && !cfg.takeout) {
-        err.locality_config = `"${loc}" debe tener al menos Delivery o Take out activado.`;
+        err.locality_config = `"${loc}" debe tener al menos A domicilio o Recoger en tienda activado.`;
         break;
       }
     }
@@ -696,7 +696,7 @@ const Products = () => {
                             <label className={styles.localityOption}>
                               <input type="checkbox" checked={!!cfg.delivery}
                                 onChange={(e) => updateLocalityConfig(loc, "delivery", e.target.checked)} />
-                              <Bike size={16} aria-hidden="true" /> Delivery
+                              <Bike size={16} aria-hidden="true" /> A domicilio
                             </label>
                             {cfg.delivery && (
                               <>
@@ -728,7 +728,7 @@ const Products = () => {
                             <label className={styles.localityOption}>
                               <input type="checkbox" checked={!!cfg.takeout}
                                 onChange={(e) => updateLocalityConfig(loc, "takeout", e.target.checked)} />
-                              <Store size={16} aria-hidden="true" /> Take out
+                              <Store size={16} aria-hidden="true" /> Recoger en tienda
                             </label>
                           </div>
                         </div>
@@ -1281,8 +1281,8 @@ const Products = () => {
                   {p.allow_comment && <span className={`${styles.variantCount} ${styles.iconText}`}><PenLine size={14} aria-hidden="true" /> Acepta personalización</span>}
                   {(p.locality_config || []).length > 0 && (
                     <span className={`${styles.deliveryBadge} ${styles.iconText}`}>
-                      {p.locality_config.some(c => c.delivery) && <><Bike size={14} aria-hidden="true" /> Delivery</>}
-                      {p.locality_config.some(c => c.takeout) && <><Store size={14} aria-hidden="true" /> Take out</>}
+                      {p.locality_config.some(c => c.delivery) && <><Bike size={14} aria-hidden="true" /> A domicilio</>}
+                      {p.locality_config.some(c => c.takeout) && <><Store size={14} aria-hidden="true" /> Recoger en tienda</>}
                     </span>
                   )}
                 </div>
@@ -1338,11 +1338,11 @@ const Products = () => {
                         <strong>{cfg.locality}:</strong>
                         {cfg.delivery && (
                           <span className={styles.iconText}>
-                            <Bike size={14} aria-hidden="true" /> Delivery{cfg.delivery_price > 0 ? ` (+${curSymbol(viewing.currency)}${formatted(cfg.delivery_price)})` : " (gratis)"}
+                            <Bike size={14} aria-hidden="true" /> A domicilio{cfg.delivery_price > 0 ? ` (+${curSymbol(viewing.currency)}${formatted(cfg.delivery_price)})` : " (gratis)"}
                           </span>
                         )}
                         {cfg.takeout && (
-                          <span className={styles.iconText}><Store size={14} aria-hidden="true" /> Take out</span>
+                          <span className={styles.iconText}><Store size={14} aria-hidden="true" /> Recoger en tienda</span>
                         )}
                       </span>
                     ))}

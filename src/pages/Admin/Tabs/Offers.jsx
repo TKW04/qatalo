@@ -11,7 +11,7 @@ import { fetchOffers, createOffer, updateOffer, deleteOffer } from "../../../ser
 import { PageHeader, Button, IconButton, Modal, EmptyState, SkeletonForm, SkeletonList } from "../../../components/admin";
 import styles from "./Offers.module.css";
 import Select from "../../../components/Select";
-import DatePicker from "../../../components/DatePicker";
+import DatePicker, { toISODate } from "../../../components/DatePicker";
 
 const emptyForm = {
   offer_id: "", name: "", description: "", is_active: true,
@@ -40,7 +40,7 @@ const Toggle = ({ checked, onChange, label }) => (
 );
 
 const offerStatus = (o) => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toISODate(new Date()); // fecha LOCAL (toISOString es UTC: tras las 8 p. m. en RD daba mañana)
   if (!o.is_active) return "inactive";
   if (o.valid_until && o.valid_until < today) return "expired";
   if (o.max_uses !== null && o.uses_count >= o.max_uses) return "exhausted";

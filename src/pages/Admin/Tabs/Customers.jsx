@@ -511,7 +511,7 @@ const Customers = () => {
                 <li><span>Cantidad</span><strong>{tx.quantity}</strong></li>
                 <li><span>Precio</span><strong>{cur} {formatted(tx.price)}</strong></li>
                 {Number(tx.delivery_price) > 0 && (
-                  <li><span className={styles.detailIcon}><Bike size={16} aria-hidden="true" /> Delivery</span><strong>{cur} {formatted(tx.delivery_price)}</strong></li>
+                  <li><span className={styles.detailIcon}><Bike size={16} aria-hidden="true" /> Envío</span><strong>{cur} {formatted(tx.delivery_price)}</strong></li>
                 )}
                 {Number(tx.discount_amount) > 0 && (
                   <li><span className={styles.detailIcon}><Gift size={16} aria-hidden="true" /> Descuento</span><strong className={styles.positive}>− {cur} {formatted(tx.discount_amount)}</strong></li>

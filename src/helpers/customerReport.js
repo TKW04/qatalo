@@ -2,6 +2,8 @@
 // Entrada: array de customers (cada uno con create_date y transactions[]).
 // Salida: filas con antigüedad, última venta, producto favorito, LTV por moneda y # de órdenes.
 
+import { parseLocalDateTime } from "../components/DatePicker/dateUtils";
+
 const PAID_STATUSES = new Set(["Aprobada", "Entregada"]);
 
 const countOrders = (txs) => {
@@ -77,16 +79,16 @@ export const buildCustomerReport = (customers = []) => {
 // Formatea fecha ISO a legible corto (es-DO). Devuelve "—" si vacío.
 export const fmtDate = (iso) => {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d)) return "—";
+  const d = parseLocalDateTime(iso);
+  if (!d) return "—";
   return d.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
 };
 
 // "Hace X días/meses" a partir de una fecha ISO.
 export const timeAgo = (iso) => {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d)) return "—";
+  const d = parseLocalDateTime(iso);
+  if (!d) return "—";
   const days = Math.floor((Date.now() - d.getTime()) / 86400000);
   if (days <= 0) return "hoy";
   if (days === 1) return "ayer";
