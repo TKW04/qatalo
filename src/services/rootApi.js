@@ -1,15 +1,50 @@
-import { getToken } from "../helpers/token";
+import { getToken, setToken, isNotValidToken } from "../helpers/token";
+import { getCurrentSession } from "./authenticate";
+import userpoolMerchants from "./userpoolMerchants";
 
 const API_URL = import.meta.env.VITE_APP_API_URL;
 
+// El idToken de Cognito dura 1 h y solo AdminDashboard lo renovaba al montar.
+// Aquí lo renovamos antes de llamar (si expiró) y una vez más ante un 401.
+// Las 3 queries del panel salen en paralelo: compartimos la misma promesa.
+let refreshing = null;
+const refreshToken = () => {
+  if (!refreshing) {
+    refreshing = getCurrentSession(userpoolMerchants)
+      .then((session) => {
+        const token = session.getIdToken().getJwtToken();
+        setToken(token);
+        return token;
+      })
+      .finally(() => { refreshing = null; });
+  }
+  return refreshing;
+};
+
+const validToken = async () => {
+  if (!isNotValidToken()) return getToken();
+  try { return await refreshToken(); } catch { return getToken(); }
+};
+
+const httpError = (message, status) => Object.assign(new Error(message), { status });
+
+// fetch autenticado: token vigente + un reintento tras renovar sesión si hay 401
+const authFetch = async (endpoint, init = {}) => {
+  const send = (token) =>
+    fetch(`${API_URL}${endpoint}`, { ...init, headers: { ...init.headers, Authorization: token } });
+  let response = await send(await validToken());
+  if (response.status === 401) {
+    const fresh = await refreshToken().catch(() => null);
+    if (fresh) response = await send(fresh);
+  }
+  return response;
+};
+
 const authGet = async (endpoint) => {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    method: "GET",
-    headers: { Authorization: getToken() },
-  });
-  if (response.status === 403) throw new Error("Acceso restringido");
-  if (response.status === 401) throw new Error("Sesión inválida o expirada");
-  if (!response.ok) throw new Error("No se pudo cargar la información");
+  const response = await authFetch(endpoint, { method: "GET" });
+  if (response.status === 403) throw httpError("Acceso restringido", 403);
+  if (response.status === 401) throw httpError("Sesión inválida o expirada", 401);
+  if (!response.ok) throw httpError("No se pudo cargar la información", response.status);
   return await response.json();
 };
 
@@ -24,9 +59,9 @@ export const fetchRootSuggestions = () => authGet("root/suggestions");
 
 /** Cambia el estado y/o notas internas de una sugerencia */
 export const updateSuggestionStatus = async ({ suggestion_id, status, admin_notes }) => {
-  const response = await fetch(`${API_URL}root/suggestions/status`, {
+  const response = await authFetch("root/suggestions/status", {
     method: "POST",
-    headers: { Authorization: getToken(), "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ suggestion_id, status, admin_notes }),
   });
   if (!response.ok) {

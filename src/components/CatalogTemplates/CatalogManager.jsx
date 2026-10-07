@@ -17,6 +17,9 @@ import { loadCustomFonts, resolveFontFamily, isCustomKey } from "../../helpers/c
 import { effectiveHours, getHoursStatus } from "../../helpers/businessHours";
 import { applyStockSetting } from "../../helpers/productSettings";
 import portal from "./CustomerPortal.module.css";
+import shared from "./catalogShared.module.css";
+import { themeVars } from "./catalogTheme";
+import { ShoppingCart } from "lucide-react";
 import Select from "../Select";
 
 const Templates = {
@@ -188,7 +191,11 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   const descColor = cs.modal_desc_color || "";
   const descSizePx = resolveTextSizePx(cs.modal_desc_size_mode, cs.modal_desc_size_px);
 
+  // Esquema claro/oscuro + texto legible sobre primario/acento (por luminancia)
+  const { scheme, vars: contrastVars } = themeVars(palette);
+
   const themeStyles = {
+    ...contrastVars,
     "--theme-primary": palette.primary,
     "--theme-secondary": palette.secondary,
     "--theme-accent": palette.accent,
@@ -263,41 +270,21 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
   const hasLocalityOverrides = Object.values(businessData?.locality_hours || {}).some((v) => v && v.enabled);
   // En "Todas" con overrides no bloqueamos (no sabemos su zona); sí informamos.
   const blockOrdering = hoursStatus.blocking && !(selectedLocality === "all" && hasLocalityOverrides);
-  const hoursColors = {
-    open: { bg: "#D1FAE5", color: "#065F46" },
-    closing_soon: { bg: "#FEF3C7", color: "#92400E" },
-    closed: { bg: "#FEE4E2", color: "#B42318" },
-  };
-  const hc = hoursColors[hoursStatus.level] || hoursColors.open;
-
   return (
-    <div style={{ ...themeStyles, width: "100%", minHeight: "100%" }}>
+    <div className={shared.themeRoot} data-scheme={scheme} style={themeStyles}>
       {hoursStatus.enabled && (
-        <div style={{
-          background: hc.bg, color: hc.color,
-          padding: ".6rem 1rem", display: "flex", justifyContent: "center",
-          alignItems: "center", gap: ".5rem", fontSize: ".9rem", fontWeight: 600,
-          textAlign: "center", flexWrap: "wrap",
-        }}>
-          <span style={{
-            width: 9, height: 9, borderRadius: "50%", flexShrink: 0,
-            background: hoursStatus.level === "open" ? "#10B981" : hoursStatus.level === "closing_soon" ? "#F59E0B" : "#EF4444",
-          }} />
+        <div className={shared.hoursBar} data-level={hoursStatus.level} role="status">
+          <span className={shared.hoursDot} aria-hidden="true" />
           <span>{hoursStatus.message}</span>
           {selectedLocality === "all" && hasLocalityOverrides && (
-            <span style={{ fontWeight: 500, opacity: .85 }}>· elige tu localidad para ver su horario</span>
+            <span className={shared.hoursHint}>· elige tu localidad para ver su horario</span>
           )}
         </div>
       )}
 
       {localityOptions.length > 0 && (
-        <div style={{
-          background: "var(--theme-background, #f7fafc)",
-          padding: ".75rem 1rem",
-          display: "flex", justifyContent: "center", alignItems: "center", gap: ".6rem",
-          borderBottom: "1px solid rgba(0,0,0,.06)",
-        }}>
-          <span style={{ fontSize: ".9rem", color: "var(--theme-secondary, #2d3e50)", fontWeight: 600 }}>Localidad:</span>
+        <div className={shared.localityBar}>
+          <span className={shared.localityLabel}>Localidad:</span>
           <Select
             value={selectedLocality}
             onChange={(e) => setSelectedLocality(e)}
@@ -357,9 +344,15 @@ const CatalogManager = ({ businessData, products = [], categories: categoriesPro
 
       {!isPreview && businessId && (
         <>
-          <button className={portal.fab} onClick={openOrders}>Mis órdenes</button>
-          <button className={portal.fabCart} onClick={openCart}>
-            🛒{cartCnt > 0 && <span className={portal.fabBadge}>{cartCnt}</span>}
+          <button type="button" className={portal.fab} onClick={openOrders}>Mis órdenes</button>
+          <button
+            type="button"
+            className={portal.fabCart}
+            onClick={openCart}
+            aria-label={cartCnt > 0 ? `Abrir carrito, ${cartCnt} producto${cartCnt !== 1 ? "s" : ""}` : "Abrir carrito"}
+          >
+            <ShoppingCart size={24} strokeWidth={2} aria-hidden="true" />
+            {cartCnt > 0 && <span className={portal.fabBadge} aria-hidden="true">{cartCnt}</span>}
           </button>
 
           {authOpen && (

@@ -1,86 +1,150 @@
 .nav {
-  background: var(--color-navy);
-  border-bottom: 1px solid var(--color-yellow);
-  width: 100%;
-  box-shadow: var(--shadow);
   position: sticky;
   top: 0;
   z-index: 50;
-}
-.logo {
-  display: block;
-  height: 150px;
-  width: auto;
-  margin-top: 20px;
+  width: 100%;
+  background: var(--color-brand);
+  box-shadow: 0 1px 0 rgba(253, 245, 170, 0.18), 0 6px 18px -10px rgba(14, 42, 68, 0.6);
+  font-family: var(--font-ui);
 }
 
 .navWrap {
+  position: relative; /* contexto para el menú móvil */
+  max-width: var(--max-width);
+  height: 64px;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 0 var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative; /* contexto para el menú móvil */
+  gap: var(--space-4);
 }
 
 .navBrand {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  margin-left: calc(-1 * var(--space-4));
+  border-radius: var(--radius-control);
+}
+
+/* El PNG trae mucho aire: se recorta al área del logotipo */
+.logo {
+  display: block;
+  width: 88px;
+  height: 56px;
+  object-fit: cover;
+  object-position: center 52%;
 }
 
 .navMenu {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-5);
 }
 
 .navLink {
-  color: white;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-on-brand);
   text-decoration: none;
-  font-weight: 700;
-  font-size: 1rem;
-  text-wrap: nowrap;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-base);
+  white-space: nowrap;
+  border-radius: var(--radius-control);
 }
 
-.navLink:hover {
-  color: var(--color-yellow);
+.navLink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--color-highlight);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
-/* Botón hamburguesa: oculto por defecto en desktop */
+@media (hover: hover) and (pointer: fine) {
+  .navLink:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+.navLink:focus-visible,
+.navCta:focus-visible,
+.navBrand:focus-visible,
+.navToggle:focus-visible {
+  outline: 2px solid var(--color-highlight);
+  outline-offset: 3px;
+}
+
+.navCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-highlight);
+  color: var(--color-on-highlight);
+  font-weight: var(--fw-heavy);
+  font-size: var(--fs-base);
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: inset 0 -2px 0 rgba(17, 63, 103, 0.12);
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+.navCta:active {
+  transform: scale(0.97);
+}
+
+/* Botón hamburguesa: oculto en escritorio */
 .navToggle {
   display: none;
 }
 
-/* Las barritas del icono */
 .navBar {
   display: block;
-  width: 24px;
+  width: 22px;
   height: 2px;
-  background: white;
+  background: var(--color-on-brand);
   border-radius: 2px;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
 }
 
 /* ========================= */
-/* Estilos móvil (≤ 760px)   */
+/* Móvil (≤ 960px)           */
 /* ========================= */
-@media (max-width: 760px) {
+@media (max-width: 960px) {
   .navToggle {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 5px;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     background: transparent;
-    border: 1px solid white;
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--radius-control);
     cursor: pointer;
-    z-index: 60;
+    transition: transform var(--dur-press) var(--ease-out);
   }
 
-  /* Animación a "X" cuando está abierto */
+  .navToggle:active {
+    transform: scale(0.97);
+  }
+
   .navToggle.isActive .navBar:nth-child(1) {
     transform: translateY(7px) rotate(45deg);
   }
@@ -91,32 +155,53 @@
     transform: translateY(-7px) rotate(-45deg);
   }
 
-  /* Menú desplegable: oculto por defecto */
+  /* Panel desplegable: entra con transform/opacity */
   .navMenu {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
     flex-direction: column;
-    align-items: flex-end;   /* ← antes era flex-start */
-    text-align: right;        /* ← añade esto por si algún elemento lo necesita */
-    gap: 1rem;
-    padding: 16px;
-    background: var(--color-navy);
-    border-top: solid 2px var(--color-yellow);
-    box-shadow: var(--shadow);
+    align-items: stretch;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4) var(--space-5);
+    background: var(--color-brand);
+    border-top: 1px solid rgba(253, 245, 170, 0.25);
+    box-shadow: 0 18px 30px -16px rgba(14, 42, 68, 0.7);
 
-    max-height: 0;
-    overflow: hidden;
     opacity: 0;
+    transform: translateY(-8px);
+    visibility: hidden;
     pointer-events: none;
-    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    transition:
+      opacity var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out),
+      visibility 0s linear var(--dur-fast);
   }
 
-  /* Menú visible al abrir */
   .navMenu.isOpen {
-    max-height: 500px;
     opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
     pointer-events: auto;
+    transition:
+      opacity var(--dur-base) var(--ease-out),
+      transform var(--dur-base) var(--ease-out),
+      visibility 0s;
+  }
+
+  .navLink {
+    min-height: 48px;
+    padding: 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+
+  .navLink::after {
+    display: none;
+  }
+
+  .navCta {
+    margin-top: var(--space-3);
+    min-height: 48px;
   }
 }

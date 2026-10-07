@@ -6,10 +6,11 @@
 
 .page {
   /* Mapeo para que escuche a tu Theme Manager */
-  --bg-color: var(--theme-background, #ffffff);
-  --primary-color: var(--theme-primary, #111111);
-  --secondary-color: var(--theme-secondary, #444444);
-  --accent-color: var(--theme-accent, #cda434);
+  /* Contrato --cat-* (catalogShared.module.css), derivado de la paleta del negocio */
+  --bg-color: var(--cat-bg);
+  --primary-color: var(--cat-primary);
+  --secondary-color: var(--cat-text);
+  --accent-color: var(--cat-accent);
 
   background: var(--bg-color);
   color: var(--secondary-color);
@@ -21,7 +22,7 @@
 }
 
 .header {
-  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 14%, transparent);
+  border-bottom: 1px solid var(--cat-border);
   padding-bottom: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -61,26 +62,26 @@
   font-size: calc(0.85rem * var(--font-scale, 1));
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  color: var(--cat-text-muted);
 }
 
 .shareBtn {
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--secondary-color) 20%, transparent);
+  border: 1px solid var(--cat-border);
   color: var(--primary-color);
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 
-.shareBtn:hover {
-  background: var(--primary-color);
-  color: var(--bg-color);
+.shareBtn:active {
+  transform: scale(0.97);
 }
 
 /* --- CONTROLES DE BÚSQUEDA Y FILTROS MINIMALISTAS --- */
@@ -93,9 +94,14 @@
 .searchBox {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary-color) 30%, var(--bg-color));
   padding-bottom: 0.5rem;
   max-width: 300px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.searchBox:focus-within {
+  border-bottom-color: var(--cat-focus);
 }
 
 .searchIcon {
@@ -111,10 +117,11 @@
   font-size: var(--custom-search-size, calc(0.9rem * var(--font-scale, 1)));
   color: var(--custom-search-color, var(--primary-color));
   outline: none;
+  appearance: none;
 }
 
 .searchInput::placeholder {
-  color: var(--custom-search-color, color-mix(in srgb, var(--secondary-color) 50%, transparent));
+  color: var(--custom-search-color, var(--cat-text-muted));
 }
 
 .categoryNav {
@@ -123,6 +130,7 @@
   overflow-x: auto;
   scrollbar-width: none;
   /* Firefox */
+  padding: 4px 2px 0;
 }
 
 .categoryNav::-webkit-scrollbar {
@@ -138,16 +146,16 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  color: var(--cat-text-muted);
   cursor: pointer;
-  padding: 0 0 0.3rem 0;
+  padding: 0.4rem 0 0.3rem 0;
   white-space: nowrap;
   position: relative;
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 
-.catBtn:hover {
-  color: var(--primary-color);
+.catBtn:active {
+  transform: scale(0.97);
 }
 
 .activeCat {
@@ -173,9 +181,11 @@
 }
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .media {
@@ -184,7 +194,7 @@
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: color-mix(in srgb, var(--secondary-color) 5%, var(--bg-color));
+  background: var(--cat-surface-2);
   border-radius: 4px;
 }
 
@@ -193,26 +203,28 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card:hover .image {
-  transform: scale(1.06);
+  transition: transform 400ms var(--ease-out);
 }
 
 .imagePlaceholder {
   width: 100%;
   height: 100%;
-  background: #f0f0f0;
+  background: var(--cat-surface-2);
 }
 
-.soldOutBadge {
-  position: absolute;
+/* Badges: posición común (estrella izq., "Agotado" der.); aquí solo forma boutique */
+.media .star {
   top: 8px;
   left: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
+  width: 28px;
+  height: 28px;
+}
+
+.media .soldOutBadge {
+  top: 8px;
+  right: 8px;
   font-size: calc(0.65rem * var(--font-scale, 1));
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 0.3rem 0.6rem;
@@ -226,20 +238,17 @@
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 1rem;
-  background: linear-gradient(to top,
-      color-mix(in srgb, var(--secondary-color) 38%, transparent),
-      transparent 45%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.38), transparent 45%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
-.card:hover .overlay {
+.card:has(:focus-visible) .overlay {
   opacity: 1;
 }
 
 .quick {
-  border: none;
-  cursor: pointer;
   font-family: inherit;
   font-size: calc(0.72rem * var(--font-scale, 1));
   font-weight: 600;
@@ -247,13 +256,13 @@
   text-transform: uppercase;
   padding: 0.55rem 1.1rem;
   border-radius: 980px;
-  background: var(--bg-color);
+  background: var(--cat-surface);
   color: var(--secondary-color);
   transform: translateY(6px);
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.card:hover .quick {
+.card:has(:focus-visible) .quick {
   transform: translateY(0);
 }
 
@@ -276,7 +285,7 @@
   margin: 0;
   font-size: calc(0.78rem * var(--font-scale, 1));
   line-height: 1.4;
-  color: color-mix(in srgb, var(--secondary-color) 58%, transparent);
+  color: var(--cat-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   /* white-space: wrap; */
@@ -295,7 +304,7 @@
   align-items: center;
   justify-content: center;
   padding: 4rem 1rem;
-  color: color-mix(in srgb, var(--secondary-color) 40%, transparent);
+  color: var(--cat-text-muted);
   text-align: center;
   font-size: calc(0.9rem * var(--font-scale, 1));
   text-transform: uppercase;
@@ -377,8 +386,10 @@
 }
 
 .collectionCard {
-  border: 1px solid color-mix(in srgb, var(--secondary-color) 14%, transparent);
-  background: var(--bg-color);
+  border: 1px solid var(--cat-border);
+  background: var(--cat-surface);
+  color: inherit;
+  font: inherit;
   border-radius: 4px;
   overflow: hidden;
   text-align: left;
@@ -386,17 +397,16 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.collectionCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--secondary-color) 16%, transparent);
+.collectionCard:active {
+  transform: scale(0.97);
 }
 
 .collectionMedia {
   aspect-ratio: 1 / 1;
-  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-color));
+  background: color-mix(in srgb, var(--primary-color) 8%, var(--cat-surface-2));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -434,23 +444,50 @@
 
 .collectionCount {
   font-size: 0.8rem;
-  color: color-mix(in srgb, var(--secondary-color) 65%, transparent);
+  color: var(--cat-text-muted);
 }
 
-/* ── Estrella de producto destacado ── */
-.featuredStar {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--bg-color, #fff) 85%, transparent);
-  color: var(--accent-color, #e5989b);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--secondary-color, #000) 25%, transparent);
-  backdrop-filter: blur(2px);
+/* ── Interacción ── */
+.shareBtn:focus-visible,
+.catBtn:focus-visible,
+.collectionCard:focus-visible {
+  outline: 2px solid var(--cat-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shareBtn:hover {
+    background: var(--primary-color);
+    color: var(--cat-on-primary);
+  }
+
+  .catBtn:hover {
+    color: var(--primary-color);
+  }
+
+  .card:hover .image {
+    transform: scale(1.04);
+  }
+
+  .card:hover .overlay {
+    opacity: 1;
+  }
+
+  .card:hover .quick {
+    transform: translateY(0);
+  }
+
+  .collectionCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px var(--cat-shadow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .image,
+  .collectionCard:hover,
+  .quick,
+  .card:hover .quick {
+    transform: none;
+  }
 }

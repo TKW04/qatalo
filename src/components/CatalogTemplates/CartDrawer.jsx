@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trash2, Plus, Minus, Check, Tag, X } from "lucide-react";
+import { Trash2, Plus, Minus, Check, Tag, X, Pencil, Ruler, Truck, Bike, Store, Gift, Clock, AlertTriangle, MapPin, MessageCircle } from "lucide-react";
 import { useNotification } from "../UI/NotificationProvider";
 import { fetchPaymentMethodsByBusinessId } from "../../services/paymentMethodsApi";
-import { fetchPublicOffers } from "../../services/offersApi";
+import { fetchPublicOffers, validateOfferCode } from "../../services/offersApi";
 import {
   getCart, setCart, clearCart,
   getValidCustomerSession, getCustomerSession,
@@ -15,6 +15,7 @@ import { currencies, formatted } from "../../helpers/utils";
 import { isOfferApplicable, calcDiscount, pickWinningOffer, distributeDiscount } from "../../helpers/offerEngine";
 import CustomerAuthModal from "./CustomerAuthModal";
 import styles from "./CustomerPortal.module.css";
+import useDialog from "./useDialog";
 
 const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
@@ -52,6 +53,7 @@ const CartDrawer = ({
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [promoInfo, setPromoInfo] = useState("");        // aviso: ya tienes una oferta mejor
+  const [promoChecking, setPromoChecking] = useState(false);
 
   const [stockError, setStockError] = useState(null);
 
@@ -122,18 +124,31 @@ const CartDrawer = ({
   };
 
   // -- Codigo promo --
-  const applyPromoCode = () => {
+  const applyPromoCode = async () => {
     const code = promoCode.trim().toUpperCase();
-    if (!code) return;
-    const offer = availableOffers.find(o => o.trigger === "code" && o.code === code);
-    if (!offer) {
+    if (!code || promoChecking) return;
+    // Los códigos no se publican: se validan uno a uno contra el servidor.
+    setPromoChecking(true);
+    let validated = null;
+    try {
+      validated = await validateOfferCode(businessId, code, items);
+    } finally {
+      setPromoChecking(false);
+    }
+    if (!validated) {
       setPromoError("Código no válido o expirado.");
       return;
     }
+    const offer = { ...validated, trigger: "code", code: validated.code || code };
     if (!isOfferApplicable(offer, items, productsSubtotal)) {
+      const reqs = [];
+      if ((offer.min_order_amount || 0) > 0)
+        reqs.push(`una compra mínima de ${cur} ${formatted(offer.min_order_amount)}`);
+      if ((offer.min_quantity || 0) > 0)
+        reqs.push(`al menos ${offer.min_quantity} unidades`);
       setPromoError(
-        (offer.min_order_amount || 0) > 0
-          ? `Este código requiere un pedido mínimo de ${cur} ${formatted(offer.min_order_amount)}.`
+        reqs.length
+          ? `Este código requiere ${reqs.join(" y ")} en los productos de la oferta.`
           : "Este código no aplica a los productos en tu carrito."
       );
       return;
@@ -249,15 +264,29 @@ const CartDrawer = ({
 
   const showPromoInput = !enteredCode;
 
+  // -- Accesibilidad del cajón (Esc, foco, scroll del body) --
+  // Mientras el modal de acceso está abierto, él maneja Esc/foco (pila de diálogos).
+  const dialogRef = useDialog(onClose);
+  const titleId = useId();
+  const fid = useId();
+
   // -- Render --
   return (
-    <div className={styles.portal} onClick={onClose}>
-      <div className={styles.sheet} onClick={e => e.stopPropagation()}>
-        <button className={styles.close} onClick={onClose} aria-label="Cerrar">×</button>
+    <div className={`${styles.portal} ${styles.drawer}`} onClick={onClose}>
+      <div
+        className={styles.sheet}
+        onClick={e => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+      >
+        <button type="button" className={styles.close} onClick={onClose} aria-label="Cerrar carrito"><X size={20} aria-hidden="true" /></button>
 
         {step === "cart" && (
           <>
-            <h2 className={styles.title}>Tu carrito</h2>
+            <h2 className={styles.title} id={titleId}>Tu carrito</h2>
             {items.length === 0 ? (
               <p className={styles.empty}>Tu carrito está vacío.</p>
             ) : (
@@ -266,25 +295,27 @@ const CartDrawer = ({
                   {items.map((it, i) => (
                     <div key={`${it.product_id}-${i}`} className={styles.cartItem}>
                       {it.image
-                        ? <img src={it.image} alt="" className={styles.cartThumb} />
+                        ? <img src={it.image} alt="" className={styles.cartThumb} width={54} height={54} loading="lazy" decoding="async" />
                         : <div className={styles.cartThumb} />}
                       <div className={styles.cartInfo}>
                         <div className={styles.productName}>{it.product_name}</div>
                         {it.variant_label && <div className={styles.variantTag}>{it.variant_label}</div>}
-                        {it.comment && <div className={styles.variantTag}>✏️ {it.comment}</div>}
+                        {it.comment && <div className={styles.variantTag}><Pencil size={12} aria-hidden="true" /> {it.comment}</div>}
                         {(it.customization || []).length > 0 && (
                           <div className={styles.variantTag}>
-                            📐 {it.customization.map((c) => `${c.label}: ${c.value}${c.type === "measurement" ? (c.unit || "") : ""}`).join(" · ")}
+                            <Ruler size={12} aria-hidden="true" /> {it.customization.map((c) => `${c.label}: ${c.value}${c.type === "measurement" ? (c.unit || "") : ""}`).join(" · ")}
                           </div>
                         )}
                         {Number(it.delivery_days_after_payment || 0) > 0 && (
                           <div className={styles.variantTag}>
-                            🚚 Entrega en {it.delivery_days_after_payment} día{Number(it.delivery_days_after_payment) !== 1 ? "s" : ""} tras el pago
+                            <Truck size={12} aria-hidden="true" /> Entrega en {it.delivery_days_after_payment} día{Number(it.delivery_days_after_payment) !== 1 ? "s" : ""} tras el pago
                           </div>
                         )}
                         {it.fulfillment_type && (
                           <div className={styles.fulfillmentTag}>
-                            {it.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}
+                            {it.fulfillment_type === "delivery"
+                              ? <><Bike size={12} aria-hidden="true" /> Delivery</>
+                              : <><Store size={12} aria-hidden="true" /> Take out</>}
                             {it.delivery_price > 0 && ` (+${cur} ${formatted(it.delivery_price)})`}
                           </div>
                         )}
@@ -292,10 +323,10 @@ const CartDrawer = ({
                           {it.locality ? `${it.locality} · ` : ""}{cur} {formatted(it.price)} c/u
                         </div>
                         <div className={styles.qtyCtrl}>
-                          <button onClick={() => changeQty(i, -1)} aria-label="Menos"><Minus size={14} /></button>
-                          <span>{it.quantity}</span>
-                          <button onClick={() => changeQty(i, +1)} aria-label="Más"><Plus size={14} /></button>
-                          <button className={styles.trash} onClick={() => removeItem(i)} aria-label="Quitar"><Trash2 size={16} /></button>
+                          <button type="button" onClick={() => changeQty(i, -1)} aria-label={`Quitar una unidad de ${it.product_name}`}><Minus size={14} aria-hidden="true" /></button>
+                          <span aria-label={`Cantidad: ${it.quantity}`}>{it.quantity}</span>
+                          <button type="button" onClick={() => changeQty(i, +1)} aria-label={`Agregar una unidad de ${it.product_name}`}><Plus size={14} aria-hidden="true" /></button>
+                          <button type="button" className={styles.trash} onClick={() => removeItem(i)} aria-label={`Eliminar ${it.product_name} del carrito`}><Trash2 size={16} aria-hidden="true" /></button>
                         </div>
                       </div>
                       <div className={styles.cartSub}>{cur} {formatted(it.price * it.quantity)}</div>
@@ -309,21 +340,22 @@ const CartDrawer = ({
                       <input
                         className={styles.promoInput}
                         placeholder="Código de descuento"
+                        aria-label="Código de descuento"
                         value={promoCode}
                         onChange={e => setPromoCode(e.target.value.toUpperCase())}
                         onKeyDown={e => e.key === "Enter" && applyPromoCode()}
                       />
-                      <button className={styles.promoBtn} onClick={applyPromoCode}>
-                        <Tag size={14} /> Aplicar
+                      <button type="button" className={styles.promoBtn} onClick={applyPromoCode} disabled={promoChecking} aria-busy={promoChecking}>
+                        <Tag size={14} aria-hidden="true" /> {promoChecking ? "Validando…" : "Aplicar"}
                       </button>
                     </div>
                   )}
-                  {promoError && <p className={styles.promoError}>{promoError}</p>}
+                  {promoError && <p className={styles.promoError} role="alert">{promoError}</p>}
                   {promoSuccess && (
                     <div className={styles.promoSuccess}>
                       <span>{promoSuccess}</span>
                       {enteredCode && (
-                        <button className={styles.promoRemove} onClick={removeOffer} aria-label="Quitar"><X size={14} /></button>
+                        <button type="button" className={styles.promoRemove} onClick={removeOffer} aria-label="Quitar descuento"><X size={14} aria-hidden="true" /></button>
                       )}
                     </div>
                   )}
@@ -333,29 +365,29 @@ const CartDrawer = ({
                 <div className={styles.cartTotal}><span>Subtotal</span><strong>{cur} {formatted(productsSubtotal)}</strong></div>
                 {discountAmount > 0 && (
                   <div className={`${styles.cartTotal} ${styles.discountLine}`}>
-                    <span>🎁 Descuento{appliedOffer ? ` (${appliedOffer.name})` : ""}</span>
+                    <span><Gift size={16} aria-hidden="true" /> Descuento{appliedOffer ? ` (${appliedOffer.name})` : ""}</span>
                     <strong>− {cur} {formatted(discountAmount)}</strong>
                   </div>
                 )}
                 {deliverySubtotal > 0 && (
-                  <div className={styles.cartTotal}><span>🛵 Delivery</span><strong>{cur} {formatted(deliverySubtotal)}</strong></div>
+                  <div className={styles.cartTotal}><span><Bike size={16} aria-hidden="true" /> Delivery</span><strong>{cur} {formatted(deliverySubtotal)}</strong></div>
                 )}
-                <div className={styles.cartTotal} style={{ borderTop: "2px solid #eef0f3", paddingTop: ".75rem", marginTop: ".25rem" }}>
+                <div className={`${styles.cartTotal} ${styles.grandTotal}`}>
                   <span><strong>Total</strong></span><strong>{cur} {formatted(total)}</strong>
                 </div>
 
                 {blockOrdering && (
-                  <div className={styles.stockErrorBanner}>
-                    ⏰ {hoursMessage}. No puedes completar el pedido en este momento.
+                  <div className={styles.stockErrorBanner} role="status">
+                    <Clock size={16} aria-hidden="true" /> <span>{hoursMessage}. No puedes completar el pedido en este momento.</span>
                   </div>
                 )}
 
-                <button className={styles.primaryBtn} onClick={goCheckout} disabled={blockOrdering}>
+                <button type="button" className={styles.primaryBtn} onClick={goCheckout} disabled={blockOrdering}>
                   Proceder al pago
                 </button>
                 {stockError && (
-                  <div className={styles.stockErrorBanner}>
-                    ⚠️ {stockError}
+                  <div className={styles.stockErrorBanner} role="alert">
+                    <AlertTriangle size={16} aria-hidden="true" /> <span>{stockError}</span>
                   </div>
                 )}
               </>
@@ -365,48 +397,48 @@ const CartDrawer = ({
 
         {step === "identity" && (
           <>
-            <h2 className={styles.title}>¿Ya compraste aquí antes?</h2>
+            <h2 className={styles.title} id={titleId}>¿Ya compraste aquí antes?</h2>
             <p className={styles.lead}>Inicia sesión para no repetir tus datos, o continúa como nuevo.</p>
-            <button className={styles.primaryBtn} onClick={() => setStep("auth")}>Ya he comprado, iniciar sesión</button>
-            <button className={styles.linkBtn} onClick={() => { setCustomerMode(businessId, "guest"); setStep("guest"); }}>Soy cliente nuevo</button>
+            <button type="button" className={styles.primaryBtn} onClick={() => setStep("auth")}>Ya he comprado, iniciar sesión</button>
+            <button type="button" className={styles.linkBtn} onClick={() => { setCustomerMode(businessId, "guest"); setStep("guest"); }}>Soy cliente nuevo</button>
           </>
         )}
 
         {step === "guest" && (
           <>
-            <h2 className={styles.title}>Tus datos</h2>
-            <label className={styles.label}>Nombre</label>
-            <input className={styles.input} value={guest.given_name} onChange={e => setGuest({ ...guest, given_name: e.target.value })} />
-            <label className={styles.label}>Apellido</label>
-            <input className={styles.input} value={guest.family_name} onChange={e => setGuest({ ...guest, family_name: e.target.value })} />
-            <label className={styles.label}>Correo</label>
-            <input className={styles.input} type="email" value={guest.email} onChange={e => setGuest({ ...guest, email: e.target.value })} />
-            <label className={styles.label}>Teléfono</label>
-            <input className={styles.input} value={guest.phone} onChange={e => setGuest({ ...guest, phone: e.target.value })} />
-            <button className={styles.primaryBtn} onClick={continueGuest}>Continuar</button>
-            <button className={styles.linkBtn} onClick={() => setStep("cart")}>Volver al carrito</button>
+            <h2 className={styles.title} id={titleId}>Tus datos</h2>
+            <label className={styles.label} htmlFor={`${fid}-given_name`}>Nombre</label>
+            <input id={`${fid}-given_name`} className={styles.input} value={guest.given_name} onChange={e => setGuest({ ...guest, given_name: e.target.value })} />
+            <label className={styles.label} htmlFor={`${fid}-family_name`}>Apellido</label>
+            <input id={`${fid}-family_name`} className={styles.input} value={guest.family_name} onChange={e => setGuest({ ...guest, family_name: e.target.value })} />
+            <label className={styles.label} htmlFor={`${fid}-email`}>Correo</label>
+            <input id={`${fid}-email`} className={styles.input} type="email" value={guest.email} onChange={e => setGuest({ ...guest, email: e.target.value })} />
+            <label className={styles.label} htmlFor={`${fid}-phone`}>Teléfono</label>
+            <input id={`${fid}-phone`} className={styles.input} value={guest.phone} onChange={e => setGuest({ ...guest, phone: e.target.value })} />
+            <button type="button" className={styles.primaryBtn} onClick={continueGuest}>Continuar</button>
+            <button type="button" className={styles.linkBtn} onClick={() => setStep("cart")}>Volver al carrito</button>
           </>
         )}
 
         {step === "pay" && (
           <>
-            <h2 className={styles.title}>Método de pago</h2>
+            <h2 className={styles.title} id={titleId}>Método de pago</h2>
             <p className={styles.lead}>
               Total: <strong>{cur} {formatted(total)}</strong>
-              {discountAmount > 0 && <span style={{ color: "#067647", fontSize: ".82rem" }}> (incluye {cur} {formatted(discountAmount)} de descuento)</span>}
+              {discountAmount > 0 && <span className={styles.discountNote}> (incluye {cur} {formatted(discountAmount)} de descuento)</span>}
             </p>
             {hasDelivery && (
-              <div style={{ marginBottom: "1rem" }}>
-                <label className={styles.label}>📍 Dirección de entrega *</label>
-                <textarea className={styles.input} rows={3} value={deliveryAddress}
+              <div className={styles.addressField}>
+                <label className={styles.label} htmlFor={`${fid}-addr`}><MapPin size={14} aria-hidden="true" className={styles.labelIcon} />Dirección de entrega *</label>
+                <textarea id={`${fid}-addr`} className={styles.input} rows={3} value={deliveryAddress}
                   onChange={e => setDeliveryAddress(e.target.value)}
                   placeholder="Calle, número, sector, ciudad…" />
               </div>
             )}
             <div className={styles.list}>
               {paymentMethods.length === 0 ? (
-                <p style={{ color: "#b42318", fontSize: ".88rem", padding: ".75rem", background: "#fff1f2", borderRadius: "8px" }}>
-                  ⚠️ Este negocio aún no tiene métodos de pago configurados.
+                <p className={styles.noMethods}>
+                  <AlertTriangle size={16} aria-hidden="true" /> Este negocio aún no tiene métodos de pago configurados.
                 </p>
               ) : (
                 paymentMethods.map(pm => (
@@ -423,56 +455,58 @@ const CartDrawer = ({
 
             {isPaymentLink && (
               <div className={styles.payLinkNote}>
-                💬 El negocio te enviará un link de pago por el monto exacto de tu pedido.
-                En el siguiente paso confirma tu número de WhatsApp.
+                <MessageCircle size={16} aria-hidden="true" />
+                <span>El negocio te enviará un link de pago por el monto exacto de tu pedido.
+                En el siguiente paso confirma tu número de WhatsApp.</span>
               </div>
             )}
 
-            <button className={styles.primaryBtn} disabled={!selectedPm || checkout.isPending} onClick={handleConfirm}>
-              {checkout.isPending ? "Enviando…" : <><Check size={16} /> {isPaymentLink ? "Continuar" : "Confirmar pedido"}</>}
+            <button type="button" className={styles.primaryBtn} disabled={!selectedPm || checkout.isPending} onClick={handleConfirm}>
+              {checkout.isPending ? "Enviando…" : <><Check size={16} aria-hidden="true" /> {isPaymentLink ? "Continuar" : "Confirmar pedido"}</>}
             </button>
-            <button className={styles.linkBtn} onClick={() => setStep("cart")}>Volver al carrito</button>
+            <button type="button" className={styles.linkBtn} onClick={() => setStep("cart")}>Volver al carrito</button>
           </>
         )}
 
         {step === "confirmPhone" && (
           <>
-            <h2 className={styles.title}>Confirma tu WhatsApp</h2>
+            <h2 className={styles.title} id={titleId}>Confirma tu WhatsApp</h2>
             <p className={styles.lead}>
               El negocio te enviará el link de pago por WhatsApp por el total de{" "}
               <strong>{cur} {formatted(total)}</strong>. Confirma tu número para recibirlo.
             </p>
-            <label className={styles.label}>Número de WhatsApp *</label>
+            <label className={styles.label} htmlFor={`${fid}-wa`}>Número de WhatsApp *</label>
             <input
+              id={`${fid}-wa`}
               className={styles.input}
               value={confirmPhone}
               onChange={e => setConfirmPhone(e.target.value)}
               placeholder="Ej. 809 555 1234"
               inputMode="tel"
             />
-            <button className={styles.primaryBtn} disabled={checkout.isPending} onClick={handleConfirmPhone}>
-              {checkout.isPending ? "Enviando…" : <><Check size={16} /> Confirmar pedido</>}
+            <button type="button" className={styles.primaryBtn} disabled={checkout.isPending} onClick={handleConfirmPhone}>
+              {checkout.isPending ? "Enviando…" : <><Check size={16} aria-hidden="true" /> Confirmar pedido</>}
             </button>
-            <button className={styles.linkBtn} onClick={() => setStep("pay")}>Volver</button>
+            <button type="button" className={styles.linkBtn} onClick={() => setStep("pay")}>Volver</button>
           </>
         )}
 
         {step === "success" && (
           <>
-            <h2 className={styles.title}>¡Pedido enviado!</h2>
+            <h2 className={styles.title} id={titleId}>¡Pedido enviado!</h2>
             <p className={styles.lead}>Recibirás un correo con el resumen y las instrucciones de pago.</p>
-            <button className={styles.primaryBtn} onClick={onClose}>Cerrar</button>
+            <button type="button" className={styles.primaryBtn} onClick={onClose}>Cerrar</button>
           </>
         )}
 
         {step === "successLink" && (
           <>
-            <h2 className={styles.title}>¡Pedido recibido! 🎉</h2>
+            <h2 className={styles.title} id={titleId}>¡Pedido recibido!</h2>
             <p className={styles.lead}>
               El negocio te enviará el <strong>link de pago por WhatsApp</strong> por el monto
               exacto de tu pedido ({cur} {formatted(total)}). Mantente atento a tu WhatsApp.
             </p>
-            <button className={styles.primaryBtn} onClick={onClose}>Entendido</button>
+            <button type="button" className={styles.primaryBtn} onClick={onClose}>Entendido</button>
           </>
         )}
       </div>

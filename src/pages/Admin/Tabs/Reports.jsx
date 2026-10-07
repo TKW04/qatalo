@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Loading from "../../../components/UI/Loading";
 import { getTokenInfo } from "../../../helpers/token";
 import { fetchCustomers } from "../../../services/customersApi";
 import SellReport from "../../../components/SellReport";
 import ProductReport from "../../../components/ProductReport";
 import CustomerReport  from "../../../components/Customerreport";
-import adminStyles from "../AdminDashboard.module.css";
+import { PageHeader, Tabs, TabPanel, SkeletonKpis, SkeletonChart } from "../../../components/admin";
 import styles from "./Reports.module.css";
+
+const REPORT_TABS = [
+  { id: "general", label: "General" },
+  { id: "product", label: "Por producto" },
+  { id: "customer", label: "Clientes" },
+];
 
 const Reports = () => {
   const auth = getTokenInfo();
@@ -22,38 +27,24 @@ const Reports = () => {
     retry: false,
   });
 
-  if (isLoading) return <Loading message="Cargando reportes..." />;
-
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Reportes</h1>
-      </div>
+      <PageHeader title="Reportes" description="Ventas, productos y clientes según tus órdenes." />
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${tab === "general" ? styles.tabActive : ""}`}
-          onClick={() => setTab("general")}
-        >
-          Reporte general
-        </button>
-        <button
-          className={`${styles.tab} ${tab === "product" ? styles.tabActive : ""}`}
-          onClick={() => setTab("product")}
-        >
-          Por producto
-        </button>
-        <button
-          className={`${styles.tab} ${tab === "customer" ? styles.tabActive : ""}`}
-          onClick={() => setTab("customer")}
-        >
-          Clientes
-        </button>
-      </div>
+      <Tabs idPrefix="reports" label="Tipo de reporte" items={REPORT_TABS} value={tab} onChange={setTab} />
 
-      {tab === "general" && <SellReport customers={customers} />}
-      {tab === "product" && <ProductReport customers={customers} />}
-      {tab === "customer" && <CustomerReport customers={customers} />}
+      {isLoading ? (
+        <div className={styles.loading}>
+          <SkeletonKpis label="Cargando reportes..." />
+          <SkeletonChart label="Cargando gráfico..." />
+        </div>
+      ) : (
+        <>
+          <TabPanel idPrefix="reports" id="general" value={tab}><SellReport customers={customers} /></TabPanel>
+          <TabPanel idPrefix="reports" id="product" value={tab}><ProductReport customers={customers} /></TabPanel>
+          <TabPanel idPrefix="reports" id="customer" value={tab}><CustomerReport customers={customers} /></TabPanel>
+        </>
+      )}
     </div>
   );
 };

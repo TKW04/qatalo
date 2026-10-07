@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FaPen, FaTrashCan, FaEye, FaArrowsRotate } from "react-icons/fa6";
+import { Pencil, Trash2, Eye, RefreshCw, Wallet } from "lucide-react";
 
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
-import Loading from "../../../components/UI/Loading";
-import PrimaryButton from "../../../components/PrimaryButton";
 import { currencies } from "../../../helpers/utils";
 import { fetchBusinessData } from "../../../services/businessApi";
 import {
@@ -14,7 +12,7 @@ import {
   updatePaymentMethod,
   deletePaymentMethod,
 } from "../../../services/paymentMethodsApi";
-import adminStyles from "../AdminDashboard.module.css";
+import { PageHeader, Button, IconButton, Modal, EmptyState, SkeletonForm, SkeletonList } from "../../../components/admin";
 import styles from "./PaymentMethods.module.css";
 import CurrencySelect from "../../../components/CurrencySelect";
 import Select from "../../../components/Select";
@@ -125,23 +123,35 @@ const PaymentMethods = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (isLoading) return <Loading message="Cargando métodos de pago..." />;
+  const header = (
+    <PageHeader title="Métodos de pago" description="Cómo te pagan tus clientes: transferencia bancaria o link de pago." />
+  );
+
+  if (isLoading) {
+    return (
+      <div>
+        {header}
+        <SkeletonForm fields={3} label="Cargando métodos de pago..." />
+        <div className={styles.listHeader}><h2>Métodos de pago existentes</h2></div>
+        <SkeletonList rows={2} media={false} />
+      </div>
+    );
+  }
   const busy = saveMutation.isPending;
+
+  const focusForm = () => {
+    document.getElementById("pm-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Gestión de Métodos de Pago</h1>
-        <p>Crea métodos de pago para tu negocio</p>
-      </div>
+      {header}
 
-      {busy && <Loading message={editingId ? "Actualizando método de pago..." : "Creando método de pago..."} />}
-
-      <div className={styles.card}>
-        <h2>{editingId ? "Editar Método de Pago" : "Nuevo Método de Pago"}</h2>
+      <div className={styles.card} id="pm-form">
+        <h2>{editingId ? "Editar método de pago" : "Nuevo método de pago"}</h2>
         <form onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label>Método de Pago *</label>
+          <div className={styles.formGroup} role="group" aria-labelledby="pm-sel-1">
+            <span id="pm-sel-1" className={styles.label}>Método de Pago *</span>
             <Select
               value={form.payment_type}
               onChange={(e) => setField("payment_type", e)}
@@ -150,14 +160,14 @@ const PaymentMethods = () => {
                 ...PAYMENT_TYPES.map((t) => ({ value: t.code, label: t.name })),
               ]}
             />
-            {errors.payment_type && <span className={styles.err}>{errors.payment_type}</span>}
+            {errors.payment_type && <span className={styles.err} role="alert">{errors.payment_type}</span>}
           </div>
 
           {(isBank || isLink) && (
             <div className={styles.formGroup}>
-              <label>Nombre del método *</label>
-              <input className="input" value={form.payment_method_name} onChange={(e) => setField("payment_method_name", e.target.value)} placeholder="PayPal, Banco XYZ, etc." />
-              {errors.payment_method_name && <span className={styles.err}>{errors.payment_method_name}</span>}
+              <label htmlFor="pm-payment_method_name">Nombre del método *</label>
+              <input id="pm-payment_method_name" className="input" value={form.payment_method_name} onChange={(e) => setField("payment_method_name", e.target.value)} placeholder="PayPal, Banco XYZ, etc." />
+              {errors.payment_method_name && <span className={styles.err} role="alert">{errors.payment_method_name}</span>}
             </div>
           )}
 
@@ -165,38 +175,38 @@ const PaymentMethods = () => {
             <>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>Número de Cuenta *</label>
-                  <input className="input" value={form.account_number} onChange={(e) => setField("account_number", e.target.value)} placeholder="123456789" />
-                  {errors.account_number && <span className={styles.err}>{errors.account_number}</span>}
+                  <label htmlFor="pm-account_number">Número de Cuenta *</label>
+                  <input id="pm-account_number" className="input" value={form.account_number} onChange={(e) => setField("account_number", e.target.value)} placeholder="123456789" />
+                  {errors.account_number && <span className={styles.err} role="alert">{errors.account_number}</span>}
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Nombre del Banco *</label>
-                  <input className="input" value={form.bank_name} onChange={(e) => setField("bank_name", e.target.value)} placeholder="Banco XYZ" />
-                  {errors.bank_name && <span className={styles.err}>{errors.bank_name}</span>}
-                </div>
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Nombre del Propietario *</label>
-                  <input className="input" value={form.owner_name} onChange={(e) => setField("owner_name", e.target.value)} placeholder="Juan Pérez" />
-                  {errors.owner_name && <span className={styles.err}>{errors.owner_name}</span>}
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Número de Documento *</label>
-                  <input className="input" value={form.owner_document} onChange={(e) => setField("owner_document", e.target.value)} placeholder="12345678789" />
-                  {errors.owner_document && <span className={styles.err}>{errors.owner_document}</span>}
+                  <label htmlFor="pm-bank_name">Nombre del Banco *</label>
+                  <input id="pm-bank_name" className="input" value={form.bank_name} onChange={(e) => setField("bank_name", e.target.value)} placeholder="Banco XYZ" />
+                  {errors.bank_name && <span className={styles.err} role="alert">{errors.bank_name}</span>}
                 </div>
               </div>
 
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>Email del Propietario *</label>
-                  <input className="input" value={form.owner_email} onChange={(e) => setField("owner_email", e.target.value)} placeholder="juan@example.com" />
-                  {errors.owner_email && <span className={styles.err}>{errors.owner_email}</span>}
+                  <label htmlFor="pm-owner_name">Nombre del Propietario *</label>
+                  <input id="pm-owner_name" className="input" value={form.owner_name} onChange={(e) => setField("owner_name", e.target.value)} placeholder="Juan Pérez" />
+                  {errors.owner_name && <span className={styles.err} role="alert">{errors.owner_name}</span>}
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Tipo de Cuenta *</label>
+                  <label htmlFor="pm-owner_document">Número de Documento *</label>
+                  <input id="pm-owner_document" className="input" value={form.owner_document} onChange={(e) => setField("owner_document", e.target.value)} placeholder="12345678789" />
+                  {errors.owner_document && <span className={styles.err} role="alert">{errors.owner_document}</span>}
+                </div>
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="pm-owner_email">Email del Propietario *</label>
+                  <input id="pm-owner_email" className="input" value={form.owner_email} onChange={(e) => setField("owner_email", e.target.value)} placeholder="juan@example.com" />
+                  {errors.owner_email && <span className={styles.err} role="alert">{errors.owner_email}</span>}
+                </div>
+                <div className={styles.formGroup} role="group" aria-labelledby="pm-sel-2">
+                  <span id="pm-sel-2" className={styles.label}>Tipo de Cuenta *</span>
                   <Select
                     value={form.account_type}
                     onChange={(e) => setField("account_type", e)}
@@ -205,33 +215,33 @@ const PaymentMethods = () => {
                       ...ACCOUNT_TYPES.map((t) => ({ value: t.code, label: t.name })),
                     ]}
                   />
-                  {errors.account_type && <span className={styles.err}>{errors.account_type}</span>}
+                  {errors.account_type && <span className={styles.err} role="alert">{errors.account_type}</span>}
                 </div>
               </div>
 
               <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Moneda *</label>
+                <div className={styles.formGroup} role="group" aria-labelledby="pm-sel-3">
+                  <span id="pm-sel-3" className={styles.label}>Moneda *</span>
                   <CurrencySelect
                     value={form.currency}
                     onChange={(code) => setField("currency", code)}
                   />
-                  {errors.currency && <span className={styles.err}>{errors.currency}</span>}
+                  {errors.currency && <span className={styles.err} role="alert">{errors.currency}</span>}
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Swift</label>
-                  <input className="input" value={form.swift} onChange={(e) => setField("swift", e.target.value)} placeholder="BCPPDOSDXXX" />
+                  <label htmlFor="pm-swift">Swift</label>
+                  <input id="pm-swift" className="input" value={form.swift} onChange={(e) => setField("swift", e.target.value)} placeholder="BCPPDOSDXXX" />
                 </div>
               </div>
 
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>Cuenta Estándar</label>
-                  <input className="input" value={form.standard_account} onChange={(e) => setField("standard_account", e.target.value)} placeholder="DO34...3443" />
+                  <label htmlFor="pm-standard_account">Cuenta Estándar</label>
+                  <input id="pm-standard_account" className="input" value={form.standard_account} onChange={(e) => setField("standard_account", e.target.value)} placeholder="DO34...3443" />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Número de Ruta (Routing Number)</label>
-                  <input className="input" value={form.routing_number} onChange={(e) => setField("routing_number", e.target.value)} placeholder="021000021" />
+                  <label htmlFor="pm-routing_number">Número de Ruta (Routing Number)</label>
+                  <input id="pm-routing_number" className="input" value={form.routing_number} onChange={(e) => setField("routing_number", e.target.value)} placeholder="021000021" />
                 </div>
               </div>
             </>
@@ -239,38 +249,43 @@ const PaymentMethods = () => {
 
           {isLink && (
             <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label>Moneda *</label>
+              <div className={styles.formGroup} role="group" aria-labelledby="pm-sel-4">
+                <span id="pm-sel-4" className={styles.label}>Moneda *</span>
                 <CurrencySelect
                   value={form.currency}
                   onChange={(code) => setField("currency", code)}
                 />
-                {errors.currency && <span className={styles.err}>{errors.currency}</span>}
+                {errors.currency && <span className={styles.err} role="alert">{errors.currency}</span>}
               </div>
               <div className={styles.formGroup}>
-                <label>Link de pago *</label>
-                <input className="input" value={form.payment_link} onChange={(e) => setField("payment_link", e.target.value)} placeholder="https://example.com/payment-link" />
-                {errors.payment_link && <span className={styles.err}>{errors.payment_link}</span>}
+                <label htmlFor="pm-payment_link">Link de pago *</label>
+                <input id="pm-payment_link" className="input" value={form.payment_link} onChange={(e) => setField("payment_link", e.target.value)} placeholder="https://example.com/payment-link" />
+                {errors.payment_link && <span className={styles.err} role="alert">{errors.payment_link}</span>}
               </div>
             </div>
           )}
 
           <div className={styles.formActions}>
-            <PrimaryButton type="submit" disabled={busy}>
+            <Button type="submit" loading={busy}>
               {busy ? "Guardando..." : editingId ? "Actualizar método de pago" : "Crear método de pago"}
-            </PrimaryButton>
-            {editingId && (<button type="button" className={styles.btnOutline} onClick={resetForm}>Cancelar edición</button>)}
+            </Button>
+            {editingId && (<Button variant="secondary" onClick={resetForm} disabled={busy}>Cancelar edición</Button>)}
           </div>
         </form>
       </div>
 
       <div className={styles.listHeader}>
         <h2>Métodos de pago existentes</h2>
-        <button className={styles.refreshBtn} onClick={() => refetch()}><FaArrowsRotate /> Actualizar</button>
+        <Button variant="ghost" size="sm" icon={RefreshCw} onClick={() => refetch()}>Actualizar</Button>
       </div>
 
       {methods.length === 0 ? (
-        <div className={styles.empty}>Aún no tienes métodos de pago. Crea el primero arriba.</div>
+        <EmptyState
+          icon={Wallet}
+          title="Aún no tienes métodos de pago"
+          description="Agrega una cuenta bancaria o un link de pago para que tus clientes sepan cómo pagarte."
+          action={<Button variant="secondary" onClick={focusForm}>Crear el primero</Button>}
+        />
       ) : (
         <div className={styles.list}>
           {methods.map((pm) => (
@@ -280,34 +295,40 @@ const PaymentMethods = () => {
                 <span className={styles.rowTag}>{typeName(pm.payment_type)}</span>
               </div>
               <div className={styles.rowActions}>
-                <button className={styles.iconBtn} onClick={() => setViewing(pm)} aria-label="Ver"><FaEye /></button>
-                <button className={styles.iconBtn} onClick={() => handleEdit(pm)} aria-label="Editar"><FaPen /></button>
-                <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => setToDelete(pm)} aria-label="Eliminar"><FaTrashCan /></button>
+                <IconButton icon={Eye} label={`Ver ${pm.payment_method_name}`} onClick={() => setViewing(pm)} />
+                <IconButton icon={Pencil} label={`Editar ${pm.payment_method_name}`} onClick={() => handleEdit(pm)} />
+                <IconButton icon={Trash2} variant="danger" label={`Eliminar ${pm.payment_method_name}`} onClick={() => setToDelete(pm)} />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {toDelete && (
-        <div className={styles.modalOverlay} onClick={() => setToDelete(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3>Eliminar método de pago</h3>
-            <p>¿Seguro que deseas eliminar <strong>{toDelete.payment_method_name}</strong>? Esta acción no se puede deshacer.</p>
-            <div className={styles.modalActions}>
-              <button className={styles.btnOutline} onClick={() => setToDelete(null)}>Cancelar</button>
-              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(toDelete.payment_method_id)} disabled={deleteMutation.isPending}>
-                {deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={!!toDelete}
+        onClose={() => setToDelete(null)}
+        dismissible={!deleteMutation.isPending}
+        size="sm"
+        title="Eliminar método de pago"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setToDelete(null)} disabled={deleteMutation.isPending}>Cancelar</Button>
+            <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteMutation.mutate(toDelete.payment_method_id)}>
+              {deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.modalText}>¿Seguro que deseas eliminar <strong>{toDelete?.payment_method_name}</strong>? Esta acción no se puede deshacer.</p>
+      </Modal>
 
-      {viewing && (
-        <div className={styles.modalOverlay} onClick={() => setViewing(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3>{viewing.payment_method_name}</h3>
+      <Modal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title={viewing?.payment_method_name}
+        footer={<Button variant="secondary" onClick={() => setViewing(null)}>Cerrar</Button>}
+      >
+        {viewing && (
             <ul className={styles.detailList}>
               <li><span>Tipo</span><strong>{typeName(viewing.payment_type)}</strong></li>
               {viewing.payment_type === "bank_transfer" && (
@@ -317,7 +338,7 @@ const PaymentMethods = () => {
                   <li><span>Email</span><strong>{viewing.owner_email}</strong></li>
                   <li><span>Banco</span><strong>{viewing.bank_name}</strong></li>
                   <li><span>N° de cuenta</span><strong>{viewing.account_number}</strong></li>
-                  <li><span>Tipo de cuenta</span><strong>{ACCOUNT_TYPES.find((t) => t.code === viewing.account_type)?.name || "—"}</strong></li>
+                  <li><span>Tipo de cuenta</span><strong>{ACCOUNT_TYPES.find((t) => t.code === viewing.account_type)?.name || "-"}</strong></li>
                   <li><span>Moneda</span><strong>{currencySymbol(viewing.currency)}</strong></li>
                   {viewing.swift && <li><span>SWIFT</span><strong>{viewing.swift}</strong></li>}
                   {viewing.routing_number && <li><span>Routing</span><strong>{viewing.routing_number}</strong></li>}
@@ -331,12 +352,8 @@ const PaymentMethods = () => {
                 </>
               )}
             </ul>
-            <div className={styles.modalActions}>
-              <button className={styles.btnOutline} onClick={() => setViewing(null)}>Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

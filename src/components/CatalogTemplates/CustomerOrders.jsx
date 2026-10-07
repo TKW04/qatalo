@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Check, X, Bike, Store, Pencil, XCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchMyOrders, cancelOrderWithToken, uploadReceipt, clearCustomerSession } from "../../services/customerAuthApi";
-import { currencies, formatted, getStatusStyle } from "../../helpers/utils";
+import { currencies, formatted } from "../../helpers/utils";
 import styles from "./CustomerPortal.module.css";
+import useDialog from "./useDialog";
 
 const STATUS_LABEL = {
   "Pendiente de pago": "Pendiente de pago",
@@ -11,6 +13,44 @@ const STATUS_LABEL = {
   Entregada: "Entregada",
   Cancelada: "Cancelada",
 };
+// Etapas del ciclo de una orden (mismas claves que STATUS_LABEL; "Cancelada" no es etapa).
+const STAGES = ["Pendiente de pago", "Pendiente de validación", "Aprobada", "Entregada"];
+
+// Stepper estático del estado de la orden (efecto 14, sin animación).
+const OrderStepper = ({ status }) => {
+  if (status === "Cancelada") {
+    return (
+      <p className={styles.cancelledNote}>
+        <XCircle size={16} aria-hidden="true" /> Esta orden fue cancelada.
+      </p>
+    );
+  }
+  const current = STAGES.indexOf(status);
+  if (current === -1) return null;
+  return (
+    <ol className={styles.stepper} aria-label="Progreso de la orden">
+      {STAGES.map((st, i) => {
+        const state = i < current ? "done" : i === current ? "current" : "todo";
+        return (
+          <li
+            key={st}
+            className={`${styles.step} ${state === "done" ? styles.stepDone : state === "current" ? styles.stepCurrent : ""}`}
+            aria-current={state === "current" ? "step" : undefined}
+          >
+            <span className={styles.stepDot} aria-hidden="true">
+              {state === "done" && <Check size={14} strokeWidth={3} />}
+            </span>
+            <span>
+              {STATUS_LABEL[st]}
+              {state === "done" && <span className={styles.srOnly}> (completado)</span>}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+};
+
 const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 const accountType = (t) => (t === "checking" ? "Corriente" : t === "savings" ? "Ahorros" : t || "");
 
@@ -70,11 +110,16 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
 
   const logout = () => { clearCustomerSession(businessId); onClose(); };
 
+  const dialogRef = useDialog(onClose);
+  const cancelRef = useDialog(() => { setCancelTarget(null); setCancelReason(""); }, !!cancelTarget);
+  const titleId = useId();
+  const cancelTitleId = useId();
+
   if (isLoading || (isFetching && !data)) {
     return (
       <div className={styles.portal} onClick={onClose}>
-        <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
-          <p className={styles.lead} style={{ textAlign: "center", padding: "2rem 0" }}>Cargando tus órdenes...</p>
+        <div className={styles.sheet} onClick={(e) => e.stopPropagation()} ref={dialogRef} role="dialog" aria-modal="true" aria-label="Mis órdenes" aria-busy="true" tabIndex={-1}>
+          <p className={styles.lead} style={{ textAlign: "center", padding: "2rem 0" }} role="status">Cargando tus órdenes...</p>
         </div>
       </div>
     );
@@ -85,12 +130,13 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
 
   return (
     <div className={styles.portal} onClick={onClose}>
-      <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.close} onClick={onClose} aria-label="Cerrar">×</button>
+      <div className={styles.sheet} onClick={(e) => e.stopPropagation()} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+        <button type="button" className={styles.close} onClick={onClose} aria-label="Cerrar"><X size={20} aria-hidden="true" /></button>
+        <h2 className={styles.srOnly} id={titleId}>Mis órdenes</h2>
 
         <div className={styles.portalHead}>
           {customer.business_logo_url ? (
-            <img src={customer.business_logo_url} alt={customer.business_name} className={styles.brandLogo} />
+            <img src={customer.business_logo_url} alt={customer.business_name} className={styles.brandLogo} decoding="async" />
           ) : (<h2 className={styles.title} style={{ margin: 0 }}>{customer.business_name}</h2>)}
           <div>
             <div className={styles.hello}>Hola, {customer.given_name || customer.full_name}</div>
@@ -111,27 +157,36 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
             const title = multi ? `Orden de ${g.items.length} productos` : g.ref.product_name;
             return (
               <div key={g.key} className={styles.orderCard}>
-                <button className={styles.orderHead} onClick={() => setExpanded(open ? null : g.key)}>
+                <button
+                  type="button"
+                  className={styles.orderHead}
+                  onClick={() => setExpanded(open ? null : g.key)}
+                  aria-expanded={open}
+                  aria-controls={`order-${g.key}`}
+                >
                   <div>
                     <div className={styles.productName}>{title}</div>
                     <div className={styles.meta}>Total: {cur} {formatted(g.total)}</div>
                   </div>
-                  <span className={styles.badge} style={getStatusStyle(g.status)}>{STATUS_LABEL[g.status] || g.status}</span>
+                  <span className={styles.badge} data-status={g.status}>{STATUS_LABEL[g.status] || g.status}</span>
                 </button>
 
                 {open && (
-                  <div className={styles.orderBody}>
+                  <div className={styles.orderBody} id={`order-${g.key}`}>
+                    <OrderStepper status={g.status} />
                     <ul className={styles.detail}>
                       {g.items.map((it) => (
                         <li key={it.transaction_id}>
-                          <span>{it.product_name} (x{it.quantity}){it.locality ? ` · ${it.locality}` : ""}{it.delivery_day ? ` · ${it.delivery_day}` : ""}{it.comment ? ` · ✏️ ${it.comment}` : ""}</span>
+                          <span>{it.product_name} (x{it.quantity}){it.locality ? ` · ${it.locality}` : ""}{it.delivery_day ? ` · ${it.delivery_day}` : ""}{it.comment ? <> · <Pencil size={12} aria-hidden="true" /> {it.comment}</> : ""}</span>
                           <strong>{cur} {formatted(it.price * it.quantity)}</strong>
                         </li>
                         
                       ))}
                       <li><span>Método</span><strong>{isBank ? "Transferencia" : "Link de pago"}</strong></li>
                       {g.ref.fulfillment_type && (
-                        <li><span>Entrega</span><strong>{g.ref.fulfillment_type === "delivery" ? "🛵 Delivery" : "🏪 Take out"}</strong></li>
+                        <li><span>Entrega</span><strong>{g.ref.fulfillment_type === "delivery"
+                          ? <><Bike size={14} aria-hidden="true" /> Delivery</>
+                          : <><Store size={14} aria-hidden="true" /> Take out</>}</strong></li>
                       )}
                       {g.ref.delivery_price > 0 && (
                         <li><span>Costo delivery</span><strong>{cur} {formatted(g.ref.delivery_price)}</strong></li>
@@ -173,12 +228,12 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
                               type="file" accept="image/*,application/pdf" hidden
                               onChange={(e) => onPickFile(g, e.target.files?.[0])}
                             />
-                            <button className={styles.uploadBtn} disabled={uploadingKey === g.key} onClick={() => fileRefs.current[g.key]?.click()}>
+                            <button type="button" className={styles.uploadBtn} disabled={uploadingKey === g.key} onClick={() => fileRefs.current[g.key]?.click()}>
                               {uploadingKey === g.key ? "Subiendo..." : g.ref.receipt_url ? "Reemplazar comprobante" : "Subir comprobante"}
                             </button>
                           </>
                         )}
-                        <button className={styles.cancelBtn} onClick={() => setCancelTarget(g)}>Cancelar orden</button>
+                        <button type="button" className={styles.cancelBtn} onClick={() => setCancelTarget(g)}>Cancelar orden</button>
                       </div>
                     )}
                   </div>
@@ -188,20 +243,20 @@ const CustomerOrders = ({ businessId, onClose, onSessionExpired }) => {
           })}
         </div>
 
-        <button className={styles.logout} onClick={logout}>Cerrar sesión</button>
+        <button type="button" className={styles.logout} onClick={logout}>Cerrar sesión</button>
       </div>
 
       {cancelTarget && (
-        <div className={styles.overlay} onClick={() => setCancelTarget(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.title}>Cancelar orden</h3>
+        <div className={styles.overlay} onClick={(e) => { e.stopPropagation(); setCancelTarget(null); }}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} ref={cancelRef} role="dialog" aria-modal="true" aria-labelledby={cancelTitleId} tabIndex={-1}>
+            <h3 className={styles.title} id={cancelTitleId}>Cancelar orden</h3>
             <p className={styles.lead}>
               ¿Seguro que deseas cancelar {cancelTarget.items.length > 1 ? `esta orden de ${cancelTarget.items.length} productos` : <strong>{cancelTarget.ref.product_name}</strong>}?
             </p>
-            <textarea className={styles.input} rows={3} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Motivo (opcional)" />
+            <textarea className={styles.input} rows={3} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Motivo (opcional)" aria-label="Motivo de la cancelación (opcional)" />
             <div className={styles.modalActions}>
-              <button className={styles.linkBtn} onClick={() => { setCancelTarget(null); setCancelReason(""); }}>Volver</button>
-              <button className={styles.cancelBtn} disabled={cancelM.isPending} onClick={() => cancelM.mutate()}>
+              <button type="button" className={styles.linkBtn} onClick={() => { setCancelTarget(null); setCancelReason(""); }}>Volver</button>
+              <button type="button" className={styles.cancelBtn} disabled={cancelM.isPending} onClick={() => cancelM.mutate()}>
                 {cancelM.isPending ? "Cancelando..." : "Sí, cancelar"}
               </button>
             </div>

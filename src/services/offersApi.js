@@ -39,3 +39,25 @@ export const fetchPublicOffers = async (businessId) => {
     return res.json();
   } catch { return []; }
 };
+
+// Pública — valida un código promo contra el servidor (los códigos no vienen en fetchPublicOffers).
+// Devuelve la oferta (campos de cálculo + code) o null si el código no es válido / hay error.
+export const validateOfferCode = async (businessId, code, items = []) => {
+  try {
+    const res = await fetch(`${API}offers/public/${businessId}/validate-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code,
+        items: items.map((it) => ({
+          product_id: it.product_id,
+          category_id: it.category_id || "",
+          quantity: Number(it.quantity) || 1,
+        })),
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.valid && data.offer ? data.offer : null;
+  } catch { return null; }
+};

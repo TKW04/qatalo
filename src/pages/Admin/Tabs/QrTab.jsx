@@ -4,10 +4,16 @@ import { TbWorld } from "react-icons/tb";
 import { FaWhatsapp, FaRegCopy, FaCheck, FaShareNodes } from "react-icons/fa6";
 
 import { getTokenInfo } from "../../../helpers/token";
+import { CLASSIC_QR_COLORS, brandQrColors } from "../../../helpers/qrColors";
 import { fetchBusinessData } from "../../../services/businessApi";
 import QrViewer from "../../../components/QrViewer";
-import adminStyles from "../AdminDashboard.module.css";
+import { PageHeader } from "../../../components/admin";
 import styles from "./QrTab.module.css";
+
+const QR_STYLE_KEY = "qatalo.qrStyle";
+const readQrStyle = () => {
+  try { return localStorage.getItem(QR_STYLE_KEY) === "brand" ? "brand" : "classic"; } catch { return "classic"; }
+};
 
 const QrTab = () => {
   const auth = getTokenInfo();
@@ -18,6 +24,15 @@ const QrTab = () => {
     enabled: !!tenantId,
     retry: false,
   });
+
+  // Estilo del QR: clásico (negro/blanco) o colores del catálogo. Solo local.
+  const [qrStyle, setQrStyleState] = useState(readQrStyle);
+  const setQrStyle = (value) => {
+    setQrStyleState(value);
+    try { localStorage.setItem(QR_STYLE_KEY, value); } catch { /* storage no disponible */ }
+  };
+  const brandColors = useMemo(() => brandQrColors(business?.themePalette), [business?.themePalette]);
+  const qrColors = qrStyle === "brand" ? brandColors : CLASSIC_QR_COLORS;
 
   const businessName = business?.business_name || business?.name || "nuestro negocio";
 
@@ -71,21 +86,56 @@ const QrTab = () => {
 
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Compartir catálogo</h1>
-        <p>Comparte tu código QR y tu enlace para que tus clientes hagan pedidos</p>
-      </div>
+      <PageHeader
+        title="Compartir catálogo"
+        description="Comparte tu código QR y tu enlace para que tus clientes hagan pedidos."
+      />
 
       <div className={styles.grid}>
         {/* ── Columna QR ── */}
-        <div className={adminStyles.adminCard}>
-          <h3 className={styles.cardTitle}>Tu código QR</h3>
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Tu código QR</h2>
           <p className={styles.cardSub}>
             Imprímelo y ponlo en tu local, tus tarjetas o tus redes.
           </p>
 
+          <div className={styles.styleToggle} role="group" aria-label="Colores del QR">
+            <button
+              type="button"
+              aria-pressed={qrStyle === "classic"}
+              className={`${styles.styleBtn} ${qrStyle === "classic" ? styles.styleBtnActive : ""}`}
+              onClick={() => setQrStyle("classic")}
+            >
+              <span className={styles.swatches} aria-hidden="true">
+                <span className={styles.swatch} style={{ background: CLASSIC_QR_COLORS.dots }} />
+                <span className={styles.swatch} style={{ background: CLASSIC_QR_COLORS.background }} />
+              </span>
+              Clásico
+            </button>
+            <button
+              type="button"
+              aria-pressed={qrStyle === "brand"}
+              className={`${styles.styleBtn} ${qrStyle === "brand" ? styles.styleBtnActive : ""}`}
+              onClick={() => setQrStyle("brand")}
+            >
+              <span className={styles.swatches} aria-hidden="true">
+                <span className={styles.swatch} style={{ background: brandColors.dots }} />
+                <span className={styles.swatch} style={{ background: brandColors.cornersSquare }} />
+                <span className={styles.swatch} style={{ background: brandColors.background }} />
+              </span>
+              Colores de tu marca
+            </button>
+          </div>
+          <p className={styles.styleHint}>
+            {qrStyle === "brand"
+              ? brandColors.adjusted
+                ? "Usamos los colores de tu catálogo, ajustados para que el QR se lea bien."
+                : "Usamos los colores de tu catálogo."
+              : "Negro sobre blanco: máxima lectura en cualquier impresión."}
+          </p>
+
           <div className={styles.qrWrap}>
-            <QrViewer />
+            <QrViewer colors={qrColors} />
           </div>
 
           <button
@@ -93,35 +143,37 @@ const QrTab = () => {
             className={styles.linkBtn}
             onClick={() => business?.slug && window.open(`/catalog/${business.slug}`, "_blank")}
           >
-            <TbWorld size={20} /> Ver catálogo público
+            <TbWorld size={20} aria-hidden="true" /> Ver catálogo público
           </button>
         </div>
 
         {/* ── Columna compartir ── */}
-        <div className={adminStyles.adminCard}>
-          <h3 className={styles.cardTitle}>Comparte tu enlace</h3>
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Comparte tu enlace</h2>
           <p className={styles.cardSub}>
             Copia el enlace o compártelo directo por tus redes.
           </p>
 
           {/* Link copiable */}
-          <label className={styles.fieldLabel}>Enlace de tu catálogo</label>
+          <label className={styles.fieldLabel} htmlFor="qr-catalog-url">Enlace de tu catálogo</label>
           <div className={styles.copyRow}>
-            <input className={styles.copyInput} value={catalogUrl} readOnly />
+            <input id="qr-catalog-url" className={styles.copyInput} value={catalogUrl} readOnly />
             <button
               type="button"
               className={styles.copyBtn}
               onClick={() => copy(catalogUrl, "link")}
+              aria-live="polite"
             >
-              {copied === "link" ? <><FaCheck /> Copiado</> : <><FaRegCopy /> Copiar</>}
+              {copied === "link" ? <><FaCheck aria-hidden="true" /> Copiado</> : <><FaRegCopy aria-hidden="true" /> Copiar</>}
             </button>
           </div>
 
           {/* Mensaje editable */}
-          <label className={styles.fieldLabel} style={{ marginTop: "1.2rem" }}>
+          <label className={`${styles.fieldLabel} ${styles.fieldGap}`} htmlFor="qr-share-message">
             Mensaje para compartir <span className={styles.editable}>(puedes editarlo)</span>
           </label>
           <textarea
+            id="qr-share-message"
             className={styles.messageBox}
             rows={4}
             value={shareText}
@@ -133,7 +185,7 @@ const QrTab = () => {
               className={styles.copyTextBtn}
               onClick={() => copy(shareText, "msg")}
             >
-              {copied === "msg" ? <><FaCheck /> Copiado</> : <><FaRegCopy /> Copiar mensaje</>}
+              {copied === "msg" ? <><FaCheck aria-hidden="true" /> Copiado</> : <><FaRegCopy aria-hidden="true" /> Copiar mensaje</>}
             </button>
             {message !== null && (
               <button
@@ -154,10 +206,10 @@ const QrTab = () => {
               rel="noopener noreferrer"
               className={`${styles.shareBtn} ${styles.whatsapp}`}
             >
-              <FaWhatsapp size={20} /> Compartir por WhatsApp
+              <FaWhatsapp size={20} aria-hidden="true" /> Compartir por WhatsApp
             </a>
             <button type="button" className={`${styles.shareBtn} ${styles.generic}`} onClick={nativeShare}>
-              <FaShareNodes size={18} /> Más opciones
+              <FaShareNodes size={18} aria-hidden="true" /> Más opciones
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import BusinessHoursEditor from "./BusinessHoursEditor";
 import { defaultBusinessHours } from "../../helpers/businessHours";
+import styles from "./BusinessHours.module.css";
 
 // Compone el horario GENERAL del negocio + overrides opcionales por localidad.
 // business: formData del negocio (business_hours_enabled/hours_mode/business_hours/locality_hours)
@@ -32,9 +33,9 @@ const BusinessHoursSettings = ({ business = {}, localities = [], onChange }) => 
             />
 
             {business.business_hours_enabled && (localities || []).length > 0 && (
-                <div style={S.localBlock}>
-                    <h3 style={S.localTitle}>Horarios especiales por localidad</h3>
-                    <p style={S.localHint}>
+                <div className={styles.localBlock}>
+                    <h3 className={styles.localTitle}>Horarios especiales por localidad</h3>
+                    <p className={styles.localHint}>
                         Por defecto cada zona usa el <strong>horario general</strong> de arriba. Enciende una zona solo si
                         tiene un horario diferente (ej. una sucursal que cierra más tarde).
                     </p>
@@ -42,7 +43,7 @@ const BusinessHoursSettings = ({ business = {}, localities = [], onChange }) => 
                     {localities.map((loc) => {
                         const entry = localityHours[loc] || { enabled: false, mode: "inform", hours: defaultBusinessHours() };
                         return (
-                            <div key={loc} style={S.localCard}>
+                            <div key={loc} className={styles.localCard}>
                                 <BusinessHoursEditor
                                     enabled={entry.enabled}
                                     mode={entry.mode}
@@ -59,13 +60,6 @@ const BusinessHoursSettings = ({ business = {}, localities = [], onChange }) => 
             )}
         </div>
     );
-};
-
-const S = {
-    localBlock: { marginTop: "1.75rem", borderTop: "2px solid #eef0f3", paddingTop: "1.25rem" },
-    localTitle: { margin: 0, color: "#113f67", fontSize: "1.05rem" },
-    localHint: { fontSize: ".85rem", color: "#667085", margin: ".35rem 0 1rem", lineHeight: 1.5 },
-    localCard: { border: "1px solid #eef0f3", borderRadius: 12, padding: "1rem 1.1rem", marginBottom: "1rem", background: "#fafbfc" },
 };
 
 export default BusinessHoursSettings;

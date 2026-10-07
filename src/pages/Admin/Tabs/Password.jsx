@@ -2,10 +2,9 @@ import { useMutation } from "@tanstack/react-query";
 
 import { getTokenInfo } from "../../../helpers/token";
 import { useNotification } from "../../../components/UI/NotificationProvider";
-import Loading from "../../../components/UI/Loading";
 import { logout } from "../../../services/authenticate";
 import { forgotPassword } from "../../../services/userApi";
-import adminStyles from "../AdminDashboard.module.css";
+import { PageHeader, Button } from "../../../components/admin";
 import styles from "./Password.module.css";
 
 const maskEmail = (email = "") => {
@@ -32,13 +31,9 @@ const Password = () => {
     onError: () => showWarning("No se pudo enviar", "Inténtalo de nuevo en un momento."),
   });
 
-  if (request.isPending) return <Loading message="Enviando correo..." />;
-
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Cambiar contraseña</h1>
-      </div>
+      <PageHeader title="Contraseña" />
 
       <div className={styles.card}>
         <div className={styles.row}>
@@ -51,13 +46,13 @@ const Password = () => {
           contraseña. Por seguridad, se cerrará tu sesión al solicitarlo.
         </p>
 
-        <button
-          className={styles.btn}
-          disabled={request.isPending}
+        <Button
+          variant="secondary"
+          loading={request.isPending}
           onClick={() => request.mutate()}
         >
-          {request.isPending ? "Enviando..." : "Solicitar cambio de contraseña"}
-        </button>
+          {request.isPending ? "Enviando correo..." : "Solicitar cambio de contraseña"}
+        </Button>
       </div>
     </div>
   );

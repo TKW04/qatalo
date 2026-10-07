@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./Navbar.module.css";
-import PrimaryButton from "../components/PrimaryButton";
+import { Link } from "react-router-dom";
 import { getTokenInfo } from "../helpers/token";
 
 const LINKS = [
@@ -9,6 +9,11 @@ const LINKS = [
   { href: "/#howItWorks", label: "Cómo funciona" },
   { href: "/#pricing", label: "Planes" },
 ];
+
+// Etiqueta única del CTA de registro (navbar, hero y CTA final)
+export const SIGNUP_CTA = "Pruébalo gratis 15 días";
+
+const MOBILE_BREAKPOINT = 960;
 
 const Navbar = () => {
   const [abierto, setAbierto] = useState(false);
@@ -27,7 +32,7 @@ const Navbar = () => {
 
   // Cerrar al volver a desktop
   useEffect(() => {
-    const onResize = () => window.innerWidth > 760 && setAbierto(false);
+    const onResize = () => window.innerWidth > MOBILE_BREAKPOINT && setAbierto(false);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -57,20 +62,23 @@ const Navbar = () => {
             src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
             alt="Qatalo"
             className={styles.logo}
+            width="88"
+            height="56"
           />
         </a>
 
         <button
           ref={toggleRef}
+          type="button"
           className={`${styles.navToggle} ${abierto ? styles.isActive : ""}`}
           onClick={() => setAbierto((v) => !v)}
-          aria-label="Abrir menú"
+          aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={abierto}
           aria-controls="nav-menu"
         >
-          <span className={styles.navBar} />
-          <span className={styles.navBar} />
-          <span className={styles.navBar} />
+          <span className={styles.navBar} aria-hidden="true" />
+          <span className={styles.navBar} aria-hidden="true" />
+          <span className={styles.navBar} aria-hidden="true" />
         </button>
 
         <nav
@@ -86,11 +94,11 @@ const Navbar = () => {
           ))}
 
           {isLogged ? (
-            <PrimaryButton to="/admin" variant="primary">Ir al panel</PrimaryButton>
+            <Link to="/admin" className={styles.navCta} onClick={cerrarMenu}>Ir al panel</Link>
           ) : (
             <>
-              <a href="/login" className={styles.navLink} onClick={cerrarMenu}>Iniciar Sesión</a>
-              <PrimaryButton to="/register" variant="primary">Comenzar Gratis</PrimaryButton>
+              <a href="/login" className={styles.navLink} onClick={cerrarMenu}>Iniciar sesión</a>
+              <Link to="/register" className={styles.navCta} onClick={cerrarMenu}>{SIGNUP_CTA}</Link>
             </>
           )}
         </nav>

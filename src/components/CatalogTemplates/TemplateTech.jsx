@@ -1,7 +1,12 @@
-import { Search, Share2, ShoppingBag, Star } from "lucide-react";
+import { Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateTech.module.css";
-import { curSymbol } from "../../helpers/utils";
+import shared from "./catalogShared.module.css";
 import ProductThumb from "./ProductThumb";
+import CardBadges from "./CardBadges";
+import SearchBar from "./SearchBar";
+import CategoryPills from "./CategoryPills";
+import CollectionsGrid from "./CollectionsGrid";
+import { cardPriceLabel, PRIORITY_IMAGES } from "./catalogPrice";
 
 /**
  * TemplateTech (Celulares / Electrónica)
@@ -24,18 +29,12 @@ export default function TemplateTech({
 }) {
   const { name = "Tech Store", description = "", logo_url } = business;
 
-  const formatPrice = (price) =>
-    Number(price).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <button onClick={onShare} className={styles.shareBtn} aria-label="Compartir catálogo">
-            <Share2 size={20} />
+          <button type="button" onClick={onShare} className={styles.shareBtn} aria-label="Compartir catálogo">
+            <Share2 size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -47,96 +46,59 @@ export default function TemplateTech({
 
         {/* Controles de Búsqueda y Filtros estilo iOS */}
         <div className={styles.controls}>
-          <div className={styles.searchBar}>
-            <Search size={18} className={styles.searchIcon} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Buscar modelos, accesorios..."
-              className={styles.searchInput}
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={onSearchChange}
+            placeholder="Buscar modelos, accesorios..."
+            className={styles.searchBar}
+            iconClassName={styles.searchIcon}
+            inputClassName={styles.searchInput}
+            iconSize={18}
+          />
 
-          <div className={styles.segmentedControl}>
-            <button
-              className={`${styles.segmentBtn} ${selectedCategory === "all" ? styles.activeSegment : ""}`}
-              onClick={() => onCategoryChange("all")}
-            >
-              Todos
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.category_id}
-                className={`${styles.segmentBtn} ${selectedCategory === cat.category_id ? styles.activeSegment : ""}`}
-                onClick={() => onCategoryChange(cat.category_id)}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+          <CategoryPills
+            categories={categories}
+            selected={selectedCategory}
+            onChange={onCategoryChange}
+            allLabel="Todos"
+            className={styles.segmentedControl}
+            pillClassName={styles.segmentBtn}
+            activeClassName={styles.activeSegment}
+          />
         </div>
       </header>
 
       {showCollections && (
-        <section className={styles.collections} aria-label="Colecciones">
-          <div className={styles.collectionsGrid}>
-            {collections.map((c) => {
-              const useLogo = c.cover && c.cover === business?.logo_url;
-              return (
-                <button
-                  key={c.category_id}
-                  type="button"
-                  className={styles.collectionCard}
-                  onClick={() => onSelectCollection?.(c.category_id)}
-                >
-                  <div className={styles.collectionMedia}>
-                    {c.cover ? (
-                      <img
-                        src={c.cover}
-                        alt={c.name}
-                        loading="lazy"
-                        className={useLogo ? styles.collectionLogo : styles.collectionImg}
-                      />
-                    ) : null}
-                  </div>
-                  <div className={styles.collectionBody}>
-                    <span className={styles.collectionName}>{c.name}</span>
-                    <span className={styles.collectionCount}>{c.count} producto{c.count !== 1 ? "s" : ""}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <CollectionsGrid
+          collections={collections}
+          business={business}
+          onSelect={onSelectCollection}
+          styles={styles}
+        />
       )}
 
       {!(showCollections && products.length === 0) && (products.length === 0 ? (
         <div className={styles.emptyState}>
-          <ShoppingBag size={48} strokeWidth={1} />
+          <ShoppingBag size={48} strokeWidth={1} aria-hidden="true" />
           <p>No se encontraron resultados</p>
         </div>
       ) : (
         <section className={styles.grid} aria-label="Productos">
-          {products.map((product) => (
-            <article
-              key={product.product_id}
-              className={styles.card}
-              onClick={() => onProductClick(product)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onProductClick(product);
-                }
-              }}
-            >
+          {products.map((product, index) => (
+            <article key={product.product_id} className={styles.card}>
               <div className={styles.cardTop}>
                 {product.show_quantity && product.quantity > 0 && (
                   <span className={styles.badge}>Disp: {product.quantity}</span>
                 )}
-                <h2 className={styles.productName}>{product.name}</h2>
+                <h2 className={styles.productName}>
+                  <button
+                    type="button"
+                    className={shared.cardLink}
+                    onClick={() => onProductClick(product)}
+                  >
+                    {product.name}
+                  </button>
+                </h2>
                 {product.description && (
                   <p className={styles.productDesc}>{product.description}</p>
                 )}
@@ -148,44 +110,20 @@ export default function TemplateTech({
                   business={business}
                   imgClassName={styles.image}
                   placeholderClassName={styles.imagePlaceholder}
+                  priority={index < PRIORITY_IMAGES}
                 />
-
-                {product.featured && (
-                  <span className={styles.featuredStar} aria-label="Destacado">
-                    <Star size={16} strokeWidth={2} fill="currentColor" />
-                  </span>
-                )}
-
-                {product.is_available !== "available" && (
-                  <span className={styles.soldOutBadge}>Agotado</span>
-                )}
+                <CardBadges
+                  featured={product.featured}
+                  soldOut={product.is_available !== "available"}
+                />
               </div>
 
               <div className={styles.cardBottom}>
-                <span className={styles.price}>
-                  Desde {curSymbol(product.currency)} {formatPrice(product.price)}
-                </span>
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={styles.buy}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onProductClick(product);
-                    }}
-                  >
-                    Comprar
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.learn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onProductClick(product);
-                    }}
-                  >
-                    Más información
-                  </button>
+                <span className={styles.price}>{cardPriceLabel(product)}</span>
+                {/* Decorativos: toda la tarjeta abre el detalle (botón del título) */}
+                <div className={styles.actions} aria-hidden="true">
+                  <span className={styles.buy}>Comprar</span>
+                  <span className={styles.learn}>Más información</span>
                 </div>
               </div>
             </article>

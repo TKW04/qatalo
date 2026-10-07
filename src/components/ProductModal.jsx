@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
-import { ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Check, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Check, ShoppingBag, X, Truck, Bike, Store } from "lucide-react";
 import { useNotification } from "./UI/NotificationProvider";
 import {
   getCart, setCart, getValidCustomerSession, setCustomerSession, fetchMyOrders,
 } from "../services/customerAuthApi";
 import Select from "./Select";
-import { formatted, currencies } from "../helpers/utils";
+import { formatted, curSymbol } from "../helpers/utils";
+import { hasPriceRange } from "./CatalogTemplates/catalogPrice";
+import useDialog from "./CatalogTemplates/useDialog";
+import DatePicker, { parseISODate } from "./DatePicker";
 import styles from "./ProductModal.module.css";
 
 const toISO = (s) => {
@@ -16,6 +19,12 @@ const toISO = (s) => {
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (m) { let [, mm, dd, yy] = m; if (yy.length === 2) yy = "20" + yy; return `${yy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`; }
   return "";
+};
+
+// Fecha local (sin desfase UTC): "8 de octubre de 2026"
+const fmtDeliveryStart = (s) => {
+  const d = parseISODate(toISO(s));
+  return d ? d.toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" }) : s;
 };
 
 const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, preselectedLocality = "" }) => {
@@ -28,7 +37,6 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
   // Monedas alternas (solo para productos sin variantes/tamaños)
   const hasAltCurrencies = (product.alt_prices || []).length > 0;
   const [selectedCurrency, setSelectedCurrency] = useState(product.currency);
-  const currencySymbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
   const priceForCurrency = (code) => {
     if (code === product.currency) return Number(product.price);
     const alt = (product.alt_prices || []).find((a) => a.currency === code);
@@ -303,10 +311,23 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
 
   const overlay = (e) => { if (e.target === e.currentTarget) onClose(); };
 
+  // Accesibilidad de diálogos: Esc cierra el diálogo superior (sub-modal primero),
+  // foco atrapado y scroll del body bloqueado.
+  const titleId = useId();
+  const subTitleId = useId();
+  const dialogRef = useDialog(onClose);
+  const cartStepRef = useDialog(() => setStep(null), step === "cart");
+  const addedStepRef = useDialog(keepShopping, step === "added" && !!lastAdded);
+  const termsRef = useDialog(() => setShowTerms(false), showTerms);
+  const showRange = hasPriceRange(product);
+  const sym = (code) => curSymbol(code);
+
   return (
     <div className={styles.overlay} onClick={overlay}>
-      <div className={styles.modal}>
-        <button className={styles.close} onClick={onClose} aria-label="Cerrar">✕</button>
+      <div className={styles.modal} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+        <button type="button" className={styles.close} onClick={onClose} aria-label="Cerrar">
+          <X size={20} aria-hidden="true" />
+        </button>
 
         {/* Gallery */}
         <div className={styles.gallery}>
@@ -315,40 +336,54 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
               <div ref={sliderRef} className="keen-slider">
                 {images.map((src, i) => (
                   <div className={`keen-slider__slide ${styles.slide}`} key={i}>
-                    <img src={src} alt={product.name} className={styles.galleryImg} />
+                    <img
+                      src={src}
+                      alt={images.length > 1 ? `${product.name} (imagen ${i + 1} de ${images.length})` : product.name}
+                      className={styles.galleryImg}
+                      decoding="async"
+                      loading={i === 0 ? "eager" : "lazy"}
+                    />
                   </div>
                 ))}
               </div>
               {images.length > 1 && (
                 <>
-                  <button className={`${styles.arrow} ${styles.arrowLeft}`} onClick={() => instanceRef.current?.prev()}><ChevronLeft /></button>
-                  <button className={`${styles.arrow} ${styles.arrowRight}`} onClick={() => instanceRef.current?.next()}><ChevronRight /></button>
+                  <button type="button" className={`${styles.arrow} ${styles.arrowLeft}`} onClick={() => instanceRef.current?.prev()} aria-label="Imagen anterior"><ChevronLeft aria-hidden="true" /></button>
+                  <button type="button" className={`${styles.arrow} ${styles.arrowRight}`} onClick={() => instanceRef.current?.next()} aria-label="Imagen siguiente"><ChevronRight aria-hidden="true" /></button>
                   <div className={styles.dots}>
-                    {images.map((_, i) => <span key={i} className={`${styles.dot} ${currentSlide === i ? styles.dotActive : ""}`} onClick={() => instanceRef.current?.moveToIdx(i)} />)}
+                    {images.map((_, i) => (
+                      <button
+                        type="button"
+                        key={i}
+                        className={`${styles.dot} ${currentSlide === i ? styles.dotActive : ""}`}
+                        onClick={() => instanceRef.current?.moveToIdx(i)}
+                        aria-label={`Ver imagen ${i + 1}`}
+                        aria-current={currentSlide === i ? "true" : undefined}
+                      />
+                    ))}
                   </div>
                 </>
               )}
             </>
           ) : business?.logo_url ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#f4f5f7", width: "100%", height: "100%" }}>
+            <div className={styles.logoFallback}>
               <img
                 src={business.logo_url}
                 alt={business?.name ? `Logo de ${business.name}` : product.name}
-                style={{ maxWidth: "55%", maxHeight: "55%", objectFit: "contain", opacity: 0.75 }}
+                className={styles.logoFallbackImg}
+                decoding="async"
               />
             </div>
-          ) : (<img src="/placeholder.svg" alt={product.name} className={styles.galleryImg} />)}
+          ) : (<img src="/placeholder.svg" alt={product.name} className={styles.galleryImg} decoding="async" />)}
         </div>
 
         {/* Product info */}
         <div className={styles.body}>
-          <h2 className={styles.title}>{product.name}</h2>
+          <h2 className={styles.title} id={titleId}>{product.name}</h2>
           <div className={styles.price}>
-            {product.is_customizable && (isSizeType
-              ? (product.variants?.length > 1)
-              : product.variants?.some((v) => v.extra_price > 0))
-              ? `Desde ${product.currency} ${formatted(lowestPrice)}`
-              : `${displayCurrency} ${formatted(displayPrice)}`}
+            {showRange
+              ? `Desde ${sym(product.currency)} ${formatted(lowestPrice)}`
+              : `${sym(displayCurrency)} ${formatted(displayPrice)}`}
           </div>
 
           {hasAltCurrencies && (
@@ -358,6 +393,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                   type="button"
                   key={code}
                   className={`${styles.pill} ${selectedCurrency === code ? styles.pillActive : ""}`}
+                  aria-pressed={selectedCurrency === code}
                   onClick={() => setSelectedCurrency(code)}
                 >
                   {code}
@@ -374,22 +410,22 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
           {productLocalities.length > 0 && <div className={styles.stock}>Disponible en: <strong>{productLocalities.join(", ")}</strong></div>}
           {deliversAfterPayment && (
             <div className={styles.stock}>
-              🚚 Se entrega <strong>{product.delivery_days_after_payment} día{Number(product.delivery_days_after_payment) !== 1 ? "s" : ""}</strong> después de confirmar tu pago.
+              <Truck size={16} aria-hidden="true" className={styles.inlineIcon} /> Se entrega <strong>{product.delivery_days_after_payment} día{Number(product.delivery_days_after_payment) !== 1 ? "s" : ""}</strong> después de confirmar tu pago.
             </div>
           )}
 
           <div className={styles.actions}>
             {product.is_available === "available" ? (
               <>
-                <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setStep("cart")}>
-                  <ShoppingCart size={18} /> Agregar al carrito
+                <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setStep("cart")}>
+                  <ShoppingCart size={18} aria-hidden="true" /> Agregar al carrito
                 </button>
-                <button className={`${styles.btn} ${styles.btnWhats}`} onClick={handleWhatsApp}>
-                  <MessageCircle size={18} /> WhatsApp
+                <button type="button" className={`${styles.btn} ${styles.btnWhats}`} onClick={handleWhatsApp}>
+                  <MessageCircle size={18} aria-hidden="true" /> WhatsApp
                 </button>
               </>
             ) : (
-              <button className={`${styles.btn} ${styles.btnDisabled}`} disabled>Producto agotado</button>
+              <button type="button" className={`${styles.btn} ${styles.btnDisabled}`} disabled>Producto agotado</button>
             )}
           </div>
         </div>
@@ -398,8 +434,8 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
       {/* ── Step: formulario de carrito ── */}
       {step === "cart" && (
         <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.subModal}>
-            <h3>Agregar al carrito</h3>
+          <div className={styles.subModal} ref={cartStepRef} role="dialog" aria-modal="true" aria-labelledby={subTitleId} tabIndex={-1}>
+            <h3 id={subTitleId}>Agregar al carrito</h3>
 
             {product.is_customizable && isSizeType && (
               <div className={styles.variantGroup}>
@@ -412,7 +448,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                       <button type="button" key={v.variant_id}
                         className={`${styles.pill} ${selectedSizeId === v.variant_id ? styles.pillActive : ""}`}
                         onClick={() => { setSelectedSizeId(v.variant_id); set("quantity", 1); }}>
-                        {v.size_name} · {product.currency} {formatted(v.price || 0)}
+                        {v.size_name} · {sym(product.currency)} {formatted(v.price || 0)}
                       </button>
                     ))}
                   </div>
@@ -456,7 +492,7 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                   <div className={styles.variantInfo}>
                     <span>Disponible: <strong>{selectedVariant.quantity}</strong></span>
                     {(isSizeType || selectedVariant.extra_price > 0) && (
-                      <span>Precio: <strong>{product.currency} {formatted(displayPrice)}</strong></span>
+                      <span>Precio: <strong>{sym(product.currency)} {formatted(displayPrice)}</strong></span>
                     )}
                   </div>
                 )}
@@ -484,11 +520,11 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                           <button
                             type="button"
                             key={opt.name}
-                            className={`${styles.pill} ${customValues[cfld.field_id] === opt.name ? styles.pillActive : ""}`}
-                            style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}
+                            className={`${styles.pill} ${styles.pillSwatch} ${customValues[cfld.field_id] === opt.name ? styles.pillActive : ""}`}
+                            aria-pressed={customValues[cfld.field_id] === opt.name}
                             onClick={() => setCustomValue(cfld.field_id, opt.name)}
                           >
-                            <span style={{ width: 12, height: 12, borderRadius: "50%", background: opt.hex, display: "inline-block", border: "1px solid rgba(0,0,0,.15)" }} />
+                            <span className={styles.swatch} style={{ background: opt.hex }} aria-hidden="true" />
                             {opt.name}
                           </button>
                         ))}
@@ -539,20 +575,20 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
                       <input type="radio" name="fulfillment" value="delivery"
                         checked={form.fulfillment_type === "delivery"}
                         onChange={() => set("fulfillment_type", "delivery")} />
-                      <span>🛵 Delivery {deliveryPrice > 0 ? `(+${displayCurrency} ${formatted(deliveryPrice)})` : "(gratis)"}</span>
+                      <span className={styles.fulfillmentText}><Bike size={16} aria-hidden="true" /> Delivery {deliveryPrice > 0 ? `(+${sym(displayCurrency)} ${formatted(deliveryPrice)})` : "(gratis)"}</span>
                     </label>
                     <label className={`${styles.fulfillmentOption} ${form.fulfillment_type === "takeout" ? styles.fulfillmentActive : ""}`}>
                       <input type="radio" name="fulfillment" value="takeout"
                         checked={form.fulfillment_type === "takeout"}
                         onChange={() => set("fulfillment_type", "takeout")} />
-                      <span>🏪 Recoger en tienda</span>
+                      <span className={styles.fulfillmentText}><Store size={16} aria-hidden="true" /> Recoger en tienda</span>
                     </label>
                   </div>
                 ) : (
                   <div className={styles.fulfillmentInfo}>
                     {hasDelivery
-                      ? `🛵 Delivery ${deliveryPrice > 0 ? `(+${displayCurrency} ${formatted(deliveryPrice)})` : "(gratis)"}`
-                      : "🏪 Recoger en tienda"}
+                      ? <><Bike size={16} aria-hidden="true" /> {`Delivery ${deliveryPrice > 0 ? `(+${sym(displayCurrency)} ${formatted(deliveryPrice)})` : "(gratis)"}`}</>
+                      : <><Store size={16} aria-hidden="true" /> Recoger en tienda</>}
                   </div>
                 )}
               </div>
@@ -574,11 +610,11 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
 
             {product.required_delivery_day && (
               <div className={styles.field}>
-                <label>Fecha de entrega {product.delivery_start_day && <span>(a partir de {new Date(product.delivery_start_day).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })})</span>}</label>
-                <input type="date" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(e) => set("delivery_day", e.target.value)} />
+                <label id="pm-delivery-label">Fecha de entrega {product.delivery_start_day && <span>(a partir de {fmtDeliveryStart(product.delivery_start_day)})</span>}</label>
+                <DatePicker tone="catalog" aria-labelledby="pm-delivery-label" className={styles.input} min={toISO(product.delivery_start_day)} value={form.delivery_day} onChange={(v) => set("delivery_day", v)} placeholder="Elegir fecha de entrega" />
                 {form.delivery_day && toISO(product.delivery_start_day) && toISO(form.delivery_day) < toISO(product.delivery_start_day) && (
-                  <span style={{ color: "#b42318", fontSize: ".82rem", display: "block", marginTop: ".3rem" }}>
-                    Elige una fecha a partir del {new Date(product.delivery_start_day).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}.
+                  <span className={styles.fieldError} role="alert">
+                    Elige una fecha a partir del {fmtDeliveryStart(product.delivery_start_day)}.
                   </span>
                 )}
               </div>
@@ -592,9 +628,9 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
             )}
 
             <div className={styles.subActions}>
-              <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(null)}>Cancelar</button>
-              <button className={`${styles.btn} ${styles.btnPrimary}`} disabled={!canAdd} onClick={addToCart}>
-                <Check size={16} /> Agregar
+              <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(null)}>Cancelar</button>
+              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} disabled={!canAdd} onClick={addToCart}>
+                <Check size={16} aria-hidden="true" /> Agregar
               </button>
             </div>
           </div>
@@ -604,22 +640,22 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
       {/* ── Step: confirmación "agregado" ── */}
       {step === "added" && lastAdded && (
         <div className={styles.subOverlay} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.subModal}>
-            <div className={styles.addedIcon}>
+          <div className={styles.subModal} ref={addedStepRef} role="dialog" aria-modal="true" aria-labelledby={subTitleId} tabIndex={-1}>
+            <div className={styles.addedIcon} aria-hidden="true">
               <Check size={28} strokeWidth={2.5} />
             </div>
-            <h3 className={styles.addedTitle}>¡Agregado al carrito!</h3>
+            <h3 className={styles.addedTitle} id={subTitleId}>¡Agregado al carrito!</h3>
             <p className={styles.addedDesc}>
               <strong>{lastAdded.qty}×</strong> {lastAdded.name}
               {lastAdded.variantLabel && <span className={styles.addedVariant}> · {lastAdded.variantLabel}</span>}
             </p>
 
             <div className={styles.addedActions}>
-              <button className={`${styles.btn} ${styles.btnGhost}`} onClick={keepShopping}>
-                <ShoppingCart size={16} /> Seguir comprando
+              <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={keepShopping}>
+                <ShoppingCart size={16} aria-hidden="true" /> Seguir comprando
               </button>
-              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={goToCart}>
-                <ShoppingBag size={16} /> Ver carrito
+              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={goToCart}>
+                <ShoppingBag size={16} aria-hidden="true" /> Ver carrito
               </button>
             </div>
           </div>
@@ -628,10 +664,10 @@ const ProductModal = ({ product, business, onClose, onAdded, onOpenCart, presele
 
       {showTerms && (
         <div className={styles.subOverlay} onClick={(e) => { e.stopPropagation(); setShowTerms(false); }}>
-          <div className={styles.subModal} onClick={(e) => e.stopPropagation()}>
-            <h3>Términos y condiciones</h3>
+          <div className={styles.subModal} onClick={(e) => e.stopPropagation()} ref={termsRef} role="dialog" aria-modal="true" aria-labelledby={`${subTitleId}-terms`} tabIndex={-1}>
+            <h3 id={`${subTitleId}-terms`}>Términos y condiciones</h3>
             <p className={styles.termsText}>{product.terms}</p>
-            <div className={styles.subActions}><button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setShowTerms(false)}>Entendido</button></div>
+            <div className={styles.subActions}><button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setShowTerms(false)}>Entendido</button></div>
           </div>
         </div>
       )}

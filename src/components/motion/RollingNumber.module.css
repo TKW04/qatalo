@@ -1,0 +1,48 @@
+.roll {
+  display: inline-grid;
+  overflow: hidden;
+  padding-block: 0.08em;
+  margin-block: -0.08em;
+  vertical-align: bottom;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll > span {
+  grid-area: 1 / 1;
+}
+
+.enter {
+  animation: rollIn 360ms var(--ease-out) both;
+}
+
+.exit {
+  animation: rollOut 360ms var(--ease-out) both;
+}
+
+@keyframes rollIn {
+  from {
+    opacity: 0;
+    transform: translateY(70%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rollOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exit {
+    display: none;
+  }
+}

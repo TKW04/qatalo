@@ -1,6 +1,12 @@
-import { Search, Share2, UtensilsCrossed, Star } from "lucide-react";
+import { Share2, UtensilsCrossed } from "lucide-react";
 import styles from "./TemplateFood.module.css";
+import shared from "./catalogShared.module.css";
 import ProductThumb from "./ProductThumb";
+import CardBadges from "./CardBadges";
+import SearchBar from "./SearchBar";
+import CategoryPills from "./CategoryPills";
+import CollectionsGrid from "./CollectionsGrid";
+import { cardPriceLabel, PRIORITY_IMAGES } from "./catalogPrice";
 
 /**
  * TemplateFood (Comidas / Dulces)
@@ -23,18 +29,12 @@ export default function TemplateFood({
 }) {
   const { name = "Cocina", description = "", logo_url } = business;
 
-  const formatPrice = (price) =>
-    Number(price).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <button onClick={onShare} className={styles.shareBtn} aria-label="Compartir menú">
-            <Share2 size={20} />
+          <button type="button" onClick={onShare} className={styles.shareBtn} aria-label="Compartir menú">
+            <Share2 size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -50,139 +50,91 @@ export default function TemplateFood({
 
         {/* Controles estilo App de Delivery */}
         <div className={styles.controls}>
-          <div className={styles.searchContainer}>
-            <Search size={20} className={styles.searchIcon} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="¿Qué se te antoja hoy?"
-              className={styles.searchInput}
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={onSearchChange}
+            placeholder="¿Qué se te antoja hoy?"
+            label="Buscar en el menú"
+            className={styles.searchContainer}
+            iconClassName={styles.searchIcon}
+            inputClassName={styles.searchInput}
+          />
 
-          <nav className={styles.categoryNav} aria-label="Categorías del menú">
-            <button
-              className={`${styles.catPill} ${selectedCategory === "all" ? styles.activePill : ""}`}
-              onClick={() => onCategoryChange("all")}
-            >
-              Menú Completo
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.category_id}
-                className={`${styles.catPill} ${selectedCategory === cat.category_id ? styles.activePill : ""}`}
-                onClick={() => onCategoryChange(cat.category_id)}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </nav>
+          <CategoryPills
+            categories={categories}
+            selected={selectedCategory}
+            onChange={onCategoryChange}
+            allLabel="Menú Completo"
+            label="Categorías del menú"
+            className={styles.categoryNav}
+            pillClassName={styles.catPill}
+            activeClassName={styles.activePill}
+          />
         </div>
       </header>
 
       {showCollections && (
-        <section className={styles.collections} aria-label="Colecciones">
-          <div className={styles.collectionsGrid}>
-            {collections.map((c) => {
-              const useLogo = c.cover && c.cover === business?.logo_url;
-              return (
-                <button
-                  key={c.category_id}
-                  type="button"
-                  className={styles.collectionCard}
-                  onClick={() => onSelectCollection?.(c.category_id)}
-                >
-                  <div className={styles.collectionMedia}>
-                    {c.cover ? (
-                      <img
-                        src={c.cover}
-                        alt={c.name}
-                        loading="lazy"
-                        className={useLogo ? styles.collectionLogo : styles.collectionImg}
-                      />
-                    ) : null}
-                  </div>
-                  <div className={styles.collectionBody}>
-                    <span className={styles.collectionName}>{c.name}</span>
-                    <span className={styles.collectionCount}>{c.count} producto{c.count !== 1 ? "s" : ""}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <CollectionsGrid
+          collections={collections}
+          business={business}
+          onSelect={onSelectCollection}
+          styles={styles}
+        />
       )}
 
       {!(showCollections && products.length === 0) && (products.length === 0 ? (
         <div className={styles.emptyState}>
-          <UtensilsCrossed size={50} strokeWidth={1.5} />
+          <UtensilsCrossed size={50} strokeWidth={1.5} aria-hidden="true" />
           <p>No encontramos platillos para esta selección.</p>
         </div>
       ) : (
         <section className={styles.grid} aria-label="Menú">
-          {products.map((product) => (
-            <article
-              key={product.product_id}
-              className={styles.card}
-              onClick={() => onProductClick(product)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onProductClick(product);
-                }
-              }}
-            >
-              <div className={styles.media}>
-                <ProductThumb
-                  product={product}
-                  business={business}
-                  imgClassName={styles.image}
-                  placeholderClassName={styles.imagePlaceholder}
-                />
+          {products.map((product, index) => {
+            const soldOut = product.is_available !== "available";
+            return (
+              <article
+                key={product.product_id}
+                className={`${styles.card} ${soldOut ? styles.isSoldOut : ""}`}
+              >
+                <div className={styles.media}>
+                  <ProductThumb
+                    product={product}
+                    business={business}
+                    imgClassName={styles.image}
+                    placeholderClassName={styles.imagePlaceholder}
+                    priority={index < PRIORITY_IMAGES}
+                  />
 
-                {product.show_quantity && product.quantity > 0 && (
-                  <span className={styles.ribbon}>Disp: {product.quantity}</span>
-                )}
+                  <CardBadges featured={product.featured} soldOut={soldOut} />
 
-                {product.featured && (
-                  <span className={styles.featuredStar} aria-label="Destacado">
-                    <Star size={16} strokeWidth={2} fill="currentColor" />
+                  {product.show_quantity && product.quantity > 0 && (
+                    <span className={styles.ribbon}>Disp: {product.quantity}</span>
+                  )}
+
+                  <span className={styles.priceTag}>{cardPriceLabel(product)}</span>
+                </div>
+
+                <div className={styles.body}>
+                  <h2 className={styles.productName}>
+                    <button
+                      type="button"
+                      className={shared.cardLink}
+                      onClick={() => onProductClick(product)}
+                    >
+                      {product.name}
+                    </button>
+                  </h2>
+                  {product.description && (
+                    <p className={styles.productDesc}>{product.description}</p>
+                  )}
+                  {/* Decorativo: toda la tarjeta abre el detalle (botón del título) */}
+                  <span className={styles.order} aria-hidden="true">
+                    {soldOut ? "No disponible" : "Ordenar ahora"}
                   </span>
-                )}
-
-                {product.is_available !== "available" && (
-                  <div className={styles.soldOutOverlay}>
-                    <span>Agotado</span>
-                  </div>
-                )}
-
-                <span className={styles.priceTag}>
-                  <small>{product.currency}</small> {formatPrice(product.price)}
-                </span>
-              </div>
-
-              <div className={styles.body}>
-                <h2 className={styles.productName}>{product.name}</h2>
-                {product.description && (
-                  <p className={styles.productDesc}>{product.description}</p>
-                )}
-                <button
-                  type="button"
-                  className={styles.order}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onProductClick(product);
-                  }}
-                  disabled={product.is_available !== "available"}
-                >
-                  {product.is_available === "available" ? "Ordenar ahora" : "No disponible"}
-                </button>
-              </div>
-            </article>
-          ))}
+                </div>
+              </article>
+            );
+          })}
         </section>
       ))}
     </main>

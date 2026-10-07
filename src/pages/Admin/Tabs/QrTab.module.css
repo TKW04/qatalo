@@ -1,191 +1,270 @@
 .grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 1.5rem;
+  gap: var(--space-5);
   align-items: start;
 }
 
+.card {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+}
+
 .cardTitle {
-  font-size: 1.2rem;
-  color: #113f67;
-  margin: 0 0 .3rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--color-ink-strong);
+  margin: 0 0 var(--space-1);
 }
 
 .cardSub {
-  color: #667085;
-  font-size: .9rem;
-  margin: 0 0 1.2rem;
+  color: var(--color-ink);
+  font-size: var(--fs-base);
+  margin: 0 0 var(--space-4);
 }
 
 /* ── QR ── */
 .qrWrap {
   display: flex;
   justify-content: center;
-  padding: 1rem;
-  background: #f7f9fb;
-  border-radius: 14px;
-  margin-bottom: 1.2rem;
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-4);
+}
+
+/* Estilo del QR: segmentado clásico / marca */
+.styleToggle {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  padding: var(--space-1);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-sunken);
+}
+
+.styleBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.styleBtn:active {
+  transform: scale(0.97);
+}
+
+.styleBtnActive {
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font-weight: var(--fw-bold);
+  box-shadow: var(--shadow-1);
+}
+
+.swatches {
+  display: inline-flex;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--color-line-strong);
+}
+
+.swatch + .swatch {
+  margin-left: -4px;
+}
+
+.styleHint {
+  margin: 0 0 var(--space-4);
+  font-size: var(--fs-xs);
+  color: var(--color-ink);
+}
+
+.linkBtn,
+.copyBtn,
+.copyTextBtn,
+.resetBtn,
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control);
+  font-family: inherit;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-base);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.linkBtn:active,
+.copyBtn:active,
+.copyTextBtn:active,
+.resetBtn:active,
+.shareBtn:active {
+  transform: scale(0.97);
 }
 
 .linkBtn {
   width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .5rem;
-  padding: .7rem 1.4rem;
-  border-radius: 10px;
-  border: 1px solid #34699a;
-  background: transparent;
-  color: #34699a;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .2s ease;
-}
-
-.linkBtn:hover {
-  background: #34699a;
-  color: #fff;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-ink-strong);
 }
 
 /* ── Campos ── */
 .fieldLabel {
   display: block;
-  font-size: .85rem;
-  font-weight: 600;
-  color: #344054;
-  margin-bottom: .4rem;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--color-ink-strong);
+  margin-bottom: var(--space-2);
+}
+
+.fieldGap {
+  margin-top: var(--space-5);
 }
 
 .editable {
-  font-weight: 400;
-  color: #98a2b3;
-  font-size: .8rem;
+  font-weight: var(--fw-regular);
+  color: var(--color-ink-soft);
 }
 
-/* Link copiable */
 .copyRow {
   display: flex;
-  gap: .5rem;
+  gap: var(--space-2);
+}
+
+.copyInput,
+.messageBox {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-control);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  color: var(--color-ink-strong);
+  background: var(--color-surface);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .copyInput {
   flex: 1;
-  min-width: 0;
-  padding: .65rem .8rem;
-  border: 1px solid #d0d5dd;
-  border-radius: 8px;
-  font-size: .9rem;
-  color: #1d2939;
-  background: #f9fafb;
+  background: var(--color-surface-sunken);
+}
+
+.messageBox {
+  resize: vertical;
+  line-height: var(--lh-body);
+}
+
+.messageBox:focus-visible,
+.copyInput:focus-visible {
+  border-color: var(--color-interactive);
+  box-shadow: 0 0 0 3px var(--color-info-bg);
 }
 
 .copyBtn,
 .copyTextBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  padding: .65rem 1rem;
   border: none;
-  border-radius: 8px;
-  background: #113f67;
-  color: #fff;
-  font-weight: 600;
-  font-size: .88rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background .2s ease;
-}
-
-.copyBtn:hover,
-.copyTextBtn:hover {
-  background: #34699a;
-}
-
-/* Mensaje editable */
-.messageBox {
-  width: 100%;
-  box-sizing: border-box;
-  padding: .75rem .9rem;
-  border: 1px solid #d0d5dd;
-  border-radius: 10px;
-  font-size: .92rem;
-  font-family: inherit;
-  color: #1d2939;
-  resize: vertical;
-  line-height: 1.5;
-}
-
-.messageBox:focus {
-  outline: none;
-  border-color: #34699a;
+  background: var(--color-interactive);
+  color: var(--color-on-brand);
 }
 
 .msgActions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: .8rem;
-  margin-top: .6rem;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .resetBtn {
-  background: transparent;
   border: none;
-  color: #34699a;
-  font-size: .82rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
+  background: transparent;
+  color: var(--color-interactive);
 }
 
-/* ── Botones de compartir ── */
+/* ── Compartir ── */
 .shareButtons {
   display: flex;
-  gap: .7rem;
-  margin-top: 1.4rem;
   flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
 }
 
 .shareBtn {
-  flex: 1;
-  min-width: 160px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .5rem;
-  padding: .8rem 1rem;
-  border-radius: 10px;
+  flex: 1 1 160px;
   border: none;
-  font-weight: 700;
-  font-size: .92rem;
-  cursor: pointer;
-  text-decoration: none;
-  transition: transform .15s ease, box-shadow .2s ease;
 }
 
-.shareBtn:hover {
-  transform: translateY(-2px);
-}
-
+/* Verde WhatsApp con texto oscuro: AA (blanco sobre #25d366 no pasa) */
 .whatsapp {
   background: #25d366;
-  color: #fff;
-}
-
-.whatsapp:hover {
-  box-shadow: 0 8px 20px -6px rgba(37, 211, 102, .5);
+  color: var(--color-ink-strong);
 }
 
 .generic {
-  background: #eef2f6;
-  color: #113f67;
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-strong);
 }
 
-.generic:hover {
-  box-shadow: 0 8px 20px -6px rgba(17, 63, 103, .25);
+@media (hover: hover) and (pointer: fine) {
+  .linkBtn:hover {
+    border-color: var(--color-interactive);
+    background: var(--color-surface-sunken);
+  }
+
+  .copyBtn:hover,
+  .copyTextBtn:hover {
+    background: var(--color-interactive-hover);
+  }
+
+  .resetBtn:hover {
+    background: var(--color-surface-sunken);
+  }
+
+  .whatsapp:hover {
+    background: #1ebe5b;
+  }
+
+  .generic:hover {
+    background: var(--color-line);
+  }
 }
 
-/* ── Responsive ── */
 @media (max-width: 860px) {
   .grid {
     grid-template-columns: 1fr;
@@ -193,14 +272,15 @@
 }
 
 @media (max-width: 480px) {
-  .qrWrap{
-    padding: 0px;
-    margin: 0px;
+  .card {
+    padding: var(--space-4);
   }
+
+  .qrWrap {
+    padding: var(--space-2);
+  }
+
   .copyRow {
     flex-direction: column;
-  }
-  .copyBtn {
-    justify-content: center;
   }
 }

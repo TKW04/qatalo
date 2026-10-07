@@ -1,12 +1,16 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { saveAs } from "file-saver";
-import { FaPen, FaTrashCan, FaEye, FaArrowsRotate, FaRegImage, FaPlus, FaFileExcel, FaCloudArrowUp, FaMagnifyingGlass } from "react-icons/fa6";
+import {
+  Pencil, Trash2, Eye, RefreshCw, ImagePlus, Image as ImageIcon, Plus, FileSpreadsheet, UploadCloud, Search, X,
+  Bike, Store, PenLine, Camera, AlertTriangle, Ruler, Palette, ArrowLeft, ArrowRight, Download, Package, SearchX,
+} from "lucide-react";
 
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
-import Loading from "../../../components/UI/Loading";
-import PrimaryButton from "../../../components/PrimaryButton";
+import {
+  PageHeader, Button, IconButton, Tabs, TabPanel, Modal, EmptyState, SkeletonList,
+} from "../../../components/admin";
 import { currencies, getAges, formatted } from "../../../helpers/utils";
 import { fetchBusinessData } from "../../../services/businessApi";
 import { fetchCategories } from "../../../services/categoryApi";
@@ -14,7 +18,7 @@ import {
   fetchProducts, createProduct, updateProduct, deleteProduct,
   deleteProductImage, uploadProductImages, importProducts
 } from "../../../services/productsApi";
-import adminStyles from "../AdminDashboard.module.css";
+import DatePicker from "../../../components/DatePicker";
 import styles from "./Products.module.css";
 import ProductSettings from "./ProductSettings";
 import CurrencySelect from "../../../components/CurrencySelect";
@@ -44,17 +48,9 @@ const emptyColorOption = { name: "", hex: "#000000" };
 // Convierte código de moneda (DOP) a símbolo (RD$). Si ya es símbolo o no se encuentra, lo deja igual.
 const curSymbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
-const tabStyle = (active) => ({
-  padding: ".6rem 1rem", border: "none", background: "transparent", cursor: "pointer",
-  fontSize: ".95rem", fontWeight: active ? 700 : 500,
-  color: active ? "#113f67" : "#667085",
-  borderBottom: active ? "2px solid #113f67" : "2px solid transparent",
-  marginBottom: "-2px",
-});
-
 const Toggle = ({ checked, onChange, label, disabled = false }) => (
-  <label className={styles.toggle} style={disabled ? { opacity: .5, cursor: "not-allowed" } : undefined}>
-    <input type="checkbox" checked={!!checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+  <label className={`${styles.toggle} ${disabled ? styles.toggleDisabled : ""}`}>
+    <input type="checkbox" role="switch" className={styles.toggleInput} checked={!!checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
     <span className={styles.track}><span className={styles.thumb} /></span>
     {label && <span className={styles.toggleLabel}>{label}</span>}
   </label>
@@ -347,7 +343,7 @@ const Products = () => {
     mutationFn: async () => {
       setImportStep("importing");
       const mapped = importRows
-        .map((row, i) => {
+        .map((row) => {
           const catName = importMapping.category ? String(row[importMapping.category] || "").trim() : "";
           const cat = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
           return {
@@ -477,40 +473,59 @@ const Products = () => {
   const hasActiveFilters = search || filterCategory !== "all" || filterStatus !== "all";
   const clearFilters = () => { setSearch(""); setFilterCategory("all"); setFilterStatus("all"); setFilterSort("orden"); };
 
-  if (isLoading) return <Loading message="Cargando productos..." />;
   const busy = saveMutation.isPending;
+  const focusProductForm = () => {
+    const el = document.getElementById("product-name");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus({ preventScroll: true });
+  };
+
+  const header = <PageHeader title="Productos" description="Crea, edita y organiza los productos de tu catálogo" />;
+
+  if (isLoading) {
+    return (
+      <div>
+        {header}
+        <SkeletonList rows={5} label="Cargando productos..." />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Gestión de Productos</h1>
-        <p>Administra tu catálogo de productos</p>
-      </div>
+      {header}
 
-      <div style={{ display: "flex", gap: ".25rem", borderBottom: "2px solid #eef0f3", marginBottom: "1.25rem" }}>
-        <button type="button" onClick={() => setTab("products")} style={tabStyle(tab === "products")}>Productos</button>
-        <button type="button" onClick={() => setTab("settings")} style={tabStyle(tab === "settings")}>Configuración</button>
-      </div>
+      <Tabs
+        idPrefix="products"
+        label="Secciones de productos"
+        items={[
+          { id: "products", label: "Productos", icon: Package },
+          { id: "settings", label: "Configuración" },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
 
-      {tab === "settings" && <ProductSettings business={business} />}
+      <TabPanel idPrefix="products" id="settings" value={tab}>
+        <ProductSettings business={business} />
+      </TabPanel>
 
-      {tab === "products" && (<>
-      {busy && <Loading message={editingId ? "Actualizando producto..." : "Creando producto..."} />}
-
-      <div className={styles.card}>
-        <h2>{editingId ? "Editar Producto" : "Nuevo Producto"}</h2>
+      <TabPanel idPrefix="products" id="products" value={tab}>
+      <section className={styles.card} aria-labelledby="product-form-title">
+        <h2 id="product-form-title">{editingId ? "Editar producto" : "Nuevo producto"}</h2>
         <p className={styles.requiredNote}>
           Los campos marcados con <span className={styles.required}>*</span> son obligatorios.
         </p>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} aria-busy={busy || undefined}>
+        <fieldset className={styles.fieldset} disabled={busy}>
           <div className={styles.formGroup}>
-            <label>Nombre <span className={styles.required}>*</span></label>
-            <input className="input" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Camisa de lino" />
+            <label htmlFor="product-name">Nombre <span className={styles.required}>*</span></label>
+            <input id="product-name" className="input" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Camisa de lino" />
             {errors.name && <span className={styles.err}>{errors.name}</span>}
           </div>
           <div className={styles.formGroup}>
-            <label>Descripción</label>
-            <input className="input" value={form.description} onChange={(e) => setField("description", e.target.value)} />
+            <label htmlFor="product-description">Descripción</label>
+            <input id="product-description" className="input" value={form.description} onChange={(e) => setField("description", e.target.value)} />
           </div>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
@@ -522,8 +537,8 @@ const Products = () => {
               {errors.currency && <span className={styles.err}>{errors.currency}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label>Precio base <span className={styles.required}>*</span> {curSymbol(form.currency)}</label>
-              <input type="number" step="0.01" min="0" className="input" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="1850.00" />
+              <label htmlFor="product-price">Precio base <span className={styles.required}>*</span> {curSymbol(form.currency)}</label>
+              <input id="product-price" type="number" step="0.01" min="0" className="input" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="1850.00" />
               {errors.price && <span className={styles.err}>{errors.price}</span>}
             </div>
             <div className={styles.formGroup}>
@@ -534,7 +549,7 @@ const Products = () => {
                 options={[{ value: "included", label: "Precio incluye ITBIS (se desglosa)" }, { value: "added", label: "ITBIS se suma aparte" }, { value: "exempt", label: "Exento de ITBIS" }]}
                 placeholder="Seleccionar"
               />
-              <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
+              <span className={styles.hint}>
                 {form.itbis_mode === "included"
                   ? "El precio ya incluye el 18%. En la factura se mostrará desglosado."
                   : form.itbis_mode === "added"
@@ -547,7 +562,7 @@ const Products = () => {
           {(
             <div className={styles.variantSection}>
               <h4 className={styles.variantTitle}>Otras monedas (opcional)</h4>
-              <p style={{ fontSize: ".8rem", color: "#667085", margin: "-.3rem 0 .75rem" }}>
+              <p className={styles.sectionHint}>
                 Define un precio fijo en otra(s) moneda(s). El cliente podrá elegir en cuál pagar.
               </p>
               <div className={styles.variantForm}>
@@ -559,13 +574,13 @@ const Products = () => {
                   />
                 </div>
                 <div className={styles.variantField}>
-                  <label>Precio {curSymbol(altPriceForm.currency)}</label>
-                  <input type="number" min="0" step="0.01" className="input" placeholder="0"
+                  <label htmlFor="product-alt-price">Precio {curSymbol(altPriceForm.currency)}</label>
+                  <input id="product-alt-price" type="number" min="0" step="0.01" className="input" placeholder="0"
                     value={altPriceForm.price}
                     onChange={(e) => setAltPriceForm((f) => ({ ...f, price: Number(e.target.value) }))} />
                 </div>
                 <div className={styles.variantBtns}>
-                  <button type="button" className={styles.btnSmall} onClick={addAltPrice}><FaPlus size={11} /> Agregar</button>
+                  <Button size="sm" icon={Plus} onClick={addAltPrice}>Agregar</Button>
                 </div>
               </div>
               {(form.alt_prices || []).length > 0 ? (
@@ -578,7 +593,7 @@ const Products = () => {
                           <td>{a.currency}</td>
                           <td>{curSymbol(a.currency)} {formatted(a.price)}</td>
                           <td className={styles.variantActions}>
-                            <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeAltPrice(a.currency)}><FaTrashCan size={12} /></button>
+                            <IconButton icon={Trash2} variant="danger" size={16} label={`Quitar precio en ${a.currency}`} onClick={() => removeAltPrice(a.currency)} />
                           </td>
                         </tr>
                       ))}
@@ -614,18 +629,19 @@ const Products = () => {
           </div>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Orden</label>
-              <input type="number" min="0" className="input" value={form.orden} onChange={(e) => setField("orden", e.target.value)} />
+              <label htmlFor="product-orden">Orden</label>
+              <input id="product-orden" type="number" min="0" className="input" value={form.orden} onChange={(e) => setField("orden", e.target.value)} />
             </div>
             {!form.is_customizable && (
               <>
                 <div className={styles.formGroup}>
-                  <label>Cantidad</label>
-                  <input type="number" min="0" className="input" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} />
+                  <label htmlFor="product-quantity">Cantidad</label>
+                  <input id="product-quantity" type="number" min="0" className="input" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Umbral de stock bajo</label>
+                  <label htmlFor="product-low-stock">Umbral de stock bajo</label>
                   <input
+                    id="product-low-stock"
                     type="number"
                     min="0"
                     className="input"
@@ -633,11 +649,11 @@ const Products = () => {
                     onChange={e => setField("low_stock_threshold", e.target.value)}
                     placeholder="Usa el umbral global"
                   />
-                  <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
+                  <span className={styles.hint}>
                     {form.low_stock_threshold === ""
                       ? "Vacío = usa el umbral configurado en tu negocio"
                       : form.low_stock_threshold === "0" || Number(form.low_stock_threshold) === 0
-                        ? "⚠️ Alertas desactivadas para este producto"
+                        ? <span className={styles.hintWarn}><AlertTriangle size={14} aria-hidden="true" /> Alertas desactivadas para este producto</span>
                         : `Alerta cuando queden ≤ ${form.low_stock_threshold} unidades`}
                   </span>
                 </div>
@@ -649,13 +665,13 @@ const Products = () => {
           {businessLocalities.length > 0 && (
             <>
               <div className={styles.formGroup}>
-                <label>Localidades disponibles</label>
-                <p style={{ color: "#667085", fontSize: ".82rem", margin: "-.2rem 0 .5rem" }}>Sin selección = disponible en todas.</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                <span className={styles.groupLabel} id="product-localities-label">Localidades disponibles</span>
+                <p className={styles.sectionHint}>Sin selección = disponible en todas.</p>
+                <div className={styles.chips} role="group" aria-labelledby="product-localities-label">
                   {businessLocalities.map((loc) => {
                     const active = (form.localities || []).includes(loc);
                     return (
-                      <button type="button" key={loc} onClick={() => toggleLocality(loc)} style={{ border: active ? "1px solid #113f67" : "1px solid #d0d5dd", background: active ? "#113f67" : "#fff", color: active ? "#fff" : "#344054", borderRadius: "999px", padding: ".4rem .9rem", fontSize: ".85rem", fontWeight: 600, cursor: "pointer" }}>
+                      <button type="button" key={loc} onClick={() => toggleLocality(loc)} aria-pressed={active} className={styles.chip}>
                         {loc}
                       </button>
                     );
@@ -665,8 +681,8 @@ const Products = () => {
 
               {(form.localities || []).length > 0 && (
                 <div className={styles.localityConfigSection}>
-                  <label className={styles.localityConfigTitle}>Opciones de entrega por localidad</label>
-                  <p style={{ color: "#667085", fontSize: ".82rem", margin: "-.2rem 0 .75rem" }}>
+                  <span className={styles.localityConfigTitle}>Opciones de entrega por localidad</span>
+                  <p className={styles.sectionHint}>
                     Configura si cada localidad tiene delivery y/o take out. El precio de delivery puede ser 0 (gratis).
                   </p>
                   {errors.locality_config && <span className={styles.err}>{errors.locality_config}</span>}
@@ -680,15 +696,15 @@ const Products = () => {
                             <label className={styles.localityOption}>
                               <input type="checkbox" checked={!!cfg.delivery}
                                 onChange={(e) => updateLocalityConfig(loc, "delivery", e.target.checked)} />
-                              🛵 Delivery
+                              <Bike size={16} aria-hidden="true" /> Delivery
                             </label>
                             {cfg.delivery && (
                               <>
                                 {/* Moneda base */}
                                 <div className={styles.deliveryPriceRow}>
-                                  <span className={styles.deliveryPriceLabel}>Precio {curSymbol(form.currency)} ({form.currency})</span>
-                                  <input type="number" min="0" step="0.01" className="input"
-                                    style={{ width: "110px" }} placeholder="0"
+                                  <label className={styles.deliveryPriceLabel} htmlFor={`delivery-${loc}-base`}>Precio {curSymbol(form.currency)} ({form.currency})</label>
+                                  <input id={`delivery-${loc}-base`} type="number" min="0" step="0.01" className={`input ${styles.priceInput}`}
+                                    placeholder="0"
                                     value={cfg.delivery_price}
                                     onChange={(e) => updateLocalityConfig(loc, "delivery_price", Number(e.target.value))} />
                                   {Number(cfg.delivery_price) === 0 && <span className={styles.freeTag}>Gratis</span>}
@@ -698,9 +714,9 @@ const Products = () => {
                                   const altPrice = (cfg.delivery_prices || {})[ap.currency] ?? "";
                                   return (
                                     <div key={ap.currency} className={styles.deliveryPriceRow}>
-                                      <span className={styles.deliveryPriceLabel}>Precio {curSymbol(ap.currency)} ({ap.currency})</span>
-                                      <input type="number" min="0" step="0.01" className="input"
-                                        style={{ width: "110px" }} placeholder="0"
+                                      <label className={styles.deliveryPriceLabel} htmlFor={`delivery-${loc}-${ap.currency}`}>Precio {curSymbol(ap.currency)} ({ap.currency})</label>
+                                      <input id={`delivery-${loc}-${ap.currency}`} type="number" min="0" step="0.01" className={`input ${styles.priceInput}`}
+                                        placeholder="0"
                                         value={altPrice}
                                         onChange={(e) => updateLocalityDeliveryPrice(loc, ap.currency, Number(e.target.value))} />
                                       {Number(altPrice) === 0 && <span className={styles.freeTag}>Gratis</span>}
@@ -712,7 +728,7 @@ const Products = () => {
                             <label className={styles.localityOption}>
                               <input type="checkbox" checked={!!cfg.takeout}
                                 onChange={(e) => updateLocalityConfig(loc, "takeout", e.target.checked)} />
-                              🏪 Take out
+                              <Store size={16} aria-hidden="true" /> Take out
                             </label>
                           </div>
                         </div>
@@ -725,33 +741,33 @@ const Products = () => {
           )}
 
           <div className={styles.formGroup}>
-            <label>Imágenes (opcional, máx. {MAX_IMAGES})</label>
-            <span style={{ fontSize: ".78rem", color: "#667085", display: "block", marginBottom: ".5rem" }}>
+            <span className={styles.groupLabel}>Imágenes (opcional, máx. {MAX_IMAGES})</span>
+            <span className={styles.sectionHint}>
               Si no agregas imagen, en el catálogo se mostrará el logo de tu negocio.
             </span>
             <div className={styles.imageRow}>
               {existingUrls.map((url) => (
                 <div key={url} className={styles.thumbBox}>
                   <img src={url} alt="" className={styles.thumbImg} />
-                  <button type="button" className={styles.thumbRemove} onClick={() => markForDelete(url)}>×</button>
+                  <button type="button" className={styles.thumbRemove} onClick={() => markForDelete(url)} aria-label="Quitar imagen"><X size={14} aria-hidden="true" /></button>
                 </div>
               ))}
               {newFiles.map((file, idx) => (
                 <div key={idx} className={styles.thumbBox}>
                   <img src={URL.createObjectURL(file)} alt="" className={styles.thumbImg} />
-                  <button type="button" className={styles.thumbRemove} onClick={() => removeNewFile(idx)}>×</button>
+                  <button type="button" className={styles.thumbRemove} onClick={() => removeNewFile(idx)} aria-label="Quitar imagen"><X size={14} aria-hidden="true" /></button>
                 </div>
               ))}
               {totalImages < MAX_IMAGES && (
                 <label className={styles.uploadBox}>
-                  <FaRegImage size={22} /><span>Agregar</span>
-                  <input type="file" accept="image/*" multiple hidden onChange={onSelectFiles} />
+                  <ImagePlus size={22} aria-hidden="true" /><span>Agregar</span>
+                  <input type="file" accept="image/*" multiple className={styles.visuallyHidden} onChange={onSelectFiles} />
                 </label>
               )}
             </div>
             {errors.images && <span className={styles.err}>{errors.images}</span>}
             {toDeleteUrls.length > 0 && (
-              <span style={{ fontSize: ".78rem", color: "#b42318", marginTop: ".3rem", display: "block" }}>
+              <span className={styles.warnText}>
                 {toDeleteUrls.length} imagen(es) se eliminarán al guardar. Si cancelas, se conservan.
               </span>
             )}
@@ -770,8 +786,8 @@ const Products = () => {
           {form.is_customizable && (
             <div className={styles.variantSection}>
               {/* Tipo de variante */}
-              <div className={styles.variantField} style={{ marginBottom: ".75rem" }}>
-                <label>Tipo de variante</label>
+              <div className={`${styles.variantField} ${styles.variantTypeField}`}>
+                <span className={styles.groupLabel}>Tipo de variante</span>
                 <Select
                   value={form.variant_type}
                   onChange={(v) => { setField("variant_type", v); setVariantForm(emptyVariant); setEditingVariantId(null); }}
@@ -788,12 +804,12 @@ const Products = () => {
               {form.variant_type === "size" ? (
                 <>
                   <div className={styles.variantForm}>
-                    <div className={styles.variantField}><label>Tamaño <span className={styles.required}>*</span></label><input className="input" placeholder="1 libra (16oz)…" value={variantForm.size_name} onChange={(e) => setVariantForm((f) => ({ ...f, size_name: e.target.value }))} /></div>
-                    <div className={styles.variantField}><label>Precio {curSymbol(form.currency)} <span className={styles.required}>*</span></label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.price} onChange={(e) => setVariantForm((f) => ({ ...f, price: Number(e.target.value) }))} /></div>
-                    <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-size-name">Tamaño <span className={styles.required}>*</span></label><input id="variant-size-name" className="input" placeholder="1 libra (16oz)…" value={variantForm.size_name} onChange={(e) => setVariantForm((f) => ({ ...f, size_name: e.target.value }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-price">Precio {curSymbol(form.currency)} <span className={styles.required}>*</span></label><input id="variant-price" type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.price} onChange={(e) => setVariantForm((f) => ({ ...f, price: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-stock">Stock</label><input id="variant-stock" type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
                     <div className={styles.variantBtns}>
-                      <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
-                      {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
+                      <Button size="sm" icon={Plus} onClick={addOrUpdateVariant}>{editingVariantId ? "Actualizar" : "Agregar"}</Button>
+                      {editingVariantId && <Button size="sm" variant="secondary" onClick={cancelEditVariant}>Cancelar</Button>}
                     </div>
                   </div>
                   {errors.variants && <span className={styles.err}>{errors.variants}</span>}
@@ -804,12 +820,12 @@ const Products = () => {
                         <tbody>
                           {(form.variants || []).map((v) => (
                             <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
-                              <td>{v.size_name || "—"}</td>
+                              <td>{v.size_name || "-"}</td>
                               <td>{curSymbol(form.currency)} {formatted(v.price || 0)}</td>
                               <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
                               <td className={styles.variantActions}>
-                                <button type="button" className={styles.iconBtn} onClick={() => startEditVariant(v)}><FaPen size={12} /></button>
-                                <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeVariant(v.variant_id)}><FaTrashCan size={12} /></button>
+                                <IconButton icon={Pencil} size={16} label="Editar variante" onClick={() => startEditVariant(v)} />
+                                <IconButton icon={Trash2} variant="danger" size={16} label="Eliminar variante" onClick={() => removeVariant(v.variant_id)} />
                               </td>
                             </tr>
                           ))}
@@ -822,13 +838,13 @@ const Products = () => {
               ) : (
                 <>
                   <div className={styles.variantForm}>
-                    <div className={styles.variantField}><label>Color <span className={styles.required}>*</span></label><input className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
-                    <div className={styles.variantField}><label>Talla</label><input className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
-                    <div className={styles.variantField}><label>Stock</label><input type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
-                    <div className={styles.variantField}><label>Precio extra {curSymbol(form.currency)}</label><input type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-color">Color <span className={styles.required}>*</span></label><input id="variant-color" className="input" placeholder="Rojo…" value={variantForm.color} onChange={(e) => setVariantForm((f) => ({ ...f, color: e.target.value }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-talla">Talla</label><input id="variant-talla" className="input" placeholder="S, M…" value={variantForm.size} onChange={(e) => setVariantForm((f) => ({ ...f, size: e.target.value }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-stock">Stock</label><input id="variant-stock" type="number" min="0" className="input" value={variantForm.quantity} onChange={(e) => setVariantForm((f) => ({ ...f, quantity: Number(e.target.value) }))} /></div>
+                    <div className={styles.variantField}><label htmlFor="variant-extra">Precio extra {curSymbol(form.currency)}</label><input id="variant-extra" type="number" min="0" step="0.01" className="input" placeholder="0" value={variantForm.extra_price} onChange={(e) => setVariantForm((f) => ({ ...f, extra_price: Number(e.target.value) }))} /></div>
                     <div className={styles.variantBtns}>
-                      <button type="button" className={styles.btnSmall} onClick={addOrUpdateVariant}><FaPlus size={11} /> {editingVariantId ? "Actualizar" : "Agregar"}</button>
-                      {editingVariantId && <button type="button" className={styles.btnOutline} onClick={cancelEditVariant}>Cancelar</button>}
+                      <Button size="sm" icon={Plus} onClick={addOrUpdateVariant}>{editingVariantId ? "Actualizar" : "Agregar"}</Button>
+                      {editingVariantId && <Button size="sm" variant="secondary" onClick={cancelEditVariant}>Cancelar</Button>}
                     </div>
                   </div>
                   {errors.variants && <span className={styles.err}>{errors.variants}</span>}
@@ -839,12 +855,12 @@ const Products = () => {
                         <tbody>
                           {(form.variants || []).map((v) => (
                             <tr key={v.variant_id} className={editingVariantId === v.variant_id ? styles.variantEditing : ""}>
-                              <td>{v.color}</td><td>{v.size || "—"}</td>
+                              <td>{v.color}</td><td>{v.size || "-"}</td>
                               <td><span className={v.quantity > 0 ? styles.stockOk : styles.stockOut}>{v.quantity}</span></td>
-                              <td>{v.extra_price ? `+ ${curSymbol(form.currency)} ${formatted(v.extra_price)}` : "—"}</td>
+                              <td>{v.extra_price ? `+ ${curSymbol(form.currency)} ${formatted(v.extra_price)}` : "-"}</td>
                               <td className={styles.variantActions}>
-                                <button type="button" className={styles.iconBtn} onClick={() => startEditVariant(v)}><FaPen size={12} /></button>
-                                <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeVariant(v.variant_id)}><FaTrashCan size={12} /></button>
+                                <IconButton icon={Pencil} size={16} label="Editar variante" onClick={() => startEditVariant(v)} />
+                                <IconButton icon={Trash2} variant="danger" size={16} label="Eliminar variante" onClick={() => removeVariant(v.variant_id)} />
                               </td>
                             </tr>
                           ))}
@@ -861,53 +877,49 @@ const Products = () => {
           {/* Campos de personalización avanzada (medidas / color de paleta) */}
           <div className={styles.variantSection}>
             <h4 className={styles.variantTitle}>Personalización avanzada (medidas / color)</h4>
-            <p style={{ fontSize: ".8rem", color: "#667085", margin: "-.3rem 0 .75rem" }}>
+            <p className={styles.sectionHint}>
               Define los datos que el cliente debe llenar al pedir (tallas, colores, etc.).
               Se guardan en la orden para que puedas producir a la medida exacta.
             </p>
 
             {/* Indicador de paso */}
-            <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: "1rem" }}>
+            <ol className={styles.stepIndicator} aria-label="Pasos del campo">
               {[
                 { n: 1, label: "Definir campo" },
                 { n: 2, label: fieldForm.type === "color" ? "Agregar colores" : "Confirmar" },
-              ].map(({ n, label }, i) => (
-                <div key={n} style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                  {i > 0 && <div style={{ width: 28, height: 1, background: fieldStep >= n ? "#113f67" : "#d0d5dd" }} />}
-                  <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-                    <span style={{
-                      width: 22, height: 22, borderRadius: "50%", fontSize: ".72rem", fontWeight: 700,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      background: fieldStep >= n ? "#113f67" : "#f2f4f7",
-                      color: fieldStep >= n ? "#fff" : "#98a2b3",
-                    }}>{n}</span>
-                    <span style={{ fontSize: ".78rem", fontWeight: fieldStep === n ? 700 : 400, color: fieldStep >= n ? "#113f67" : "#98a2b3" }}>{label}</span>
-                  </div>
-                </div>
+              ].map(({ n, label }) => (
+                <li
+                  key={n}
+                  className={`${styles.stepItem} ${fieldStep >= n ? styles.stepReached : ""} ${fieldStep === n ? styles.stepActive : ""}`}
+                  aria-current={fieldStep === n ? "step" : undefined}
+                >
+                  <span className={styles.stepNum} aria-hidden="true">{n}</span>
+                  <span className={styles.stepText}>{label}</span>
+                </li>
               ))}
-            </div>
+            </ol>
 
             {/* PASO 1: Definir tipo, etiqueta, unidad, obligatorio */}
             {fieldStep === 1 && (
               <>
                 <div className={styles.variantForm}>
                   <div className={styles.variantField}>
-                    <label>Tipo de campo</label>
+                    <span className={styles.groupLabel}>Tipo de campo</span>
                     <Select
                       value={fieldForm.type}
                       onChange={(v) => { setFieldForm((f) => ({ ...f, type: v })); setFieldOptions([]); setFieldStep(1); }}
-                      options={[{ value: "measurement", label: "📐 Medida (cm / pulgadas)" }, { value: "color", label: "🎨 Color (de una paleta)" }]}
+                      options={[{ value: "measurement", label: "Medida (cm / pulgadas)" }, { value: "color", label: "Color (de una paleta)" }]}
                       searchable={false}
                     />
                   </div>
                   <div className={styles.variantField}>
-                    <label>Nombre del campo <span className={styles.required}>*</span></label>
-                    <input className="input" placeholder={fieldForm.type === "color" ? "Ej. Color del vestido…" : "Ej. Busto, Cadera, Espalda…"}
+                    <label htmlFor="custom-field-label">Nombre del campo <span className={styles.required}>*</span></label>
+                    <input id="custom-field-label" className="input" placeholder={fieldForm.type === "color" ? "Ej. Color del vestido…" : "Ej. Busto, Cadera, Espalda…"}
                       value={fieldForm.label} onChange={(e) => setFieldForm((f) => ({ ...f, label: e.target.value }))} />
                   </div>
                   {fieldForm.type === "measurement" && (
                     <div className={styles.variantField}>
-                      <label>Unidad</label>
+                      <span className={styles.groupLabel}>Unidad</span>
                       <Select
                         value={fieldForm.unit}
                         onChange={(v) => setFieldForm((f) => ({ ...f, unit: v }))}
@@ -916,23 +928,22 @@ const Products = () => {
                       />
                     </div>
                   )}
-                  <div className={styles.variantField}>
-                    <label>&nbsp;</label>
+                  <div className={`${styles.variantField} ${styles.variantFieldToggle}`}>
                     <Toggle checked={fieldForm.required} onChange={(v) => setFieldForm((f) => ({ ...f, required: v }))} label="Obligatorio" />
                   </div>
                 </div>
                 <div className={styles.variantBtns}>
                   {fieldForm.type === "measurement" ? (
-                    <button type="button" className={styles.btnSmall} onClick={addOrUpdateField}>
-                      <FaPlus size={11} /> {editingFieldId ? "Actualizar campo" : "Agregar campo"}
-                    </button>
+                    <Button size="sm" icon={Plus} onClick={addOrUpdateField}>
+                      {editingFieldId ? "Actualizar campo" : "Agregar campo"}
+                    </Button>
                   ) : (
-                    <button type="button" className={styles.btnSmall}
+                    <Button size="sm"
                       onClick={() => { if (!fieldForm.label.trim()) { showWarning("Aviso", "Escribe el nombre del campo primero"); return; } setFieldStep(2); }}>
-                      Continuar → Agregar colores
-                    </button>
+                      Continuar: agregar colores <ArrowRight size={16} aria-hidden="true" />
+                    </Button>
                   )}
-                  {editingFieldId && <button type="button" className={styles.btnOutline} onClick={cancelEditField}>Cancelar</button>}
+                  {editingFieldId && <Button size="sm" variant="secondary" onClick={cancelEditField}>Cancelar</Button>}
                 </div>
               </>
             )}
@@ -940,99 +951,108 @@ const Products = () => {
             {/* PASO 2: Paleta de colores (solo tipo "color") */}
             {fieldStep === 2 && fieldForm.type === "color" && (
               <>
-                <div style={{ background: "#f9fafb", borderRadius: 10, padding: "1rem", marginBottom: ".75rem", border: "1px solid #eef0f3" }}>
-                  <div style={{ marginBottom: ".75rem" }}>
-                    <span style={{ fontWeight: 700, color: "#113f67", fontSize: ".9rem" }}>Campo: "{fieldForm.label}"</span>
-                    <span style={{ fontSize: ".78rem", color: "#667085", marginLeft: ".5rem" }}>({fieldForm.required ? "Obligatorio" : "Opcional"})</span>
-                    <button type="button" onClick={() => setFieldStep(1)}
-                      style={{ marginLeft: "auto", display: "block", fontSize: ".78rem", color: "#667085", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                      ← Editar nombre
-                    </button>
+                <div className={styles.paletteBox}>
+                  <div className={styles.paletteHeader}>
+                    <span className={styles.paletteFieldName}>Campo: "{fieldForm.label}"</span>
+                    <span className={styles.paletteMeta}>({fieldForm.required ? "Obligatorio" : "Opcional"})</span>
+                    <Button size="sm" variant="ghost" icon={ArrowLeft} onClick={() => setFieldStep(1)} className={styles.paletteBack}>
+                      Editar nombre
+                    </Button>
                   </div>
 
-                  <p style={{ fontSize: ".82rem", color: "#667085", margin: "0 0 .75rem" }}>
+                  <p className={styles.sectionHint}>
                     Agrega los colores que el cliente puede elegir. Usa el selector o escribe el código hex.
                   </p>
 
-                  <div style={{ display: "flex", gap: ".5rem", alignItems: "center", flexWrap: "wrap", marginBottom: ".75rem" }}>
+                  <div className={styles.colorRow}>
                     <input type="color"
+                      className={styles.colorPicker}
+                      aria-label="Selector de color"
                       value={/^#[0-9a-fA-F]{6}$/.test(colorOptionForm.hex) ? colorOptionForm.hex : "#000000"}
                       onChange={(e) => setColorOptionForm((c) => ({ ...c, hex: e.target.value }))}
-                      style={{ width: 40, height: 34, padding: 0, border: "1px solid #d0d5dd", borderRadius: 6, cursor: "pointer" }}
                       title="Abre el selector de color" />
-                    <input className="input" style={{ maxWidth: 90, fontFamily: "monospace", fontSize: ".85rem" }}
+                    <input className={`input ${styles.hexInput}`}
+                      aria-label="Código hex del color"
                       placeholder="#FFFFFF"
                       value={colorOptionForm.hex}
                       onChange={(e) => setColorOptionForm((c) => ({ ...c, hex: e.target.value.trim() }))}
                       onBlur={(e) => { if (!/^#[0-9a-fA-F]{6}$/.test(e.target.value.trim())) setColorOptionForm((c) => ({ ...c, hex: "#000000" })); }} />
-                    <input className="input" style={{ maxWidth: 170 }}
+                    <input className={`input ${styles.colorNameInput}`}
+                      aria-label="Nombre del color"
                       placeholder="Nombre (ej. Rojo vino)"
                       value={colorOptionForm.name}
                       onChange={(e) => setColorOptionForm((c) => ({ ...c, name: e.target.value }))}
                       onKeyDown={(e) => e.key === "Enter" && addColorOptionToField()} />
-                    <button type="button" className={styles.btnSmall} onClick={addColorOptionToField}>
-                      <FaPlus size={11} /> Agregar
-                    </button>
+                    <Button size="sm" icon={Plus} onClick={addColorOptionToField}>
+                      Agregar
+                    </Button>
                   </div>
 
                   {fieldOptions.length > 0 ? (
                     <>
-                      <p style={{ fontSize: ".78rem", color: "#344054", fontWeight: 600, margin: "0 0 .4rem" }}>
+                      <p className={styles.paletteLabel}>
                         Colores en la paleta ({fieldOptions.length}):
                       </p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                      <ul className={styles.colorChips}>
                         {fieldOptions.map((opt, idx) => (
-                          <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: "#fff", border: "1px solid #d0d5dd", borderRadius: 999, padding: ".3rem .75rem .3rem .4rem", fontSize: ".82rem" }}>
-                            <span style={{ width: 18, height: 18, borderRadius: "50%", background: opt.hex, border: "1px solid rgba(0,0,0,.12)", display: "inline-block", flexShrink: 0 }} />
-                            <span style={{ fontWeight: 500 }}>{opt.name}</span>
-                            <span style={{ fontFamily: "monospace", color: "#98a2b3", fontSize: ".75rem" }}>{opt.hex}</span>
-                            <button type="button" onClick={() => removeColorOptionFromField(idx)}
-                              style={{ border: "none", background: "transparent", cursor: "pointer", color: "#98a2b3", padding: 0, lineHeight: 1, marginLeft: ".2rem" }}>×</button>
-                          </span>
+                          <li key={idx} className={styles.colorChip}>
+                            <span className={styles.swatch} style={{ background: opt.hex }} aria-hidden="true" />
+                            <span className={styles.colorChipName}>{opt.name}</span>
+                            <span className={styles.hexText}>{opt.hex}</span>
+                            <button type="button" className={styles.chipRemove} onClick={() => removeColorOptionFromField(idx)} aria-label={`Quitar ${opt.name}`}>
+                              <X size={14} aria-hidden="true" />
+                            </button>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </>
                   ) : (
-                    <p style={{ fontSize: ".8rem", color: "#98a2b3", margin: 0 }}>
+                    <p className={styles.variantEmpty}>
                       Aún no has agregado colores. Agrega al menos uno para continuar.
                     </p>
                   )}
                 </div>
 
                 <div className={styles.variantBtns}>
-                  <button type="button" className={styles.btnOutline} onClick={() => setFieldStep(1)}>← Volver</button>
-                  <button type="button" className={styles.btnSmall} onClick={addOrUpdateField} disabled={fieldOptions.length === 0}>
-                    <FaPlus size={11} /> {editingFieldId ? "Actualizar campo" : "Agregar campo con esta paleta"}
-                  </button>
-                  {editingFieldId && <button type="button" className={styles.btnOutline} onClick={cancelEditField}>Cancelar</button>}
+                  <Button size="sm" variant="secondary" icon={ArrowLeft} onClick={() => setFieldStep(1)}>Volver</Button>
+                  <Button size="sm" icon={Plus} onClick={addOrUpdateField} disabled={fieldOptions.length === 0}>
+                    {editingFieldId ? "Actualizar campo" : "Agregar campo con esta paleta"}
+                  </Button>
+                  {editingFieldId && <Button size="sm" variant="secondary" onClick={cancelEditField}>Cancelar</Button>}
                 </div>
               </>
             )}
 
             {(form.customization_fields || []).length > 0 ? (
-              <div className={styles.variantTableWrap} style={{ marginTop: "1rem" }}>
+              <div className={`${styles.variantTableWrap} ${styles.fieldsTable}`}>
                 <table className={styles.variantTable}>
                   <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Oblig.</th><th></th></tr></thead>
                   <tbody>
                     {form.customization_fields.map((cfld) => (
                       <tr key={cfld.field_id} className={editingFieldId === cfld.field_id ? styles.variantEditing : ""}>
                         <td>{cfld.label}</td>
-                        <td>{cfld.type === "measurement" ? "📐 Medida" : "🎨 Color"}</td>
+                        <td>
+                          <span className={styles.iconText}>
+                            {cfld.type === "measurement"
+                              ? <><Ruler size={14} aria-hidden="true" /> Medida</>
+                              : <><Palette size={14} aria-hidden="true" /> Color</>}
+                          </span>
+                        </td>
                         <td>
                           {cfld.type === "measurement"
                             ? (cfld.unit === "in" ? "Pulgadas" : "Centímetros")
                             : (cfld.options || []).length > 0
-                              ? <div style={{ display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
+                              ? <div className={styles.swatchRow}>
                                   {cfld.options.map((o, i) => (
-                                    <span key={i} title={`${o.name} ${o.hex}`} style={{ width: 16, height: 16, borderRadius: "50%", background: o.hex, border: "1px solid rgba(0,0,0,.15)", display: "inline-block" }} />
+                                    <span key={i} title={`${o.name} ${o.hex}`} className={`${styles.swatch} ${styles.swatchSm}`} style={{ background: o.hex }} />
                                   ))}
                                 </div>
                               : "Sin colores"}
                         </td>
                         <td>{cfld.required ? "Sí" : "No"}</td>
                         <td className={styles.variantActions}>
-                          <button type="button" className={styles.iconBtn} onClick={() => startEditField(cfld)}><FaPen size={12} /></button>
-                          <button type="button" className={`${styles.iconBtn} ${styles.danger}`} onClick={() => removeField(cfld.field_id)}><FaTrashCan size={12} /></button>
+                          <IconButton icon={Pencil} size={16} label={`Editar campo ${cfld.label}`} onClick={() => startEditField(cfld)} />
+                          <IconButton icon={Trash2} variant="danger" size={16} label={`Eliminar campo ${cfld.label}`} onClick={() => removeField(cfld.field_id)} />
                         </td>
                       </tr>
                     ))}
@@ -1058,15 +1078,16 @@ const Products = () => {
           </div>
           {form.allow_comment && (
             <div className={styles.formGroup}>
-              <label>Texto guía para el cliente (opcional)</label>
+              <label htmlFor="product-comment-label">Texto guía para el cliente (opcional)</label>
               <input
+                id="product-comment-label"
                 className="input"
                 value={form.comment_label}
                 onChange={(e) => setField("comment_label", e.target.value)}
                 placeholder="Ej. ¿Qué nombre quieres grabar?"
                 maxLength={80}
               />
-              <span style={{ fontSize: ".75rem", color: "#667085", marginTop: ".2rem", display: "block" }}>
+              <span className={styles.hint}>
                 Este texto le indica al cliente qué escribir al pedir. Si lo dejas vacío, se mostrará "Personalización".
               </span>
             </div>
@@ -1092,7 +1113,7 @@ const Products = () => {
               label="Requiere fecha de entrega"
               disabled={!!form.delivery_days_after_payment}
             />
-            {form.required_delivery_day && (<input type="date" className="input" style={{ maxWidth: 200 }} value={form.delivery_start_day} onChange={(e) => setField("delivery_start_day", e.target.value)} />)}
+            {form.required_delivery_day && (<DatePicker aria-label="Fecha de entrega a partir de" className="input" wrapperClassName={styles.dateInput} value={form.delivery_start_day} onChange={(v) => setField("delivery_start_day", v)} />)}
           </div>
           <div className={styles.toggleRow}>
             <Toggle
@@ -1105,41 +1126,43 @@ const Products = () => {
               disabled={form.required_delivery_day}
             />
             {!!form.delivery_days_after_payment && (
-              <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+              <div className={styles.inlineRow}>
                 <input
-                  type="number" min="1" max="90" className="input" style={{ maxWidth: 90 }}
+                  aria-label="Días después del pago"
+                  type="number" min="1" max="90" className={`input ${styles.daysInput}`}
                   value={form.delivery_days_after_payment}
                   onChange={(e) => setField("delivery_days_after_payment", e.target.value)}
                 />
-                <span style={{ fontSize: ".85rem", color: "#667085" }}>días</span>
+                <span className={styles.unitText}>días</span>
               </div>
             )}
           </div>
           {(form.required_delivery_day || !!form.delivery_days_after_payment) && (
-            <p style={{ fontSize: ".78rem", color: "#667085", margin: "-.5rem 0 1rem" }}>
+            <p className={`${styles.sectionHint} ${styles.exclusiveNote}`}>
               Estas dos opciones son excluyentes: usa una fecha fija <strong>o</strong> un plazo tras el pago, no ambas.
             </p>
           )}
           <div className={styles.formGroup}>
-            <label>Términos y condiciones (opcional)</label>
-            <textarea className="input" rows={4} value={form.terms} onChange={(e) => setField("terms", e.target.value)} />
+            <label htmlFor="product-terms">Términos y condiciones (opcional)</label>
+            <textarea id="product-terms" className="input" rows={4} value={form.terms} onChange={(e) => setField("terms", e.target.value)} />
           </div>
           <div className={styles.formActions}>
-            <PrimaryButton type="submit" disabled={busy}>{busy ? "Guardando..." : editingId ? "Actualizar producto" : "Crear producto"}</PrimaryButton>
-            {editingId && <button type="button" className={styles.btnOutline} onClick={resetForm}>Cancelar edición</button>}
+            <Button type="submit" loading={busy}>{busy ? (editingId ? "Actualizando..." : "Creando...") : editingId ? "Actualizar producto" : "Crear producto"}</Button>
+            {editingId && <Button variant="secondary" onClick={resetForm}>Cancelar edición</Button>}
           </div>
+        </fieldset>
         </form>
-      </div>
+      </section>
 
       <div className={styles.listHeader}>
         <h2>Productos existentes</h2>
-        <div style={{ display: "flex", gap: ".6rem" }}>
-          <button className={styles.importBtn} onClick={() => setImportOpen(true)}>
-            <FaFileExcel /> Importar Excel
-          </button>
-          <button className={styles.refreshBtn} onClick={() => refetch()}>
-            <FaArrowsRotate /> Actualizar
-          </button>
+        <div className={styles.listActions}>
+          <Button size="sm" variant="secondary" icon={FileSpreadsheet} onClick={() => setImportOpen(true)}>
+            Importar Excel
+          </Button>
+          <Button size="sm" variant="secondary" icon={RefreshCw} onClick={() => refetch()}>
+            Actualizar
+          </Button>
         </div>
       </div>
 
@@ -1147,14 +1170,20 @@ const Products = () => {
       {products.length > 0 && (
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
-            <FaMagnifyingGlass color="#667085" />
+            <Search size={18} className={styles.searchIcon} aria-hidden="true" />
             <input
+              type="search"
+              aria-label="Buscar productos"
               className={styles.searchInput}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nombre o descripción..."
             />
-            {search && <button className={styles.searchClear} onClick={() => setSearch("")}>×</button>}
+            {search && (
+              <button type="button" className={styles.searchClear} onClick={() => setSearch("")} aria-label="Limpiar búsqueda">
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
           </div>
 
           <div className={styles.filterControls}>
@@ -1208,23 +1237,39 @@ const Products = () => {
               : `${visibleProducts.length} de ${products.length} producto(s)`}
           </span>
           {hasActiveFilters && (
-            <button className={styles.clearFilters} onClick={clearFilters}>Limpiar filtros</button>
+            <Button size="sm" variant="ghost" onClick={clearFilters}>Limpiar filtros</Button>
           )}
         </div>
       )}
 
       {products.length === 0 ? (
-        <div className={styles.empty}>Aún no tienes productos.</div>
+        <EmptyState
+          icon={Package}
+          title="Aún no tienes productos"
+          description="Agrega tu primer producto con el formulario de arriba o importa varios desde Excel."
+          action={
+            <div className={styles.emptyActions}>
+              <Button icon={Plus} onClick={focusProductForm}>Crear producto</Button>
+              <Button variant="secondary" icon={FileSpreadsheet} onClick={() => setImportOpen(true)}>Importar Excel</Button>
+            </div>
+          }
+        />
       ) : visibleProducts.length === 0 ? (
-        <div className={styles.empty}>No hay productos que coincidan con la búsqueda o filtros.</div>
+        <EmptyState
+          compact
+          icon={SearchX}
+          title="Sin resultados"
+          description="No hay productos que coincidan con la búsqueda o los filtros."
+          action={<Button variant="secondary" onClick={clearFilters}>Limpiar filtros</Button>}
+        />
       ) : (
         <div className={styles.grid}>
           {visibleProducts.map((p) => {
             const img = p.imagesUrl?.[0]?.image || p.imagesUrl?.[0];
             return (
-              <div key={p.product_id} className={styles.productCard}>
+              <article key={p.product_id} className={styles.productCard}>
                 <div className={styles.productThumb}>
-                  {img ? <img src={img} alt={p.name} /> : <FaRegImage size={28} />}
+                  {img ? <img src={img} alt={p.name} loading="lazy" decoding="async" /> : <ImageIcon size={28} aria-hidden="true" />}
                   {p.is_available !== "available" && <span className={styles.soldOut}>Agotado</span>}
                   {p.is_customizable && <span className={styles.customBadge}>Personalizable</span>}
                 </div>
@@ -1233,41 +1278,50 @@ const Products = () => {
                   <span className={styles.productCat}>{categoryName(p.category_id)}</span>
                   <span className={styles.productPrice}>{curSymbol(p.currency)} {formatted(p.price)}</span>
                   {p.is_customizable && p.variants?.length > 0 && <span className={styles.variantCount}>{p.variants.length} variante(s)</span>}
-                  {p.allow_comment && <span className={styles.variantCount}>✏️ Acepta personalización</span>}
+                  {p.allow_comment && <span className={`${styles.variantCount} ${styles.iconText}`}><PenLine size={14} aria-hidden="true" /> Acepta personalización</span>}
                   {(p.locality_config || []).length > 0 && (
-                    <span className={styles.deliveryBadge}>
-                      {p.locality_config.some(c => c.delivery) ? "🛵" : ""}{p.locality_config.some(c => c.takeout) ? " 🏪" : ""}
+                    <span className={`${styles.deliveryBadge} ${styles.iconText}`}>
+                      {p.locality_config.some(c => c.delivery) && <><Bike size={14} aria-hidden="true" /> Delivery</>}
+                      {p.locality_config.some(c => c.takeout) && <><Store size={14} aria-hidden="true" /> Take out</>}
                     </span>
                   )}
                 </div>
                 <div className={styles.productActions}>
-                  <button className={styles.iconBtn} onClick={() => setViewing(p)}><FaEye /></button>
-                  <button className={styles.iconBtn} onClick={() => handleEdit(p)}><FaPen /></button>
-                  <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => setToDelete(p)}><FaTrashCan /></button>
+                  <IconButton icon={Eye} variant="outline" label={`Ver ${p.name}`} onClick={() => setViewing(p)} />
+                  <IconButton icon={Pencil} variant="outline" label={`Editar ${p.name}`} onClick={() => handleEdit(p)} />
+                  <IconButton icon={Trash2} variant="danger" label={`Eliminar ${p.name}`} onClick={() => setToDelete(p)} />
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
       )}
 
-      {toDelete && (
-        <div className={styles.modalOverlay} onClick={() => setToDelete(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3>Eliminar producto</h3>
-            <p>¿Seguro que deseas eliminar <strong>{toDelete.name}</strong>?</p>
-            <div className={styles.modalActions}>
-              <button className={styles.btnOutline} onClick={() => setToDelete(null)}>Cancelar</button>
-              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(toDelete.product_id)} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={!!toDelete}
+        onClose={() => setToDelete(null)}
+        title="Eliminar producto"
+        size="sm"
+        dismissible={!deleteMutation.isPending}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setToDelete(null)} disabled={deleteMutation.isPending}>Cancelar</Button>
+            <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteMutation.mutate(toDelete.product_id)}>
+              {deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.modalText}>¿Seguro que deseas eliminar <strong>{toDelete?.name}</strong>?</p>
+      </Modal>
 
-      {viewing && (
-        <div className={styles.modalOverlay} onClick={() => setViewing(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3>{viewing.name}</h3>
+      <Modal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title={viewing?.name}
+        footer={<Button variant="secondary" onClick={() => setViewing(null)}>Cerrar</Button>}
+      >
+        {viewing && (<>
             <div className={styles.detailGallery}>{(viewing.imagesUrl || []).map((i, idx) => <img key={idx} src={i.image || i} alt="" />)}</div>
             <ul className={styles.detailList}>
               <li><span>Precio base</span><strong>{curSymbol(viewing.currency)} {formatted(viewing.price)}</strong></li>
@@ -1276,58 +1330,68 @@ const Products = () => {
               <li><span>Estado</span><strong>{viewing.is_available === "available" ? "Disponible" : "Agotado"}</strong></li>
               <li><span>Localidades</span><strong>{viewing.localities?.length ? viewing.localities.join(", ") : "Todas"}</strong></li>
               {(viewing.locality_config || []).length > 0 && (
-                <li style={{ flexDirection: "column", alignItems: "flex-start" }}>
+                <li className={styles.detailStacked}>
                   <span>Entrega por localidad</span>
-                  <div style={{ marginTop: ".4rem", display: "flex", flexDirection: "column", gap: ".3rem" }}>
+                  <div className={styles.detailLocalities}>
                     {viewing.locality_config.map((cfg) => (
-                      <span key={cfg.locality} style={{ fontSize: ".85rem", color: "#344054" }}>
-                        <strong>{cfg.locality}:</strong>{" "}
-                        {[
-                          cfg.delivery ? `🛵 Delivery${cfg.delivery_price > 0 ? ` (+${curSymbol(viewing.currency)}${formatted(cfg.delivery_price)})` : " (gratis)"}` : null,
-                          cfg.takeout ? "🏪 Take out" : null,
-                        ].filter(Boolean).join(" · ")}
+                      <span key={cfg.locality} className={styles.detailLocality}>
+                        <strong>{cfg.locality}:</strong>
+                        {cfg.delivery && (
+                          <span className={styles.iconText}>
+                            <Bike size={14} aria-hidden="true" /> Delivery{cfg.delivery_price > 0 ? ` (+${curSymbol(viewing.currency)}${formatted(cfg.delivery_price)})` : " (gratis)"}
+                          </span>
+                        )}
+                        {cfg.takeout && (
+                          <span className={styles.iconText}><Store size={14} aria-hidden="true" /> Take out</span>
+                        )}
                       </span>
                     ))}
                   </div>
                 </li>
               )}
-              {viewing.allow_comment && <li><span>Personalización</span><strong>{viewing.comment_required ? "Obligatoria" : "Opcional"}{viewing.comment_label ? ` — "${viewing.comment_label}"` : ""}</strong></li>}
+              {viewing.allow_comment && <li><span>Personalización</span><strong>{viewing.comment_required ? "Obligatoria" : "Opcional"}{viewing.comment_label ? `: "${viewing.comment_label}"` : ""}</strong></li>}
               {viewing.min_age_allow && <li><span>Edad mínima</span><strong>{viewing.min_age} años</strong></li>}
               {viewing.terms && <li><span>Términos</span><strong>{viewing.terms}</strong></li>}
             </ul>
-            <div className={styles.modalActions}><button className={styles.btnOutline} onClick={() => setViewing(null)}>Cerrar</button></div>
-          </div>
-        </div>
-      )}
-      {importOpen && (
-        <div className={styles.modalOverlay} onClick={importStep !== "importing" ? resetImport : undefined}>
-          <div className={`${styles.modal} ${styles.modalWide}`} onClick={e => e.stopPropagation()}>
+        </>)}
+      </Modal>
+      <Modal
+        open={importOpen}
+        onClose={resetImport}
+        size="lg"
+        dismissible={importStep !== "importing"}
+        title={
+          importStep === "preview" ? `Vista previa: ${importRows.length} filas detectadas`
+            : importStep === "importing" ? "Importando productos"
+              : importStep === "done" ? "Importación completada"
+                : "Importar productos desde Excel"
+        }
+      >
 
             {/* ── Step: upload ── */}
             {importStep === "upload" && (
               <>
-                <h3>Importar productos desde Excel</h3>
                 <p className={styles.importNote}>
                   Sube un archivo <strong>.xlsx</strong>, <strong>.xls</strong> o <strong>.csv</strong>.
                   Todos los productos se importarán como <strong>inactivos</strong> hasta que les agregues imágenes.
                 </p>
 
                 <label className={styles.dropZone}>
-                  <FaCloudArrowUp size={32} color="#113f67" />
+                  <UploadCloud size={32} className={styles.dropIcon} aria-hidden="true" />
                   <span className={styles.dropTitle}>Arrastra tu archivo aquí</span>
                   <span className={styles.dropSub}>o haz clic para seleccionar</span>
                   <input
-                    type="file" hidden
+                    type="file" className={styles.visuallyHidden}
                     accept=".xlsx,.xls,.csv"
                     onChange={e => handleImportFile(e.target.files?.[0])}
                   />
                 </label>
 
                 <div className={styles.importActions}>
-                  <button className={styles.btnOutline} onClick={resetImport}>Cancelar</button>
-                  <button className={styles.templateBtn} onClick={downloadTemplate}>
-                    <FaFileExcel /> Descargar plantilla
-                  </button>
+                  <Button variant="secondary" onClick={resetImport}>Cancelar</Button>
+                  <Button variant="secondary" icon={Download} onClick={downloadTemplate}>
+                    Descargar plantilla
+                  </Button>
                 </div>
               </>
             )}
@@ -1335,8 +1399,6 @@ const Products = () => {
             {/* ── Step: preview ── */}
             {importStep === "preview" && (
               <>
-                <h3>Vista previa — {importRows.length} filas detectadas</h3>
-
                 {/* Mapeo de columnas */}
                 <div className={styles.mappingGrid}>
                   {[
@@ -1354,7 +1416,7 @@ const Products = () => {
                         value={importMapping[key] || ""}
                         onChange={(value) => setImportMapping(m => ({ ...m, [key]: value }))}
                         options={[
-                          { value: "", label: "— sin mapear —" },
+                          { value: "", label: "Sin mapear" },
                           ...importHeaders.map(h => ({ value: h, label: h })),
                         ]}
                       />
@@ -1393,22 +1455,22 @@ const Products = () => {
                 </div>
 
                 <div className={styles.importActions}>
-                  <button className={styles.btnOutline} onClick={() => setImportStep("upload")}>Volver</button>
-                  <button
-                    className={styles.btnImport}
+                  <Button variant="secondary" icon={ArrowLeft} onClick={() => setImportStep("upload")}>Volver</Button>
+                  <Button
+                    icon={FileSpreadsheet}
                     disabled={!importMapping.name}
                     onClick={() => importMutation.mutate()}
                   >
-                    <FaFileExcel /> Importar {importRows.length} productos
-                  </button>
+                    Importar {importRows.length} productos
+                  </Button>
                 </div>
               </>
             )}
 
             {/* ── Step: importing ── */}
             {importStep === "importing" && (
-              <div className={styles.importingState}>
-                <div className={styles.importSpinner} />
+              <div className={styles.importingState} role="status">
+                <div className={styles.importSpinner} aria-hidden="true" />
                 <p>Importando productos...</p>
                 <span className={styles.importNote}>No cierres esta ventana.</span>
               </div>
@@ -1417,22 +1479,23 @@ const Products = () => {
             {/* ── Step: done ── */}
             {importStep === "done" && importResult && (
               <>
-                <h3>Importación completada</h3>
-
                 <div className={styles.importSummary}>
-                  <div className={styles.summaryItem} style={{ color: "#065f46", background: "#d1fae5" }}>
+                  <div className={`${styles.summaryItem} ${styles.summarySuccess}`}>
                     <strong>{importResult.created}</strong>
                     <span>Importados</span>
                   </div>
-                  <div className={styles.summaryItem} style={{ color: importResult.error_count > 0 ? "#b42318" : "#667085", background: importResult.error_count > 0 ? "#fee2e2" : "#f4f6f8" }}>
+                  <div className={`${styles.summaryItem} ${importResult.error_count > 0 ? styles.summaryError : styles.summaryNeutral}`}>
                     <strong>{importResult.error_count}</strong>
                     <span>Errores</span>
                   </div>
                 </div>
 
                 <div className={styles.importAlert}>
-                  📷 <strong>Todos los productos fueron importados como inactivos.</strong><br />
-                  Ve a <strong>Productos</strong>, edita cada uno, agrega una foto y actívalo para que aparezca en tu catálogo.
+                  <Camera size={18} className={styles.importAlertIcon} aria-hidden="true" />
+                  <p>
+                    <strong>Todos los productos fueron importados como inactivos.</strong><br />
+                    Ve a <strong>Productos</strong>, edita cada uno, agrega una foto y actívalo para que aparezca en tu catálogo.
+                  </p>
                 </div>
 
                 {importResult.errors?.length > 0 && (
@@ -1440,7 +1503,7 @@ const Products = () => {
                     <p className={styles.errorListTitle}>Filas con error:</p>
                     {importResult.errors.map((e, i) => (
                       <div key={i} className={styles.errorItem}>
-                        <span>Fila {e.row} — {e.name}</span>
+                        <span>Fila {e.row}: {e.name}</span>
                         <span>{e.error}</span>
                       </div>
                     ))}
@@ -1448,15 +1511,12 @@ const Products = () => {
                 )}
 
                 <div className={styles.importActions}>
-                  <button className={styles.btnPrimary} onClick={resetImport}>Cerrar</button>
+                  <Button onClick={resetImport}>Cerrar</Button>
                 </div>
               </>
             )}
-
-          </div>
-        </div>
-      )}
-      </>)}
+      </Modal>
+      </TabPanel>
     </div>
   );
 };

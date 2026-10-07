@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import Loading from "../components/UI/Loading";
 import CatalogManager from "../components/CatalogTemplates/CatalogManager";
+import CatalogSkeleton from "../components/CatalogTemplates/CatalogSkeleton";
 import CatalogUnavailable from "../components/CatalogTemplates/CatalogUnavailable"; // ← nuevo
 import { fetchBusinessBySlug } from "../services/businessApi";
 import { fetchProductsByBusinessId } from "../services/productsApi";
@@ -73,7 +73,8 @@ const CatalogPublic = () => {
   );
 
   if (loadingBusiness || (businessId && !catalogDisabled && loadingProducts)) {
-    return <Loading message="Cargando catálogo..." visible />;
+    // Skeleton con la paleta del negocio (neutro mientras llega el negocio)
+    return <CatalogSkeleton palette={normalizedBusiness?.themePalette} />;
   }
 
   // Catálogo oculto por suscripción del dueño (cancelada/pausada): pantalla neutra con la marca.

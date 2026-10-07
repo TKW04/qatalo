@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowsRotate, FaCheck, FaTruck, FaBan,
@@ -7,12 +7,11 @@ import {
 } from "react-icons/fa6";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
-import Loading from "../../../components/UI/Loading";
-import { currencies, formatted, getStatusStyle } from "../../../helpers/utils";
+import { currencies, formatted } from "../../../helpers/utils";
 import {
   fetchCustomers, approveTransaction,
   deliveredTransaction, cancelTransaction, emitInvoice,
-  changeOrderPaymentMethod, reactivateTransaction, applyOfferToOrder,
+  changeOrderPaymentMethod, reactivateTransaction, applyOfferToOrder, changeDeliveryDay,
 } from "../../../services/customersApi";
 import { fetchPaymentMethods } from "../../../services/paymentMethodsApi";
 import { fetchBusinessData } from "../../../services/businessApi";
@@ -20,7 +19,9 @@ import { fetchProducts } from "../../../services/productsApi";
 import { fetchOffers } from "../../../services/offersApi";
 import { isOfferApplicable, calcDiscount, distributeDiscount } from "../../../helpers/offerEngine";
 import Select from "../../../components/Select";
-import adminStyles from "../AdminDashboard.module.css";
+import { Bike, Store, CalendarDays, Clock, AlertTriangle, Siren, Pencil, Gift, Receipt, Truck, MapPin, MessageSquare, Ruler, FileText, X, ClipboardList, SearchX } from "lucide-react";
+import { PageHeader, StatusBadge, OrderStepper, SkeletonList, EmptyState, Button } from "../../../components/admin";
+import DatePicker from "../../../components/DatePicker";
 import styles from "./Orders.module.css";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -33,11 +34,11 @@ const STATUS_LABEL = {
 };
 
 const STATUS_BAR = [
-  { key: "Pendiente de pago", label: "Pend. pago", bg: "#FEF3C7", color: "#92400E" },
-  { key: "Pendiente de validación", label: "Por validar", bg: "#DBEAFE", color: "#1E40AF" },
-  { key: "Aprobada", label: "Aprobadas", bg: "#D1FAE5", color: "#065F46" },
-  { key: "Entregada", label: "Entregadas", bg: "#CFFAFE", color: "#0E7490" },
-  { key: "Cancelada", label: "Canceladas", bg: "#FEE2E2", color: "#991B1B" },
+  { key: "Pendiente de pago", label: "Pend. pago", bg: "var(--state-pending-bg)", color: "var(--state-pending-fg)" },
+  { key: "Pendiente de validación", label: "Por validar", bg: "var(--state-validating-bg)", color: "var(--state-validating-fg)" },
+  { key: "Aprobada", label: "Aprobadas", bg: "var(--state-approved-bg)", color: "var(--state-approved-fg)" },
+  { key: "Entregada", label: "Entregadas", bg: "var(--state-delivered-bg)", color: "var(--state-delivered-fg)" },
+  { key: "Cancelada", label: "Canceladas", bg: "var(--state-cancelled-bg)", color: "var(--state-cancelled-fg)" },
 ];
 
 const APPROVABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
@@ -76,10 +77,51 @@ const deliveryStatus = (deliveryDay, status) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const target = new Date(deliveryDay + "T00:00:00");
   const diff = Math.floor((today - target) / 86400000);
-  if (diff < 0) return { type: "green", label: `📅 En ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""}` };
-  if (diff === 0) return { type: "today", label: "📅 Entrega hoy" };
-  if (diff <= 2) return { type: "yellow", label: `⚠️ Retraso ${diff} día${diff !== 1 ? "s" : ""}` };
-  return { type: "red", label: `🚨 Retraso ${diff} días` };
+  if (diff < 0) return { type: "green", label: `En ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""}` };
+  if (diff === 0) return { type: "today", label: "Entrega hoy" };
+  if (diff <= 2) return { type: "yellow", label: `Retraso ${diff} día${diff !== 1 ? "s" : ""}` };
+  return { type: "red", label: `Retraso ${diff} días` };
+};
+
+// ── Orden de la lista ("Ordenar por") ──
+const ORDER_SORT_KEY = "qatalo:orders:sort";
+const ORDER_SORT_OPTIONS = [
+  { value: "recent", label: "Más recientes" },
+  { value: "delivery", label: "Entrega más próxima" },
+];
+const readOrderSort = () => {
+  try {
+    const v = localStorage.getItem(ORDER_SORT_KEY);
+    return ORDER_SORT_OPTIONS.some(o => o.value === v) ? v : "recent";
+  } catch { return "recent"; }
+};
+const localTodayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+// Fecha de entrega de la orden = la más temprana de sus ítems (igual que la tarjeta).
+const orderDeliveryDay = (o) => o.items.map(t => (t.delivery_day || "").slice(0, 10)).filter(Boolean).sort()[0] || "";
+// 1) hoy y futuras, ascendente; 2) vencidas, la más reciente primero; 3) sin fecha (orden original).
+const sortByNextDelivery = (list) => {
+  const today = localTodayISO();
+  const rank = (d) => (!d ? 2 : d >= today ? 0 : 1);
+  return list
+    .map((o, i) => ({ o, i, d: orderDeliveryDay(o) }))
+    .sort((a, b) => {
+      const ra = rank(a.d), rb = rank(b.d);
+      if (ra !== rb) return ra - rb;
+      if (ra === 0) return a.d.localeCompare(b.d) || a.i - b.i;
+      if (ra === 1) return b.d.localeCompare(a.d) || a.i - b.i;
+      return a.i - b.i;
+    })
+    .map(x => x.o);
+};
+
+// Icono del estado de entrega (sustituye emojis; color en .ds_*)
+const DS_ICON = { green: CalendarDays, today: CalendarDays, yellow: AlertTriangle, red: Siren };
+const DeliveryIcon = ({ type }) => {
+  const Icon = DS_ICON[type] || CalendarDays;
+  return <Icon size={13} aria-hidden="true" />;
 };
 
 const formatDate = (s) => {
@@ -149,6 +191,7 @@ const Orders = () => {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState(readOrderSort);
   const [viewOrder, setViewOrder] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -156,6 +199,7 @@ const Orders = () => {
   const [discountCode, setDiscountCode] = useState("");
   const [discountErr, setDiscountErr] = useState("");
   const [editingPm, setEditingPm] = useState(false);   // ← modo edición del método de pago
+  const [editDelivDay, setEditDelivDay] = useState({ txId: null, value: "" }); // ← edición fecha entrega
 
   const [invoiceTarget, setInvoiceTarget] = useState(null);
   const [invoiceType, setInvoiceType] = useState("recibo");
@@ -185,6 +229,13 @@ const Orders = () => {
       return matchSearch && matchStatus;
     });
   }, [orders, search, statusFilter]);
+
+  // Orden en cliente sobre lo ya cargado ("recent" = orden original de buildOrders)
+  const sorted = useMemo(() => (sortBy === "delivery" ? sortByNextDelivery(filtered) : filtered), [filtered, sortBy]);
+  const changeSort = (v) => {
+    setSortBy(v);
+    try { localStorage.setItem(ORDER_SORT_KEY, v); } catch { /* almacenamiento no disponible */ }
+  };
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["customers", tenantId] });
 
@@ -266,6 +317,13 @@ const Orders = () => {
         showError("Error", e.message);
       }
     },
+  });
+
+  // Cambiar fecha de entrega de un ítem
+  const changeDayM = useMutation({
+    mutationFn: ({ customerId, txId, day }) => changeDeliveryDay(customerId, txId, day),
+    onSuccess: () => { showSuccess("Guardado", "Fecha de entrega actualizada"); invalidate(); setEditDelivDay({ txId: null, value: "" }); },
+    onError: (e) => showError("Error", e.message),
   });
 
   // ── Aplicar / quitar descuento a una orden creada ──
@@ -398,14 +456,31 @@ const Orders = () => {
     });
   };
 
-  if (isLoading) return <Loading message="Cargando órdenes..." />;
+  // Esc cierra el modal abierto (el de más arriba primero)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (receiptUrl) setReceiptUrl(null);
+      else if (cancelTarget) { setCancelTarget(null); setCancelReason(""); }
+      else if (invoiceTarget) closeInvoice();
+      else if (viewOrder) { setViewOrder(null); setEditingPm(false); setEditDelivDay({ txId: null, value: "" }); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
+
+  if (isLoading) {
+    return (
+      <div>
+        <PageHeader title="Órdenes" description="Vista operativa de todos los pedidos" />
+        <SkeletonList rows={6} label="Cargando órdenes..." media={false} />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Órdenes</h1>
-        <p>Vista operativa de todos los pedidos</p>
-      </div>
+      <PageHeader title="Órdenes" description="Vista operativa de todos los pedidos" />
 
       {/* ── Barra de estado ── */}
       <div className={styles.statusBar}>
@@ -415,6 +490,7 @@ const Orders = () => {
             className={`${styles.statusChip} ${statusFilter === s.key ? styles.statusChipActive : ""}`}
             style={statusFilter === s.key ? { background: s.bg, color: s.color, borderColor: s.color } : {}}
             onClick={() => setStatusFilter(prev => prev === s.key ? "all" : s.key)}
+            aria-pressed={statusFilter === s.key}
           >
             <span className={styles.chipCount} style={{ color: s.color }}>
               {statusCounts[s.key] || 0}
@@ -423,30 +499,73 @@ const Orders = () => {
           </button>
         ))}
         <button className={styles.refreshBtn} onClick={() => refetch()}>
-          <FaArrowsRotate /> Actualizar
+          <FaArrowsRotate aria-hidden="true" /> Actualizar
         </button>
       </div>
 
       {/* ── Buscador ── */}
       <div className={styles.searchBar}>
-        <FaMagnifyingGlass color="#667085" />
+        <FaMagnifyingGlass aria-hidden="true" />
         <input
           className={styles.searchInput}
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por cliente o producto..."
+          aria-label="Buscar órdenes por cliente o producto"
+          type="search"
         />
-        {search && <button className={styles.searchClear} onClick={() => setSearch("")}>×</button>}
+        {search && <button className={styles.searchClear} onClick={() => setSearch("")} aria-label="Limpiar búsqueda"><X size={16} aria-hidden="true" /></button>}
+      </div>
+
+      {/* ── Ordenar por ── */}
+      <div className={styles.sortBar} role="radiogroup" aria-label="Ordenar órdenes por">
+        <span className={styles.sortLabel} aria-hidden="true">Ordenar por</span>
+        {ORDER_SORT_OPTIONS.map(o => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={sortBy === o.value}
+            tabIndex={sortBy === o.value ? 0 : -1}
+            className={`${styles.sortChip} ${sortBy === o.value ? styles.sortChipActive : ""}`}
+            onClick={() => changeSort(o.value)}
+            onKeyDown={(e) => {
+              if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+              e.preventDefault();
+              const i = ORDER_SORT_OPTIONS.findIndex(x => x.value === sortBy);
+              const step = e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 1;
+              const next = ORDER_SORT_OPTIONS[(i + step + ORDER_SORT_OPTIONS.length) % ORDER_SORT_OPTIONS.length];
+              changeSort(next.value);
+              e.currentTarget.parentElement.querySelector(`[data-sort="${next.value}"]`)?.focus();
+            }}
+            data-sort={o.value}
+          >
+            {o.value === "delivery" ? <CalendarDays size={14} aria-hidden="true" /> : <Clock size={14} aria-hidden="true" />}
+            {o.label}
+          </button>
+        ))}
       </div>
 
       {/* ── Lista ── */}
       {filtered.length === 0 ? (
-        <div className={styles.empty}>
-          {orders.length === 0 ? "Aún no hay órdenes." : "No hay órdenes que coincidan con la búsqueda."}
-        </div>
+        orders.length === 0 ? (
+          <EmptyState
+            icon={ClipboardList}
+            title="Aún no hay órdenes"
+            description="Cuando un cliente haga un pedido desde tu catálogo, aparecerá aquí."
+            action={<Button variant="secondary" icon={FaArrowsRotate} onClick={() => refetch()}>Actualizar</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title="No hay órdenes que coincidan"
+            description="Prueba con otro nombre o quita el filtro de estado."
+            action={<Button variant="secondary" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Quitar filtros</Button>}
+          />
+        )
       ) : (
         <div className={styles.orderList}>
-          {filtered.map(order => {
+          {sorted.map(order => {
             const { customer, items, create_date, order_id } = order;
             const firstTx = items[0];
             const status = firstTx?.status || "";
@@ -479,7 +598,7 @@ const Orders = () => {
                     <span className={styles.orderProducts}>{preview || "—"}</span>
                     {(hasDelivery || hasTakeout || locality) && (
                       <span className={styles.orderFulfillment}>
-                        {hasDelivery ? "🛵 Delivery" : hasTakeout ? "🏪 Take out" : ""}
+                        {hasDelivery ? <><Bike size={14} aria-hidden="true" /> Delivery</> : hasTakeout ? <><Store size={14} aria-hidden="true" /> Take out</> : ""}
                         {locality ? ` · ${locality}` : ""}
                       </span>
                     )}
@@ -487,12 +606,10 @@ const Orders = () => {
 
                   <div className={styles.colRight}>
                     <span className={styles.orderTotal}>{cur} {formatted(total)}</span>
-                    <span className={styles.statusBadge} style={getStatusStyle(status)}>
-                      {STATUS_LABEL[status] || status}
-                    </span>
+                    <StatusBadge status={status}>{STATUS_LABEL[status] || status}</StatusBadge>
                     {ds && (
                       <span className={`${styles.delivPill} ${styles[`ds_${ds.type}`]}`}>
-                        {ds.label}
+                        <DeliveryIcon type={ds.type} />{ds.label}
                       </span>
                     )}
                   </div>
@@ -577,9 +694,10 @@ const Orders = () => {
           status === "Pendiente de pago";
 
         return (
-          <div className={styles.overlay} onClick={() => { setViewOrder(null); setEditingPm(false); }}>
-            <div className={styles.modal} onClick={e => e.stopPropagation()}>
-              <h3>Detalle de orden</h3>
+          <div className={styles.overlay} onClick={() => { setViewOrder(null); setEditingPm(false); setEditDelivDay({ txId: null, value: "" }); }}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
+              <h3 id="order-detail-title">Detalle de orden</h3>
+              <div className={styles.stepperWrap}><OrderStepper status={status} /></div>
 
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Cliente</div>
@@ -604,42 +722,80 @@ const Orders = () => {
                         x{t.quantity} · {cur} {formatted(t.price)} c/u
                         {t.fulfillment_type && (
                           <span style={{ marginLeft: ".4rem" }}>
-                            {t.fulfillment_type === "delivery" ? "🛵" : "🏪"}
+                            {t.fulfillment_type === "delivery" ? <Bike size={14} aria-label="Delivery" /> : <Store size={14} aria-label="Take out" />}
                           </span>
                         )}
                       </div>
-                      {t.delivery_day && (
-                        <div className={styles.itemSub}>
-                          Entrega: {t.delivery_day}
-                          {itemDs && (
-                            <span className={`${styles.delivPill} ${styles[`ds_${itemDs.type}`]}`} style={{ marginLeft: ".4rem" }}>
-                              {itemDs.label}
-                            </span>
+                      {editDelivDay.txId === t.transaction_id ? (
+                        <div className={styles.itemSub} style={{ display: "flex", alignItems: "center", gap: ".4rem", flexWrap: "wrap" }}>
+                          <DatePicker
+                            value={editDelivDay.value}
+                            onChange={(v) => setEditDelivDay(prev => ({ ...prev, value: v }))}
+                            aria-label="Nueva fecha de entrega"
+                            clearable={false}
+                            wrapperClassName={styles.delivDayPicker}
+                          />
+                          <button
+                            className={styles.linkLikeBtn}
+                            disabled={changeDayM.isPending || !editDelivDay.value}
+                            onClick={() => changeDayM.mutate({ customerId: customer.customer_id, txId: t.transaction_id, day: editDelivDay.value })}
+                            style={{ color: "var(--color-success-fg)" }}
+                          >
+                            {changeDayM.isPending ? "Guardando…" : "Guardar"}
+                          </button>
+                          <button className={styles.linkLikeBtn} onClick={() => setEditDelivDay({ txId: null, value: "" })}>
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className={styles.itemSub} style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+                          {t.delivery_day ? (
+                            <>
+                              Entrega: {t.delivery_day}
+                              {itemDs && (
+                                <span className={`${styles.delivPill} ${styles[`ds_${itemDs.type}`]}`}>
+                                  <DeliveryIcon type={itemDs.type} />{itemDs.label}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className={styles.muted}>Sin fecha de entrega</span>
+                          )}
+                          {["Pendiente de pago", "Pendiente de validación", "Aprobada"].includes(status) && (
+                            <button
+                              title="Cambiar fecha de entrega"
+                              className={styles.linkLikeBtn}
+                              aria-label="Cambiar fecha de entrega"
+                              style={{ fontSize: ".75rem", padding: "0 4px", color: "var(--color-ink-soft)" }}
+                              onClick={() => setEditDelivDay({ txId: t.transaction_id, value: t.delivery_day || "" })}
+                            >
+                              <Pencil size={14} aria-hidden="true" />
+                            </button>
                           )}
                         </div>
                       )}
                       {!t.delivery_day && Number(t.delivery_days_after_payment || 0) > 0 && (
                         <div className={styles.itemSub}>
-                          🚚 Entrega en {t.delivery_days_after_payment} día{Number(t.delivery_days_after_payment) !== 1 ? "s" : ""} tras confirmar el pago
+                          <Truck size={14} aria-hidden="true" /> Entrega en {t.delivery_days_after_payment} día{Number(t.delivery_days_after_payment) !== 1 ? "s" : ""} tras confirmar el pago
                           {status !== "Aprobada" && status !== "Entregada" && (
-                            <span style={{ marginLeft: ".4rem", color: "#98a2b3" }}>(se calcula al aprobar)</span>
+                            <span style={{ marginLeft: ".4rem", color: "var(--color-ink-soft)" }}>(se calcula al aprobar)</span>
                           )}
                         </div>
                       )}
                       {t.delivery_address && (
-                        <div className={styles.itemSub}>📍 {t.delivery_address}</div>
+                        <div className={styles.itemSub}><MapPin size={14} aria-hidden="true" /> {t.delivery_address}</div>
                       )}
                       {t.comment && (
-                        <div className={styles.itemSub}>✏️ {t.comment}</div>
+                        <div className={styles.itemSub}><MessageSquare size={14} aria-hidden="true" /> {t.comment}</div>
                       )}
                       {(t.customization || []).length > 0 && (
                         <div className={styles.itemSub}>
-                          📐 {t.customization.map((c) => `${c.label}: ${c.value}${c.type === "measurement" ? (c.unit || "") : ""}`).join(" · ")}
+                          <Ruler size={14} aria-hidden="true" /> {t.customization.map((c) => `${c.label}: ${c.value}${c.type === "measurement" ? (c.unit || "") : ""}`).join(" · ")}
                         </div>
                       )}
                       {(t.discount_amount > 0) && (
                         <div className={styles.itemDiscount}>
-                          🎁 {t.offer_name ? `${t.offer_name} ·` : ""} −{cur} {formatted(t.discount_amount)}
+                          <Gift size={14} aria-hidden="true" /> {t.offer_name ? `${t.offer_name} ·` : ""} −{cur} {formatted(t.discount_amount)}
                         </div>
                       )}
                     </div>
@@ -650,9 +806,9 @@ const Orders = () => {
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Totales</div>
                 <div className={styles.row}><span>Subtotal</span><strong>{cur} {formatted(subtotal)}</strong></div>
-                {deliveryAmt > 0 && <div className={styles.row}><span>🛵 Delivery</span><strong>{cur} {formatted(deliveryAmt)}</strong></div>}
-                {discountAmt > 0 && <div className={styles.row} style={{ color: "#067647" }}><span>🎁 Descuento</span><strong>− {cur} {formatted(discountAmt)}</strong></div>}
-                <div className={styles.row} style={{ fontWeight: 800, borderTop: "2px solid #eef0f3", paddingTop: ".5rem", marginTop: ".25rem" }}>
+                {deliveryAmt > 0 && <div className={styles.row}><span className={styles.iconLabel}><Bike size={14} aria-hidden="true" /> Delivery</span><strong>{cur} {formatted(deliveryAmt)}</strong></div>}
+                {discountAmt > 0 && <div className={styles.row} style={{ color: "var(--color-success-fg)" }}><span className={styles.iconLabel}><Gift size={14} aria-hidden="true" /> Descuento</span><strong>− {cur} {formatted(discountAmt)}</strong></div>}
+                <div className={styles.row} style={{ fontWeight: 800, borderTop: "1px solid var(--color-line-strong)", paddingTop: ".5rem", marginTop: ".25rem" }}>
                   <span>Total</span><strong>{cur} {formatted(total)}</strong>
                 </div>
               </div>
@@ -663,13 +819,13 @@ const Orders = () => {
                   <div className={styles.sectionTitle}>Descuento</div>
                   {discountAmt > 0 ? (
                     <>
-                      <div className={styles.row} style={{ color: "#067647" }}>
-                        <span>🎁 {firstTx?.offer_name || "Descuento aplicado"}{firstTx?.offer_code ? ` (${firstTx.offer_code})` : ""}</span>
+                      <div className={styles.row} style={{ color: "var(--color-success-fg)" }}>
+                        <span className={styles.iconLabel}><Gift size={14} aria-hidden="true" /> {firstTx?.offer_name || "Descuento aplicado"}{firstTx?.offer_code ? ` (${firstTx.offer_code})` : ""}</span>
                         <strong>− {cur} {formatted(discountAmt)}</strong>
                       </div>
                       <button
                         className={styles.linkLikeBtn}
-                        style={{ color: "#b42318", marginTop: ".4rem" }}
+                        style={{ color: "var(--color-danger)", marginTop: ".4rem" }}
                         disabled={applyM.isPending}
                         onClick={() => handleRemoveDiscount(viewOrder)}
                       >
@@ -686,6 +842,7 @@ const Orders = () => {
                           onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountErr(""); }}
                           onKeyDown={e => e.key === "Enter" && handleApplyDiscount(viewOrder)}
                           placeholder="Código de descuento"
+                          aria-label="Código de descuento"
                         />
                         <button
                           className={styles.btnApprove}
@@ -696,11 +853,11 @@ const Orders = () => {
                         </button>
                       </div>
                       {discountErr && (
-                        <div style={{ color: "#b42318", fontSize: ".82rem", marginTop: ".4rem" }}>{discountErr}</div>
+                        <div role="alert" style={{ color: "var(--color-danger)", fontSize: ".82rem", marginTop: ".4rem" }}>{discountErr}</div>
                       )}
                       {status === "Pendiente de validación" && (
-                        <div style={{ color: "#92400E", fontSize: ".8rem", marginTop: ".4rem", lineHeight: 1.4 }}>
-                          ⚠️ El cliente ya subió comprobante por el monto anterior. Si aplicas un descuento, avísale del nuevo total.
+                        <div className={styles.iconLabel} style={{ color: "var(--state-pending-fg)", fontSize: ".8rem", marginTop: ".4rem", lineHeight: 1.4, alignItems: "flex-start" }}>
+                          <AlertTriangle size={14} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} /> El cliente ya subió comprobante por el monto anterior. Si aplicas un descuento, avísale del nuevo total.
                         </div>
                       )}
                     </>
@@ -748,19 +905,17 @@ const Orders = () => {
                           </button>
                         )}
                       </span>
-                      <span className={styles.statusBadge} style={getStatusStyle(status)}>
-                        {STATUS_LABEL[status] || status}
-                      </span>
+                      <StatusBadge status={status}>{STATUS_LABEL[status] || status}</StatusBadge>
                     </>
                   )}
                 </div>
                 {existingNcf && (
-                  <div style={{ fontSize: ".82rem", color: "#065F46", marginTop: ".4rem", fontWeight: 600 }}>
-                    🧾 Facturada con NCF: <span style={{ fontFamily: "monospace" }}>{existingNcf}</span>
+                  <div className={styles.iconLabel} style={{ fontSize: ".82rem", color: "var(--state-approved-fg)", marginTop: ".4rem", fontWeight: 600 }}>
+                    <Receipt size={14} aria-hidden="true" /> Facturada con NCF: <span style={{ fontFamily: "monospace" }}>{existingNcf}</span>
                   </div>
                 )}
                 {status === "Cancelada" && firstTx?.cancellation_reason && (
-                  <div style={{ fontSize: ".82rem", color: "#b42318", marginTop: ".3rem" }}>
+                  <div style={{ fontSize: ".82rem", color: "var(--color-danger)", marginTop: ".3rem" }}>
                     Razón: {firstTx.cancellation_reason}
                   </div>
                 )}
@@ -768,7 +923,7 @@ const Orders = () => {
 
               {isPayLinkPending && (
                 <div className={styles.payLinkAdminNote}>
-                  💬 Esta orden espera que le envíes el <strong>link de pago</strong> al cliente por el total exacto.
+                  <MessageSquare size={14} aria-hidden="true" /> Esta orden espera que le envíes el <strong>link de pago</strong> al cliente por el total exacto.
                   Usa el botón de WhatsApp y pega tu link en el mensaje.
                 </div>
               )}
@@ -780,7 +935,7 @@ const Orders = () => {
               )}
 
               <div className={styles.modalActions}>
-                <button className={styles.btnOutline} onClick={() => { setViewOrder(null); setEditingPm(false); }}>Cerrar</button>
+                <button className={styles.btnOutline} onClick={() => { setViewOrder(null); setEditingPm(false); setEditDelivDay({ txId: null, value: "" }); }}>Cerrar</button>
                 {isPayLinkPending && (
                   <button className={styles.btnWhats} onClick={() => sendPaymentLinkWA(viewOrder)}>
                     <FaWhatsapp /> Enviar link por WhatsApp
@@ -832,16 +987,16 @@ const Orders = () => {
 
         return (
           <div className={styles.overlay} onClick={closeInvoice}>
-            <div className={styles.modal} onClick={e => e.stopPropagation()}>
-              <h3>Emitir comprobante</h3>
-              <p style={{ color: "#475467", marginBottom: "1rem", fontSize: ".9rem" }}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="order-invoice-title">
+              <h3 id="order-invoice-title">Emitir comprobante</h3>
+              <p style={{ color: "var(--color-ink)", marginBottom: "1rem", fontSize: ".9rem" }}>
                 Orden <strong style={{ fontFamily: "monospace" }}>#{String(invoiceTarget.order_id).slice(0, 8).toUpperCase()}</strong>
                 {" · "}{customer.full_name || `${customer.given_name} ${customer.family_name}`}
               </p>
 
               {existingNcf && (
                 <div className={styles.invoiceNotice}>
-                  🧾 Esta orden ya fue facturada con NCF <strong>{existingNcf}</strong>. Se reutilizará el mismo (no consume otro).
+                  <Receipt size={14} aria-hidden="true" /> Esta orden ya fue facturada con NCF <strong>{existingNcf}</strong>. Se reutilizará el mismo (no consume otro).
                 </div>
               )}
 
@@ -850,7 +1005,7 @@ const Orders = () => {
                   <input type="radio" name="invtype" checked={!isFactura}
                     onChange={() => setInvoiceType("recibo")} disabled={!!existingNcf} />
                   <div>
-                    <div className={styles.invoiceOptTitle}>📄 Recibo de pago</div>
+                    <div className={styles.invoiceOptTitle}><FileText size={16} aria-hidden="true" /> Recibo de pago</div>
                     <div className={styles.invoiceOptDesc}>Comprobante simple sin valor fiscal.</div>
                   </div>
                 </label>
@@ -859,7 +1014,7 @@ const Orders = () => {
                   <input type="radio" name="invtype" checked={isFactura}
                     onChange={() => setInvoiceType("factura")} disabled={!ncfEnabled} />
                   <div>
-                    <div className={styles.invoiceOptTitle}>🧾 Factura con NCF</div>
+                    <div className={styles.invoiceOptTitle}><Receipt size={16} aria-hidden="true" /> Factura con NCF</div>
                     <div className={styles.invoiceOptDesc}>
                       {ncfEnabled
                         ? `Comprobante fiscal. Disponibles: ${ncfAvailable}.`
@@ -871,10 +1026,11 @@ const Orders = () => {
 
               {isFactura && !existingNcf && (
                 <div className={styles.formGroup} style={{ marginBottom: "1rem" }}>
-                  <label style={{ fontSize: ".82rem", fontWeight: 600, color: "#475467" }}>
+                  <label htmlFor="order-ncf-manual" style={{ fontSize: ".82rem", fontWeight: 700, color: "var(--color-ink-strong)" }}>
                     NCF manual (opcional)
                   </label>
                   <input
+                    id="order-ncf-manual"
                     className="input"
                     value={ncfManual}
                     onChange={e => setNcfManual(e.target.value.toUpperCase())}
@@ -885,7 +1041,7 @@ const Orders = () => {
 
               {noNcfLeft && (
                 <div className={styles.invoiceWarning}>
-                  ⚠️ No tienes NCF disponibles. Carga más en Configuración → Facturación o escribe uno manual.
+                  <AlertTriangle size={14} aria-hidden="true" /> No tienes NCF disponibles. Carga más en Configuración → Facturación o escribe uno manual.
                 </div>
               )}
 
@@ -902,7 +1058,7 @@ const Orders = () => {
                 </button>
               </div>
               {!custEmail && (
-                <p style={{ fontSize: ".78rem", color: "#b42318", marginTop: ".5rem", textAlign: "right" }}>
+                <p style={{ fontSize: ".78rem", color: "var(--color-danger)", marginTop: ".5rem", textAlign: "right" }}>
                   El cliente no tiene correo registrado.
                 </p>
               )}
@@ -914,9 +1070,9 @@ const Orders = () => {
       {/* ── Modal: cancelar ── */}
       {cancelTarget && (
         <div className={styles.overlay} onClick={() => setCancelTarget(null)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <h3>Cancelar orden</h3>
-            <p style={{ color: "#475467", marginBottom: "1rem" }}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="order-cancel-title">
+            <h3 id="order-cancel-title">Cancelar orden</h3>
+            <p style={{ color: "var(--color-ink)", marginBottom: "1rem" }}>
               ¿Cancelar la orden de{" "}
               <strong>
                 {cancelTarget.customer.full_name || cancelTarget.customer.email}
@@ -928,6 +1084,7 @@ const Orders = () => {
               value={cancelReason}
               onChange={e => setCancelReason(e.target.value)}
               placeholder="Razón (opcional)"
+              aria-label="Razón de la cancelación (opcional)"
             />
             <div className={styles.modalActions}>
               <button className={styles.btnOutline} onClick={() => { setCancelTarget(null); setCancelReason(""); }}>Cerrar</button>
@@ -947,9 +1104,9 @@ const Orders = () => {
       {/* ── Modal: recibo ── */}
       {receiptUrl && (
         <div className={styles.overlay} onClick={() => setReceiptUrl(null)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <h3>Comprobante de pago</h3>
-            <img src={receiptUrl} alt="Comprobante" style={{ width: "100%", borderRadius: "8px", marginBottom: "1rem" }} />
+          <div className={styles.modal} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="order-receipt-title">
+            <h3 id="order-receipt-title">Comprobante de pago</h3>
+            <img src={receiptUrl} alt="Comprobante de pago enviado por el cliente" style={{ width: "100%", borderRadius: "8px", marginBottom: "1rem" }} />
             <div className={styles.modalActions}>
               <button className={styles.btnOutline} onClick={() => setReceiptUrl(null)}>Cerrar</button>
             </div>

@@ -130,6 +130,14 @@ export const deliveredTransaction = async (customerId, transactionId) => {
   return handle(res);
 };
 
+export const changeDeliveryDay = async (customerId, transactionId, deliveryDay) => {
+  const res = await fetch(`${API_URL}customers/transactions/update`, {
+    method: "PUT", headers: authHeaders(),
+    body: JSON.stringify({ customer_id: customerId, transaction_id: transactionId, delivery_day: deliveryDay }),
+  });
+  return handle(res);
+};
+
 export const cancelTransaction = async (customerId, transactionId, reason) => {
   const res = await fetch(`${API_URL}customers/transactions/cancelAdmin`, {
     method: "POST", headers: authHeaders(),

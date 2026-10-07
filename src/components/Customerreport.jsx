@@ -4,6 +4,8 @@ import { currencies, formatted } from "../helpers/utils";
 import { buildCustomerReport, fmtDate, timeAgo } from "../helpers/customerReport";
 import styles from "./SellReport.module.css";
 import Select from "./Select";
+import { Download } from "lucide-react";
+import { Button, SortableHeader, useSortableData } from "./admin";
 
 const sym = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
@@ -18,13 +20,12 @@ const CustomerReport = ({ customers = [] }) => {
   }, [allRows]);
 
   const [filterCurrency, setFilterCurrency] = useState("all");
-  const [sort, setSort] = useState("ltv");
   const [search, setSearch] = useState("");
 
-  // Rows filtradas por búsqueda y moneda
+  // Rows filtradas por búsqueda y moneda; orden inicial: mayor gasto (en la moneda filtrada)
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
-    let out = allRows.filter((r) => {
+    const out = allRows.filter((r) => {
       const matchSearch = !term ||
         r.name.toLowerCase().includes(term) ||
         (r.email || "").toLowerCase().includes(term) ||
@@ -38,15 +39,29 @@ const CustomerReport = ({ customers = [] }) => {
       return (r.ltv || {})[filterCurrency] || 0;
     };
 
-    const cmp = {
-      ltv: (a, b) => ltvInFilter(b) - ltvInFilter(a),
-      orders: (a, b) => b.orders_count - a.orders_count,
-      recent: (a, b) => (b.last_sale || "").localeCompare(a.last_sale || ""),
-      oldest: (a, b) => (a.created || "").localeCompare(b.created || ""),
-    }[sort] || ((a, b) => ltvInFilter(b) - ltvInFilter(a));
+    return out.sort((a, b) => ltvInFilter(b) - ltvInFilter(a));
+  }, [allRows, filterCurrency, search]);
 
-    return [...out].sort(cmp);
-  }, [allRows, filterCurrency, sort, search]);
+  // Orden por columna (sin columna activa = orden inicial por mayor gasto)
+  const columnSort = useMemo(() => ({
+    name: { type: "text", value: (r) => (r.name === "—" ? "" : r.name) },
+    created: { type: "date" },
+    last_sale: { type: "date" },
+    favorite_product: { type: "text", value: (r) => (r.favorite_product === "—" ? "" : r.favorite_product) },
+    orders_count: { type: "number" },
+    // Gasto según el filtro de moneda (con "todas", misma suma que el orden inicial); sin compras → al final
+    ltv: {
+      type: "number",
+      value: (r) => {
+        const ltv = r.ltv || {};
+        if (filterCurrency !== "all") return ltv[filterCurrency] ?? null;
+        const vals = Object.values(ltv);
+        return vals.length ? vals.reduce((s, v) => s + v, 0) : null;
+      },
+    },
+  }), [filterCurrency]);
+  const sortState = useSortableData(rows, columnSort);
+  const sortedRows = sortState.sorted;
 
   // KPIs: separados por moneda
   const stats = useMemo(() => {
@@ -76,7 +91,7 @@ const CustomerReport = ({ customers = [] }) => {
     ];
     const wsData = [
       header,
-      ...rows.map((r) => [
+      ...sortedRows.map((r) => [
         r.name, r.email, r.phone,
         r.created ? r.created.slice(0, 10) : "",
         r.last_sale ? r.last_sale.slice(0, 10) : "",
@@ -119,17 +134,7 @@ const CustomerReport = ({ customers = [] }) => {
           </label>
         )}
 
-        <label className={styles.filter}>Ordenar por
-          <Select value={sort} onChange={setSort}
-            options={[
-              { value: "ltv", label: "Mayor gasto" },
-              { value: "orders", label: "Más órdenes" },
-              { value: "recent", label: "Compra más reciente" },
-              { value: "oldest", label: "Cliente más antiguo" },
-            ]} searchable={false} />
-        </label>
-
-        <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
+        <Button variant="secondary" icon={Download} className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</Button>
       </div>
 
       {/* KPIs */}
@@ -152,52 +157,52 @@ const CustomerReport = ({ customers = [] }) => {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Cliente</th>
-                <th>Cliente desde</th>
-                <th>Última compra</th>
-                <th>Producto favorito</th>
-                <th>Órdenes</th>
-                <th>Total gastado</th>
+                <SortableHeader sortKey="name" sort={sortState}>Cliente</SortableHeader>
+                <SortableHeader sortKey="created" sort={sortState}>Cliente desde</SortableHeader>
+                <SortableHeader sortKey="last_sale" sort={sortState}>Última compra</SortableHeader>
+                <SortableHeader sortKey="favorite_product" sort={sortState}>Producto favorito</SortableHeader>
+                <SortableHeader sortKey="orders_count" sort={sortState}>Órdenes</SortableHeader>
+                <SortableHeader sortKey="ltv" sort={sortState}>Total gastado</SortableHeader>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {sortedRows.map((r) => (
                 <tr key={r.customer_id}>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{r.name}</div>
+                    <div className={styles.cellStrong}>{r.name}</div>
                     {(r.email || r.phone) && (
-                      <div style={{ fontSize: ".8rem", color: "#667085" }}>
+                      <div className={styles.cellMeta}>
                         {r.email}{r.email && r.phone ? " · " : ""}{r.phone}
                       </div>
                     )}
                   </td>
                   <td>
                     {fmtDate(r.created)}
-                    <div style={{ fontSize: ".78rem", color: "#98a2b3" }}>{timeAgo(r.created)}</div>
+                    <div className={styles.cellMeta}>{timeAgo(r.created)}</div>
                   </td>
                   <td>
                     {r.last_sale ? (
                       <>
                         {fmtDate(r.last_sale)}
-                        <div style={{ fontSize: ".78rem", color: "#98a2b3" }}>{timeAgo(r.last_sale)}</div>
+                        <div className={styles.cellMeta}>{timeAgo(r.last_sale)}</div>
                       </>
-                    ) : <span style={{ color: "#98a2b3" }}>Sin compras</span>}
+                    ) : <span className={styles.cellMuted}>Sin compras</span>}
                   </td>
                   <td>
                     {r.favorite_product}
                     {r.favorite_units > 0 && (
-                      <div style={{ fontSize: ".78rem", color: "#98a2b3" }}>{r.favorite_units} uds</div>
+                      <div className={styles.cellMeta}>{r.favorite_units} uds</div>
                     )}
                   </td>
                   <td>{r.orders_count}</td>
                   <td>
                     {Object.entries(r.ltv || {}).length === 0
-                      ? <span style={{ color: "#98a2b3" }}>—</span>
+                      ? <span className={styles.cellMuted}>—</span>
                       : Object.entries(r.ltv).map(([cur, val]) => (
-                          <div key={cur} style={{ fontWeight: 600 }}>
+                          <div key={cur} className={styles.cellStrong}>
                             {sym(cur)} {formatted(val)}
                             {Object.keys(r.ltv).length > 1 && (
-                              <span style={{ fontSize: ".75rem", color: "#98a2b3", marginLeft: ".3rem" }}>({cur})</span>
+                              <span className={styles.cellMeta} style={{ marginLeft: "var(--space-1)" }}>({cur})</span>
                             )}
                           </div>
                         ))

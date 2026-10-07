@@ -2,68 +2,39 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
-  background: linear-gradient(135deg, #113f67 0%, #34699a 100%);
-  border-radius: 16px;
-  padding: 2rem;
+  gap: var(--space-4);
+  max-width: 100%;
 }
 
+/* El fondo lo pone el QR (inline) para que la vista coincida con la descarga */
 .qrPanel {
-  background: #fff;
-  border-radius: 16px;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-1);
   line-height: 0;
+  max-width: 100%;
 }
 
 .qrPanel canvas,
 .qrPanel svg {
   display: block;
-  border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-control);
+}
+
+.qrHint {
+  margin: 0;
+  max-width: 320px;
+  font-size: var(--fs-xs);
+  color: var(--color-ink-soft);
+  text-align: center;
 }
 
 .qrActions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
   justify-content: center;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.4rem;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.btnDownload {
-  background: #fff;
-  color: #113f67;
-}
-
-.btnDownload:hover {
-  background: #eaf1f7;
-}
-
-.btnPrint {
-  background: transparent;
-  color: #fff;
-  border-color: #fff;
-}
-
-.btnPrint:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-@media (max-width: 480px) {
-  .qrContainer {
-    width: 367px;
-    margin: 0px;
-    /* padding: 0; */
-  }
 }

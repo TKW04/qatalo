@@ -1,0 +1,183 @@
+/* Tiempos: cada paso se enciende a i*280ms; su conector dibuja justo después */
+.pipeline {
+  --node: 56px;
+  --gap: var(--space-6);
+  --step-delay: 280ms;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gap);
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--node) minmax(0, 1fr);
+  column-gap: var(--space-4);
+  align-items: start;
+  align-content: start;
+}
+
+/* ---------- Nodo numerado ---------- */
+.node {
+  position: relative;
+  width: var(--node);
+  height: var(--node);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+
+.nodeBase,
+.nodeLit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+}
+
+.nodeBase {
+  background: var(--color-surface);
+  border: 2px solid var(--color-line-strong);
+  color: var(--color-ink);
+}
+
+.nodeLit {
+  background: var(--color-brand);
+  color: var(--color-highlight);
+  box-shadow: var(--shadow-clay);
+  transition:
+    opacity 320ms var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+  transition-delay: calc(var(--i) * var(--step-delay));
+}
+
+.pipeline[data-state="idle"] .nodeLit {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* ---------- Conector (SVG + stroke-dashoffset) ---------- */
+.connector {
+  position: absolute;
+  pointer-events: none;
+}
+
+.connector svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.track,
+.fill {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.track {
+  stroke: var(--color-line);
+}
+
+.fill {
+  stroke: var(--color-support);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 420ms var(--ease-in-out);
+  transition-delay: calc(var(--i) * var(--step-delay) + 160ms);
+}
+
+.pipeline[data-state="idle"] .fill {
+  stroke-dashoffset: 1;
+}
+
+/* Móvil: vertical (de nodo a nodo, a la izquierda) */
+.lineH {
+  display: none !important;
+}
+
+.connector {
+  left: calc(var(--node) / 2 - 2px);
+  width: 4px;
+  top: calc(var(--node) + var(--space-2));
+  bottom: calc(-1 * var(--gap) + var(--space-2));
+}
+
+.body {
+  padding-top: var(--space-2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  color: var(--color-brand);
+}
+
+.text {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  max-width: 34ch;
+}
+
+/* Escritorio: horizontal, nodos arriba conectados de centro a centro */
+@media (min-width: 900px) {
+  .pipeline {
+    grid-template-columns: repeat(var(--steps), minmax(0, 1fr));
+  }
+
+  .step {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    row-gap: var(--space-4);
+  }
+
+  .body {
+    padding-top: 0;
+  }
+
+  .text {
+    margin-inline: auto;
+  }
+
+  .lineH {
+    display: block !important;
+  }
+
+  .lineV {
+    display: none !important;
+  }
+
+  .connector {
+    top: calc(var(--node) / 2 - 2px);
+    bottom: auto;
+    height: 4px;
+    width: auto;
+    left: calc(50% + var(--node) / 2 + var(--space-2));
+    right: calc(-50% - var(--gap) + var(--node) / 2 + var(--space-2));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline .nodeLit {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .pipeline .fill {
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+  }
+}

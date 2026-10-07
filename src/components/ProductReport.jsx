@@ -1,24 +1,45 @@
 import { useMemo, useState } from "react";
 import {
-  ResponsiveContainer, BarChart, Bar, Cell,
+  ResponsiveContainer, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
 import Select from "./Select";
+import DatePicker from "./DatePicker";
 import styles from "./SellReport.module.css"; // misma paleta visual
+import { Download } from "lucide-react";
+import { Button, StatusBadge, useChartAnimation, SortableHeader, useSortableData } from "./admin";
 
 const PAID = ["Aprobada", "Entregada"];
-const STATUS_COLORS = {
-  "Pendiente de pago": "#F59E0B",
-  "Pendiente de validación": "#3B82F6",
-  Aprobada: "#10B981",
-  Entregada: "#0E7490",
-  Cancelada: "#EF4444",
-};
-const BAR_COLORS = ["#113F67", "#34699A", "#0E7490", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#6B7280"];
+// Un solo color de marca para barras; estados con tokens --state-* (StatusBadge).
+const BAR_COLOR = "var(--color-interactive)";
+const GRID_COLOR = "var(--color-line)";
+const AXIS_TICK = { fill: "var(--color-ink-soft)", fontSize: 11 };
 const NO_LOC = "Sin especificar";
 const NO_VAR = "Sin variante";
+
+// Columnas ordenables: valores crudos (montos/cantidades como número, sin convertir monedas).
+const noDash = (v) => (v === "—" ? "" : v);
+const SUMMARY_SORT = {
+  product_name: { type: "text", value: (g) => noDash(g.product_name.trim()) },
+  variant: { type: "text", value: (g) => (g.variant === NO_VAR ? "" : g.variant.trim()) },
+  currency: { type: "text", value: (g) => noDash(g.currency) },
+  units: { type: "number" },
+  avg: { type: "number", value: (g) => (g.units ? g.revenue / g.units : 0) },
+  revenue: { type: "number" },
+  totalDiscount: { type: "number" },
+};
+const DETAIL_SORT = {
+  product_name: { type: "text", value: (r) => noDash(r.product_name.trim()) },
+  variant: { type: "text", value: (r) => r.variant_label.trim() },
+  quantity: { type: "number" },
+  price: { type: "number" },
+  total: { type: "number" },
+  status: { type: "text" },
+  locality: { type: "text" },
+  date: { type: "date" },
+};
 
 const flattenWithVariants = (customers) => {
   const rows = [];
@@ -51,6 +72,7 @@ const flattenWithVariants = (customers) => {
 const symbolOf = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
 const ProductReport = ({ customers = [] }) => {
+  const anim = useChartAnimation();
   const allRows = useMemo(() => flattenWithVariants(customers), [customers]);
 
   const productNames = useMemo(
@@ -104,6 +126,12 @@ const ProductReport = ({ customers = [] }) => {
     });
     return Object.values(map).sort((a, b) => b.revenue - a.revenue);
   }, [paidRows]);
+
+  // Orden por columna (sin columna activa = orden original: resumen por ingresos desc.)
+  const summarySort = useSortableData(grouped, SUMMARY_SORT);
+  const detailSort = useSortableData(rows, DETAIL_SORT);
+  const sortedGrouped = summarySort.sorted;
+  const sortedRows = detailSort.sorted;
 
   const hasVariants = useMemo(() => paidRows.some((r) => r.variant_label), [paidRows]);
   const hasDiscounts = useMemo(() => grouped.some(g => g.totalDiscount > 0), [grouped]);
@@ -171,7 +199,7 @@ const ProductReport = ({ customers = [] }) => {
 
     // Hoja 1: Resumen por producto + variante + moneda
     const sumH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Moneda", "Unidades", "Precio prom.", "Ingresos", ...(hasDiscounts ? ["Descuento"] : [])];
-    const sumRows = grouped.map((g) => [
+    const sumRows = sortedGrouped.map((g) => [
       g.product_name.trim(), ...(hasVariants ? [g.variant] : []), g.currency,
       g.units, g.units ? g.revenue / g.units : 0, g.revenue,
       ...(hasDiscounts ? [g.totalDiscount || 0] : []),
@@ -181,7 +209,7 @@ const ProductReport = ({ customers = [] }) => {
 
     // Hoja 2: Detalle completo
     const detH = ["Producto", ...(hasVariants ? ["Variante"] : []), "Moneda", "Cant.", "Precio", "Total", "Estado", ...(hasLocalities ? ["Localidad"] : []), "Fecha"];
-    const detRows = rows.map((r) => [
+    const detRows = sortedRows.map((r) => [
       r.product_name.trim(), ...(hasVariants ? [r.variant_label || NO_VAR] : []), r.currency,
       r.quantity, r.price, r.total, r.status, ...(hasLocalities ? [r.locality || NO_LOC] : []), r.date,
     ]);
@@ -245,9 +273,15 @@ const ProductReport = ({ customers = [] }) => {
             />
           </label>
         )}
-        <label className={styles.filter}>Desde<input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-        <label className={styles.filter}>Hasta<input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} /></label>
-        <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
+        <div className={styles.filter}>
+          <span id="product-report-from-label">Desde</span>
+          <DatePicker className="input" aria-labelledby="product-report-from-label" value={from} max={to || undefined} onChange={(v) => setFrom(v)} />
+        </div>
+        <div className={styles.filter}>
+          <span id="product-report-to-label">Hasta</span>
+          <DatePicker className="input" aria-labelledby="product-report-to-label" value={to} min={from || undefined} onChange={(v) => setTo(v)} />
+        </div>
+        <Button variant="secondary" icon={Download} className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</Button>
       </div>
 
       {/* KPIs: ingresos por moneda, separados */}
@@ -268,18 +302,16 @@ const ProductReport = ({ customers = [] }) => {
 
       {/* Gráfico */}
       {chartData.length > 0 && (
-        <div className={styles.chartsGrid} style={{ gridTemplateColumns: "1fr" }}>
+        <div className={`${styles.chartsGrid} ${styles.single}`}>
           <div className={styles.chartCard}>
             <h3>{chartTitle}</h3>
             <ResponsiveContainer width="100%" height={Math.max(220, chartData.length * 44)}>
               <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
-                <XAxis type="number" fontSize={11} tickFormatter={(v) => chartKey === "revenue" ? `${symbolOf(currency !== "all" ? currency : "")} ${formatted(v)}` : String(v)} />
-                <YAxis type="category" dataKey="name" width={160} fontSize={11} />
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
+                <XAxis type="number" tick={AXIS_TICK} stroke={GRID_COLOR} tickFormatter={(v) => chartKey === "revenue" ? `${symbolOf(currency !== "all" ? currency : "")} ${formatted(v)}` : String(v)} />
+                <YAxis type="category" dataKey="name" width={130} tick={AXIS_TICK} stroke={GRID_COLOR} />
                 <Tooltip formatter={(v) => chartKey === "revenue" ? `${symbolOf(currency !== "all" ? currency : "")} ${formatted(v)}` : `${v} uds.`} />
-                <Bar dataKey={chartKey} radius={[0, 6, 6, 0]}>
-                  {chartData.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
-                </Bar>
+                <Bar dataKey={chartKey} radius={[0, 6, 6, 0]} fill={BAR_COLOR} {...anim} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -293,17 +325,17 @@ const ProductReport = ({ customers = [] }) => {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Producto</th>
-                {hasVariants && <th>Variante</th>}
-                {hasMultiCurrency && <th>Moneda</th>}
-                <th>Unidades</th>
-                <th>Precio prom.</th>
-                <th>Ingresos</th>
-                {hasDiscounts && <th>Descuento total</th>}
+                <SortableHeader sortKey="product_name" sort={summarySort}>Producto</SortableHeader>
+                {hasVariants && <SortableHeader sortKey="variant" sort={summarySort}>Variante</SortableHeader>}
+                {hasMultiCurrency && <SortableHeader sortKey="currency" sort={summarySort}>Moneda</SortableHeader>}
+                <SortableHeader sortKey="units" sort={summarySort}>Unidades</SortableHeader>
+                <SortableHeader sortKey="avg" sort={summarySort}>Precio prom.</SortableHeader>
+                <SortableHeader sortKey="revenue" sort={summarySort}>Ingresos</SortableHeader>
+                {hasDiscounts && <SortableHeader sortKey="totalDiscount" sort={summarySort}>Descuento total</SortableHeader>}
               </tr>
             </thead>
             <tbody>
-              {grouped.map((g, i) => (
+              {sortedGrouped.map((g, i) => (
                 <tr key={i}>
                   <td>{g.product_name.trim()}</td>
                   {hasVariants && <td>{g.variant.trim()}</td>}
@@ -312,7 +344,7 @@ const ProductReport = ({ customers = [] }) => {
                   <td>{symbolOf(g.currency)} {formatted(g.units ? g.revenue / g.units : 0)}</td>
                   <td><strong>{symbolOf(g.currency)} {formatted(g.revenue)}</strong></td>
                   {hasDiscounts && (
-                    <td style={{ color: g.totalDiscount > 0 ? "#067647" : "inherit" }}>
+                    <td className={g.totalDiscount > 0 ? styles.positive : undefined}>
                       {g.totalDiscount > 0 ? `− ${symbolOf(g.currency)} ${formatted(g.totalDiscount)}` : "—"}
                     </td>
                   )}
@@ -322,7 +354,7 @@ const ProductReport = ({ customers = [] }) => {
                 <tr><td colSpan={hasVariants ? 6 : 5} className={styles.tableEmpty}>Sin órdenes cobradas en el rango seleccionado.</td></tr>
               )}
               {grouped.length > 0 && (
-                <tr style={{ background: "#f0f7ff", fontWeight: 700 }}>
+                <tr className={styles.totalRow}>
                   <td colSpan={(hasVariants ? 1 : 0) + (hasMultiCurrency ? 2 : 1)}>Total</td>
                   <td>{grandUnits}</td>
                   <td></td>
@@ -339,21 +371,24 @@ const ProductReport = ({ customers = [] }) => {
       </div>
 
       {/* Tabla detalle completo */}
-      <div className={styles.tableCard} style={{ marginTop: "1.25rem" }}>
+      <div className={`${styles.tableCard} ${styles.stacked}`}>
         <h3>Detalle de todas las órdenes</h3>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Producto</th>
-                {hasVariants && <th>Variante</th>}
-                <th>Cant.</th><th>Precio</th><th>Total</th><th>Estado</th>
-                {hasLocalities && <th>Localidad</th>}
-                <th>Fecha</th>
+                <SortableHeader sortKey="product_name" sort={detailSort}>Producto</SortableHeader>
+                {hasVariants && <SortableHeader sortKey="variant" sort={detailSort}>Variante</SortableHeader>}
+                <SortableHeader sortKey="quantity" sort={detailSort}>Cant.</SortableHeader>
+                <SortableHeader sortKey="price" sort={detailSort}>Precio</SortableHeader>
+                <SortableHeader sortKey="total" sort={detailSort}>Total</SortableHeader>
+                <SortableHeader sortKey="status" sort={detailSort}>Estado</SortableHeader>
+                {hasLocalities && <SortableHeader sortKey="locality" sort={detailSort}>Localidad</SortableHeader>}
+                <SortableHeader sortKey="date" sort={detailSort}>Fecha</SortableHeader>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {sortedRows.map((r, i) => (
                 <tr key={i}>
                   <td>{r.product_name.trim()}</td>
                   {hasVariants && <td>{r.variant_label.trim()}</td>}
@@ -361,9 +396,7 @@ const ProductReport = ({ customers = [] }) => {
                   <td>{symbolOf(r.currency)} {formatted(r.price)}</td>
                   <td>{symbolOf(r.currency)} {formatted(r.total)}</td>
                   <td>
-                    <span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>
-                      {r.status}
-                    </span>
+                    <StatusBadge status={r.status} />
                   </td>
                   {hasLocalities && <td>{r.locality || NO_LOC}</td>}
                   <td>{r.date}</td>

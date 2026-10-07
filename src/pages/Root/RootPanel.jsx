@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowsRotate, FaMagnifyingGlass, FaUsers, FaLightbulb,
-  FaBoxOpen, FaCartShopping, FaShieldHalved,
+  FaBoxOpen, FaCartShopping, FaShieldHalved, FaTriangleExclamation,
 } from "react-icons/fa6";
 import { useNotification } from "../../components/UI/NotificationProvider";
-import Loading from "../../components/UI/Loading";
+import { Button, EmptyState, SkeletonList, SkeletonTable } from "../../components/admin";
 import {
   fetchRootOverview, fetchRootBusinesses, fetchRootSuggestions, updateSuggestionStatus,
 } from "../../services/rootApi";
@@ -44,6 +44,27 @@ const TYPE_LABEL = {
   bug: "🐞 Problema",
   other: "💬 Otra idea",
 };
+
+// Reintenta fallos transitorios (red, 5xx, timeouts/cold start del backend);
+// 401/403 ya pasaron por la renovación de sesión del servicio → no insistir.
+const rootRetry = (count, err) => count < 2 && err?.status !== 401 && err?.status !== 403;
+const rootRetryDelay = (attempt) => Math.min(1000 * 2 ** attempt, 4000);
+const ROOT_QUERY = { retry: rootRetry, retryDelay: rootRetryDelay };
+
+// Error visible con reintento (antes el fallo se veía como "Sin resultados")
+const LoadError = ({ query, what, compact = false }) => (
+  <EmptyState
+    compact={compact}
+    icon={FaTriangleExclamation}
+    title={`No se pudo cargar ${what}`}
+    description={query.error?.message || "Revisa tu conexión e inténtalo de nuevo."}
+    action={
+      <Button variant="secondary" size="sm" icon={FaArrowsRotate} loading={query.isFetching} onClick={() => query.refetch()}>
+        Reintentar
+      </Button>
+    }
+  />
+);
 
 const fmtDate = (s) => {
   if (!s) return "—";
@@ -108,14 +129,9 @@ const RootPanel = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const overview = useQuery({ queryKey: ["root-overview"], queryFn: fetchRootOverview, retry: false });
-  // console.log(overview);
-  
-  const businesses = useQuery({ queryKey: ["root-businesses"], queryFn: fetchRootBusinesses, retry: false, enabled: tab === "clients" });
-  
-  const suggestions = useQuery({ queryKey: ["root-suggestions"], queryFn: fetchRootSuggestions, retry: false, enabled: tab === "suggestions" });
-  // console.log(suggestions);
-  
+  const overview = useQuery({ queryKey: ["root-overview"], queryFn: fetchRootOverview, ...ROOT_QUERY });
+  const businesses = useQuery({ queryKey: ["root-businesses"], queryFn: fetchRootBusinesses, ...ROOT_QUERY, enabled: tab === "clients" });
+  const suggestions = useQuery({ queryKey: ["root-suggestions"], queryFn: fetchRootSuggestions, ...ROOT_QUERY, enabled: tab === "suggestions" });
 
   const statusM = useMutation({
     mutationFn: updateSuggestionStatus,
@@ -178,6 +194,8 @@ const RootPanel = () => {
         </button>
       </div>
 
+      {overview.isError && <LoadError query={overview} what="el resumen" compact />}
+
       {/* Tarjetas resumen */}
       <div className={styles.stats}>
         <div className={styles.statCard}>
@@ -231,7 +249,8 @@ const RootPanel = () => {
 
       {/* ── TAB CLIENTES ── */}
       {tab === "clients" && (
-        businesses.isLoading ? <Loading message="Cargando clientes..." /> : (
+        businesses.isLoading ? <SkeletonTable label="Cargando clientes..." /> :
+        businesses.isError ? <LoadError query={businesses} what="los clientes" /> : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
@@ -294,7 +313,8 @@ const RootPanel = () => {
 
       {/* ── TAB SUGERENCIAS ── */}
       {tab === "suggestions" && (
-        suggestions.isLoading ? <Loading message="Cargando sugerencias..." /> : (
+        suggestions.isLoading ? <SkeletonList label="Cargando sugerencias..." media={false} /> :
+        suggestions.isError ? <LoadError query={suggestions} what="las sugerencias" /> : (
           filteredSuggestions.length === 0 ? (
             <div className={styles.empty}>No hay sugerencias que coincidan.</div>
           ) : (

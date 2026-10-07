@@ -1,0 +1,20 @@
+.word {
+  display: inline-block;
+  transition:
+    transform var(--dur-reveal) var(--ease-out),
+    opacity 400ms var(--ease-out);
+  transition-delay: calc(var(--i) * var(--stagger, 45ms));
+}
+
+.split[data-state="idle"] .word {
+  opacity: 0;
+  transform: translateY(0.35em);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .split .word {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

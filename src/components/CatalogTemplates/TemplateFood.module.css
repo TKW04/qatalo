@@ -6,11 +6,13 @@
 
 .page {
   /* Mapeo al Theme Manager */
-  --bg-color: var(--theme-background, #fffaf5);
-  --primary-color: var(--theme-primary, #e63946);
-  /* Rojo apetitoso por defecto */
-  --secondary-color: var(--theme-secondary, #1d3557);
-  --accent-color: var(--theme-accent, #f4a261);
+  /* Solo tokens --cat-* (paleta del negocio, ver catalogShared.module.css) */
+  --bg-color: var(--cat-bg);
+  --primary-color: var(--cat-primary);
+  --secondary-color: var(--cat-text);
+  --accent-color: var(--cat-accent);
+  --card-bg: var(--cat-surface);
+  --muted: var(--cat-text-muted);
 
   background: var(--bg-color);
   color: var(--secondary-color);
@@ -29,23 +31,24 @@
 }
 
 .shareBtn {
-  background: white;
+  background: var(--card-bg);
   border: none;
   color: var(--secondary-color);
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px var(--cat-shadow);
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.shareBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+.shareBtn:active {
+  transform: scale(0.94);
 }
 
 .header {
@@ -65,7 +68,7 @@
   max-width: calc(200px * var(--logo-scale, 1));
   object-fit: contain;
   border-radius: 16px;
-  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--secondary-color) 55%, transparent);
+  box-shadow: 0 8px 20px -10px var(--cat-shadow);
 }
 
 .businessName {
@@ -81,7 +84,7 @@
   margin: 0.35rem 0 0;
   font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 600;
-  color: color-mix(in srgb, var(--secondary-color) 65%, transparent);
+  color: var(--muted);
 }
 
 /* Controles: Buscador y Categorías */
@@ -94,20 +97,24 @@
 .searchContainer {
   display: flex;
   align-items: center;
-  background: white;
+  background: var(--card-bg);
   border-radius: 18px;
   padding: 0.8rem 1.2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  border: 1px solid color-mix(in srgb, var(--secondary-color) 5%, transparent);
-  transition: box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px var(--cat-shadow);
+  border: 1px solid var(--cat-border);
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 
 .searchContainer:focus-within {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  border-color: var(--cat-focus);
+  box-shadow: 0 0 0 2px var(--cat-focus);
 }
 
 .searchIcon {
-  color: color-mix(in srgb, var(--secondary-color) 40%, transparent);
+  color: var(--muted);
+  flex-shrink: 0;
   margin-right: 0.8rem;
 }
 
@@ -123,7 +130,7 @@
 }
 
 .searchInput::placeholder {
-  color: var(--custom-search-color, color-mix(in srgb, var(--secondary-color) 40%, transparent));
+  color: var(--custom-search-color, var(--muted));
   font-weight: 400;
 }
 
@@ -131,7 +138,8 @@
   display: flex;
   gap: 0.8rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem;
+  padding: 4px 4px 0.5rem;
+  margin: -4px -4px 0;
   scrollbar-width: none;
 }
 
@@ -140,7 +148,7 @@
 }
 
 .catPill {
-  background: white;
+  background: var(--card-bg);
   border: none;
   font-family: inherit;
   font-size: calc(0.95rem * var(--font-scale, 1));
@@ -150,18 +158,32 @@
   color: var(--secondary-color);
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-  transition: all 0.2s ease;
+  min-height: 40px;
+  box-shadow: 0 2px 10px var(--cat-shadow);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
-.catPill:hover {
-  background: color-mix(in srgb, var(--bg-color) 90%, var(--primary-color));
+.catPill:active {
+  transform: scale(0.97);
 }
 
-.activePill {
+/* Activa: texto del negocio invertido sobre su propio color (contraste por diseño) */
+.activePill,
+.activePill:hover {
   background: var(--secondary-color);
-  color: white;
-  box-shadow: 0 4px 15px color-mix(in srgb, var(--secondary-color) 40%, transparent);
+  color: var(--bg-color);
+  box-shadow: 0 4px 15px var(--cat-shadow);
+}
+
+.shareBtn:focus-visible,
+.catPill:focus-visible,
+.collectionCard:focus-visible {
+  outline: 2px solid var(--cat-focus);
+  outline-offset: 2px;
 }
 
 /* Grid & Cards */
@@ -172,23 +194,30 @@
 }
 
 .card {
+  position: relative;
   border-radius: 26px;
   overflow: hidden;
-  background: white;
-  box-shadow: 0 12px 30px -20px color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  background: var(--card-bg);
+  box-shadow: 0 12px 30px -20px var(--cat-shadow);
   display: flex;
   flex-direction: column;
   /* Fix de un bug de Safari/iOS: cuando un hijo tiene "transition/transform",
      a veces el recorte por overflow+border-radius del padre falla en móvil.
      Este mask-image fuerza a Safari a recomponer el recorte correctamente. */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 26px 50px -24px color-mix(in srgb, var(--secondary-color) 60%, transparent);
+/* El mask de arriba recorta outlines externos: el anillo de foco va por dentro */
+.card button:focus-visible::after {
+  outline-offset: -4px;
+  border-radius: 26px;
+}
+
+.card:active {
+  transform: scale(0.99);
 }
 
 .media {
@@ -196,7 +225,7 @@
   aspect-ratio: 16 / 11;
   overflow: hidden;
   border-radius: 26px 26px 0 0;
-  background: color-mix(in srgb, var(--secondary-color) 5%, transparent);
+  background: var(--cat-surface-2);
 }
 
 .image {
@@ -205,23 +234,30 @@
   object-fit: cover;
   display: block;
   border-radius: 26px 26px 0 0;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 400ms var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out);
 }
 
 .imagePlaceholder {
   width: 100%;
   height: 100%;
   border-radius: 26px 26px 0 0;
-  background: color-mix(in srgb, var(--secondary-color) 8%, transparent);
+  background: var(--cat-surface-2);
 }
 
-.card:hover .image {
-  transform: scale(1.07);
+/* Agotado: solo se atenúa la foto; estrella, badge y precio quedan visibles */
+.isSoldOut .image,
+.isSoldOut .imagePlaceholder {
+  opacity: 0.55;
+  filter: grayscale(0.85);
 }
 
+/* "Disp" abajo-izquierda: no choca con estrella (arriba-izq) ni "Agotado" (arriba-der) */
 .ribbon {
   position: absolute;
-  top: 14px;
+  bottom: 14px;
   left: 14px;
   font-size: calc(0.75rem * var(--font-scale, 1));
   font-weight: 700;
@@ -230,31 +266,10 @@
   padding: 0.4rem 0.8rem;
   border-radius: 980px;
   background: var(--accent-color);
-  color: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  color: var(--cat-on-accent);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
   z-index: 2;
-}
-
-.soldOutOverlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(2px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-}
-
-.soldOutOverlay span {
-  background: var(--secondary-color);
-  color: white;
-  font-family: var(--font-heading, "Fraunces", serif);
-  font-size: calc(1.2rem * var(--font-scale, 1));
-  font-weight: 700;
-  padding: 0.5rem 1.5rem;
-  border-radius: 12px;
-  transform: rotate(-5deg);
+  pointer-events: none;
 }
 
 .priceTag {
@@ -262,24 +277,17 @@
   bottom: 14px;
   right: 14px;
   font-family: var(--font-heading, "Fraunces", Georgia, serif);
-  font-size: calc(1.5rem * var(--font-scale, 1));
+  font-size: calc(1.3rem * var(--font-scale, 1));
   font-weight: 700;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 18px;
   background: var(--primary-color);
-  color: white;
-  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--primary-color) 80%, transparent);
+  color: var(--cat-on-primary);
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.45);
   z-index: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 0.2rem;
-}
-
-.priceTag small {
-  font-family: var(--font-body, "Nunito Sans", sans-serif);
-  font-size: calc(0.9rem * var(--font-scale, 1));
-  font-weight: 600;
-  opacity: 0.9;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  max-width: calc(100% - 28px);
 }
 
 .body {
@@ -302,13 +310,14 @@
   margin: 0.6rem 0 1.5rem;
   font-size: calc(0.95rem * var(--font-scale, 1));
   line-height: 1.6;
-  color: color-mix(in srgb, var(--secondary-color) 68%, transparent);
+  color: var(--muted);
   flex: 1;
 }
 
 .order {
-  border: none;
-  cursor: pointer;
+  display: block;
+  text-align: center;
+  box-sizing: border-box;
   font-family: inherit;
   font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 700;
@@ -316,19 +325,16 @@
   padding: 1rem;
   border-radius: 16px;
   background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-color));
-  color: var(--primary-color);
-  transition: all 0.2s ease;
+  color: color-mix(in srgb, var(--primary-color) 80%, var(--secondary-color));
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
-.card:hover .order {
-  background: var(--primary-color);
-  color: white;
-}
-
-.order:disabled {
-  background: color-mix(in srgb, var(--secondary-color) 10%, transparent);
-  color: color-mix(in srgb, var(--secondary-color) 50%, transparent);
-  cursor: not-allowed;
+.isSoldOut .order,
+.isSoldOut:hover .order {
+  background: var(--cat-surface-2);
+  color: var(--muted);
 }
 
 .emptyState {
@@ -337,7 +343,7 @@
   align-items: center;
   justify-content: center;
   padding: 6rem 1rem;
-  color: color-mix(in srgb, var(--secondary-color) 30%, transparent);
+  color: var(--muted);
   text-align: center;
   font-family: var(--font-heading, "Fraunces", serif);
   font-size: calc(1.2rem * var(--font-scale, 1));
@@ -396,7 +402,9 @@
   width: 180px;
   flex: 0 0 auto;
   border: none;
-  background: white;
+  background: var(--card-bg);
+  color: var(--secondary-color);
+  font: inherit;
   border-radius: 22px;
   overflow: hidden;
   text-align: left;
@@ -404,18 +412,19 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 30px -20px color-mix(in srgb, var(--secondary-color) 60%, transparent);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 12px 30px -20px var(--cat-shadow);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.collectionCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px -20px color-mix(in srgb, var(--secondary-color) 55%, transparent);
+.collectionCard:active {
+  transform: scale(0.98);
 }
 
 .collectionMedia {
   aspect-ratio: 1 / 1;
-  background: color-mix(in srgb, var(--accent-color) 12%, white);
+  background: color-mix(in srgb, var(--accent-color) 12%, var(--card-bg));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -450,24 +459,53 @@
 .collectionCount {
   font-size: calc(0.8rem * var(--font-scale, 1));
   font-weight: 600;
-  color: color-mix(in srgb, var(--secondary-color) 55%, transparent);
+  color: var(--muted);
   display: block;
   margin-top: 0.2rem;
 }
 
-/* ── Estrella de producto destacado ── */
-.featuredStar {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: white;
-  color: var(--accent-color);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+/* ── Hover solo en punteros finos ── */
+@media (hover: hover) and (pointer: fine) {
+  .shareBtn:hover {
+    box-shadow: 0 6px 15px var(--cat-shadow);
+  }
+
+  .catPill:hover {
+    background: color-mix(in srgb, var(--card-bg) 88%, var(--primary-color));
+  }
+
+  .card:hover,
+  .collectionCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 26px 50px -24px var(--cat-shadow);
+  }
+
+  .card:hover .image {
+    transform: scale(1.04);
+  }
+
+  .card:not(.isSoldOut):hover .order {
+    background: var(--primary-color);
+    color: var(--cat-on-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .image,
+  .collectionCard,
+  .catPill,
+  .shareBtn {
+    transition: none;
+  }
+
+  .card:hover,
+  .card:active,
+  .card:hover .image,
+  .collectionCard:hover,
+  .collectionCard:active,
+  .catPill:active,
+  .shareBtn:active {
+    transform: none;
+  }
 }

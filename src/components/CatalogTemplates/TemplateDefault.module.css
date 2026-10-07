@@ -1,20 +1,22 @@
 /* =========================================
    TEMPLATE DEFAULT - ESTILOS BASE
+   Colores: solo tokens --cat-* (derivados de la paleta del negocio,
+   ver catalogShared.module.css).
    ========================================= */
 
 .templateWrapper {
-  /* Lee las 4 variables inyectadas; fallbacks = paleta Brisa Oceánica */
-  --bg-color: var(--theme-background, #fafafa);
-  --primary-color: var(--theme-primary, #113f67);
-  --secondary-color: var(--theme-secondary, #34699a);
-  --accent-color: var(--theme-accent, #fdf5aa);
+  --bg-color: var(--cat-bg);
+  --primary-color: var(--cat-primary);
+  --secondary-color: var(--cat-text);
+  --accent-color: var(--cat-accent);
 
-  /* Derivados (no vienen en la paleta de 4) */
-  --card-bg: #ffffff;
-  --text: var(--secondary-color);
-  --text-light: color-mix(in srgb, var(--secondary-color) 60%, transparent);
+  --card-bg: var(--cat-surface);
+  --text: var(--cat-text);
+  --text-light: var(--cat-text-muted);
+  --line: var(--cat-border);
 
   background-color: var(--bg-color);
+  color: var(--text);
   min-height: 100vh;
   font-family: var(--font-body, "Roboto", sans-serif);
 }
@@ -22,7 +24,8 @@
 /* --- HEADER --- */
 .header {
   background-color: var(--card-bg);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px var(--cat-shadow);
+  border-bottom: 1px solid var(--line);
   padding: 2rem 1rem;
   margin-bottom: 2rem;
 }
@@ -49,7 +52,6 @@
   max-width: calc(200px * var(--logo-scale, 1));
   object-fit: contain;
   border-radius: 8px;
-  
 }
 
 .businessName {
@@ -58,6 +60,7 @@
   font-weight: 800;
   color: var(--primary-color);
   margin: 0 0 0.25rem 0;
+  text-wrap: balance;
 }
 
 .businessDescription {
@@ -65,6 +68,7 @@
   color: var(--text-light);
   margin: 0;
   max-width: 500px;
+  line-height: 1.5;
 }
 
 .shareButton {
@@ -75,15 +79,19 @@
   color: var(--secondary-color);
   border: 2px solid var(--secondary-color);
   padding: 0.6rem 1.2rem;
+  min-height: 44px;
   border-radius: 8px;
+  font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
-.shareButton:hover {
-  background-color: var(--secondary-color);
-  color: #fff;
+.shareButton:active {
+  transform: scale(0.97);
 }
 
 /* --- MAIN CONTENT --- */
@@ -112,17 +120,23 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #999;
+  color: var(--text-light);
+  pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
+  box-sizing: border-box;
   padding: 0.8rem 1rem 0.8rem 2.5rem;
-  border: 1px solid #e1e5e9;
+  border: 1px solid var(--line);
   border-radius: 8px;
+  background-color: var(--card-bg);
+  font-family: inherit;
   font-size: var(--custom-search-size, calc(1rem * var(--font-scale, 1)));
   color: var(--custom-search-color, var(--text));
-  transition: all 0.3s ease;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .searchInput::placeholder {
@@ -131,39 +145,57 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--secondary-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary-color) 12%, transparent);
+}
+
+.searchInput:focus-visible {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 22%, transparent);
 }
 
 .categoryFilters {
   display: flex;
   gap: 0.8rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem;
+  padding: 4px 4px 0.5rem;
+  margin: -4px -4px 0;
   scrollbar-width: thin;
 }
 
 .categoryPill {
   white-space: nowrap;
   padding: 0.5rem 1.2rem;
-  border: 1px solid #e1e5e9;
+  min-height: 40px;
+  border: 1px solid var(--line);
   background-color: var(--card-bg);
   color: var(--text);
   border-radius: 20px;
+  font-family: inherit;
   font-size: calc(0.9rem * var(--font-scale, 1));
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
-.categoryPill:hover {
-  border-color: var(--secondary-color);
+.categoryPill:active {
+  transform: scale(0.97);
 }
 
-.activeCategory {
+.activeCategory,
+.activeCategory:hover {
   background-color: var(--primary-color);
-  color: #fff;
+  color: var(--cat-on-primary);
   border-color: var(--primary-color);
+}
+
+.shareButton:focus-visible,
+.categoryPill:focus-visible,
+.collectionCard:focus-visible {
+  outline: 2px solid var(--cat-focus);
+  outline-offset: 2px;
 }
 
 /* --- GRILLA Y TARJETAS DE PRODUCTO --- */
@@ -174,20 +206,22 @@
 }
 
 .productCard {
+  position: relative;
   background-color: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 15px var(--cat-shadow);
+  border: 1px solid var(--line);
   display: flex;
   flex-direction: column;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.productCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+.productCard:has(:focus-visible) {
+  outline: 3px solid var(--cat-focus);
+  outline-offset: 3px;
 }
 
 .imageContainer {
@@ -195,31 +229,15 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background-color: #f8f9fa;
+  background-color: var(--cat-surface-2);
 }
 
 .productImage {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.productCard:hover .productImage {
-  transform: scale(1.05);
-}
-
-.badgeUnavailable {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(231, 76, 60, 0.9);
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  font-size: calc(0.8rem * var(--font-scale, 1));
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  transition: transform 400ms var(--ease-out);
 }
 
 .productInfo {
@@ -243,6 +261,7 @@
   color: var(--primary-color);
   font-weight: 800;
   margin-top: auto;
+  font-variant-numeric: tabular-nums;
   /* Empuja el precio al fondo si el título es corto */
 }
 
@@ -259,9 +278,42 @@
   color: var(--text-light);
 }
 
+.emptyTitle {
+  font-family: var(--font-heading, "Roboto", sans-serif);
+  font-size: calc(1.2rem * var(--font-scale, 1));
+  color: var(--text);
+  margin: 0 0 0.5rem;
+}
+
 .emptyIcon {
-  color: #ccc;
+  color: var(--line);
   margin-bottom: 1rem;
+}
+
+/* --- HOVER (solo punteros finos) --- */
+@media (hover: hover) and (pointer: fine) {
+  .shareButton:hover {
+    background-color: var(--secondary-color);
+    color: var(--bg-color);
+  }
+
+  .categoryPill:hover {
+    border-color: var(--secondary-color);
+  }
+
+  .productCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px var(--cat-shadow);
+  }
+
+  .productCard:hover .productImage {
+    transform: scale(1.04);
+  }
+
+  .collectionCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px var(--cat-shadow);
+  }
 }
 
 /* --- RESPONSIVE --- */
@@ -288,6 +340,7 @@
     justify-content: center;
   }
 }
+
 /* ── Colecciones (vista de inicio "no mostrar productos") ── */
 .collections {
   margin-bottom: 2rem;
@@ -304,21 +357,24 @@
   width: 250px;
   flex: 0 0 auto;
   background-color: var(--card-bg);
-  border: 1px solid #f0f0f0;
+  color: var(--text);
+  border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
   text-align: left;
   padding: 0;
   cursor: pointer;
+  font: inherit;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px var(--cat-shadow);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.collectionCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+.collectionCard:active {
+  transform: scale(0.98);
 }
 
 .collectionMedia {
@@ -363,20 +419,21 @@
   color: var(--text-light);
 }
 
-/* ── Estrella de producto destacado ── */
-.featuredStar {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--bg-color) 85%, transparent);
-  color: var(--primary-color);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(2px);
+@media (prefers-reduced-motion: reduce) {
+  .productCard,
+  .productImage,
+  .collectionCard,
+  .categoryPill,
+  .shareButton {
+    transition: none;
+  }
+
+  .productCard:hover,
+  .productCard:hover .productImage,
+  .collectionCard:hover,
+  .categoryPill:active,
+  .shareButton:active,
+  .collectionCard:active {
+    transform: none;
+  }
 }

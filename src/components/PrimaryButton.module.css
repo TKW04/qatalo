@@ -3,16 +3,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
   padding: 1rem 2rem;
+  font-family: var(--font-ui);
   font-size: 1.1rem;
-  font-weight: 800;
-  border-radius: 50px;
+  font-weight: var(--fw-heavy);
+  line-height: 1.2;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: all 0.3s ease;
   border: 2px solid transparent;
   text-decoration: none;
   width: 100%;
   /* Para que en el AuthLayout ocupen todo el ancho */
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* Feedback de pulsación (todas las variantes salvo deshabilitado) */
+.button:active:not(.disabled) {
+  transform: scale(0.97);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
 }
 
 /* Variante Principal */
@@ -20,13 +40,11 @@
   background: var(--color-navy);
   color: var(--color-yellow);
   border-color: var(--color-yellow);
-  box-shadow: 0 4px 15px rgba(17, 63, 103, 0.3);
+  box-shadow: var(--shadow-clay);
 }
 
-.primary:hover {
-  background: var(--color-blue);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(17, 63, 103, 0.5);
+.primary:active {
+  box-shadow: var(--shadow-clay-pressed);
 }
 
 /* Variante Secundaria */
@@ -36,24 +54,11 @@
   border-color: var(--color-yellow);
 }
 
-.secondary:hover {
-  background: transparent;
-  color: var(--color-navy);
-  border-color: var(--color-navy);
-  transform: translateY(-2px);
-}
-
 /* Variante Peligro (Cancelar) */
 .danger {
   background: transparent;
-  color: #e74c3c;
-  border-color: #e74c3c;
-}
-
-.danger:hover {
-  background: #e74c3c;
-  color: white;
-  transform: translateY(-2px);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 /* Variante Outline (Usada en el Footer) */
@@ -63,41 +68,54 @@
   border-color: var(--color-navy);
 }
 
-.outline:hover {
-  background: var(--color-navy);
-  color: white;
-  transform: translateY(-2px);
-}
-
 /* Variante Deshabilitada */
 .disabled {
-  background: #e1e5e9;
-  color: #a0aab5;
-  border-color: #e1e5e9;
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-soft);
+  border-color: var(--color-line);
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.disabled:hover {
-  transform: none;
-  /* Quitamos la animación de saltito */
-}
-
-/* Efecto Pulse */
+/* Énfasis (prop isPulse): anillo estático, sin bucle infinito */
 .pulse {
-  animation: pulse 2s infinite;
+  box-shadow:
+    0 0 0 4px rgba(253, 245, 170, 0.55),
+    var(--shadow-clay);
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(253, 245, 170, 0.7);
+/* Hover solo con puntero fino: cambio de color, sin saltos */
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover {
+    background: var(--color-blue);
   }
 
-  70% {
-    box-shadow: 0 0 0 15px rgba(253, 245, 170, 0);
+  .secondary:hover {
+    background: transparent;
+    color: var(--color-navy);
+    border-color: var(--color-navy);
   }
 
-  100% {
-    box-shadow: 0 0 0 0 rgba(253, 245, 170, 0);
+  .danger:hover {
+    background: var(--color-danger);
+    color: var(--color-on-brand);
+  }
+
+  .outline:hover {
+    background: var(--color-navy);
+    color: var(--color-on-brand);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .button:active:not(.disabled) {
+    transform: none;
   }
 }

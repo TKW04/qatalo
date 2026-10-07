@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TbLayoutDashboard, TbPalette, TbMapPin, TbBuildingStore, TbBell, TbDeviceMobile, TbDeviceTablet, TbDeviceDesktop, TbFileInvoice, TbTypography, TbPhoto, TbClock } from "react-icons/tb";
+import { LayoutTemplate, Palette, MapPin, Store, Bell, Smartphone, Tablet, Monitor, FileText, Type, Image as ImageIcon, Clock, Receipt, AlertTriangle, CalendarClock, BarChart3, Check, CheckCircle2, X } from "lucide-react";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
-import Loading from "../../../components/UI/Loading";
-import PrimaryButton from "../../../components/PrimaryButton";
 import CatalogManager from "../../../components/CatalogTemplates/CatalogManager";
 import DevicePreviewFrame from "../../../components/UI/DevicePreviewFrame";
 import Select from "../../../components/Select";
-import adminStyles from "../AdminDashboard.module.css";
+import { PageHeader, Button, Tabs, TabPanel, SkeletonForm } from "../../../components/admin";
 import styles from "./Business.module.css";
 import { PREDEFINED_PALETTES, PREDEFINED_TEMPLATES, PALETTE_FIELDS } from "../../../constants/themePalettes";
 import { FONT_OPTIONS, SCALE_OPTIONS, LOGO_SCALE_OPTIONS, getFont, TEXT_SIZE_MODE_OPTIONS } from "../../../constants/catalogFonts";
@@ -23,17 +21,17 @@ import { DEMO_PRODUCTS } from "../../../constants/dummyCatalog";
 import { fetchCategories } from "../../../services/categoryApi";
 
 const TABS = [
-  { id: "general", label: "General", icon: TbBuildingStore },
-  { id: "appearance", label: "Apariencia", icon: TbPalette },
-  { id: "billing", label: "Facturación", icon: TbFileInvoice },
-  { id: "hours", label: "Horario", icon: TbClock },
-  { id: "notifications", label: "Notificaciones", icon: TbBell },
+  { id: "general", label: "General", icon: Store },
+  { id: "appearance", label: "Apariencia", icon: Palette },
+  { id: "billing", label: "Facturación", icon: FileText },
+  { id: "hours", label: "Horario", icon: Clock },
+  { id: "notifications", label: "Notificaciones", icon: Bell },
 ];
 
 const DEVICES = [
-  { id: "mobile", label: "Móvil", icon: TbDeviceMobile, width: 390 },
-  { id: "tablet", label: "Tablet", icon: TbDeviceTablet, width: 768 },
-  { id: "desktop", label: "Desktop", icon: TbDeviceDesktop, width: "100%" },
+  { id: "mobile", label: "Móvil", icon: Smartphone, width: 390 },
+  { id: "tablet", label: "Tablet", icon: Tablet, width: 768 },
+  { id: "desktop", label: "Escritorio", icon: Monitor, width: "100%" },
 ];
 const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
@@ -329,7 +327,17 @@ const Business = () => {
     mutation.mutate(dataToSave);
   };
 
-  if (isFetching) return <Loading message="Cargando configuración..." />;
+  if (isFetching) {
+    return (
+      <div className={styles.businessContainer}>
+        <PageHeader title="Configuración" />
+        <Tabs idPrefix="business" label="Secciones de configuración" items={TABS} value={activeTab} onChange={setActiveTab} />
+        <SkeletonForm fields={5} label="Cargando configuración..." />
+      </div>
+    );
+  }
+
+  const saving = isLoading || mutation.isPending;
 
   // Familias CSS resueltas (integradas o subidas) para el mini-preview
   const builtinFamily = (key) => getFont(key).family;
@@ -341,31 +349,12 @@ const Business = () => {
 
   return (
     <div className={styles.businessContainer}>
-      {isLoading && <Loading message={loadingMessage} />}
+      <PageHeader title="Configuración" description="Datos de tu negocio, apariencia del catálogo, facturación, horario y avisos." />
 
-      <div className={adminStyles.adminHeader}>
-        <h1>Configuración del Negocio</h1>
-      </div>
-
-      <div className={styles.tabNav}>
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabBtnActive : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon /> {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs idPrefix="business" label="Secciones de configuración" items={TABS} value={activeTab} onChange={setActiveTab} />
 
       <form onSubmit={handleSubmit}>
-        {activeTab === "general" && (
-          <div className={styles.tabPanel}>
+        <TabPanel idPrefix="business" id="general" value={activeTab} className={styles.tabPanel}>
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>Información General</h2>
               <p className={styles.requiredNote}>
@@ -373,40 +362,40 @@ const Business = () => {
               </p>
 
               <div className={styles.formGroup}>
-                <label>Nombre del Negocio<span className={styles.required}>*</span></label>
-                <input className="input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ej. Mi Tienda Increíble" />
+                <label htmlFor="biz-name">Nombre del negocio<span className={styles.required}>*</span></label>
+                <input id="biz-name" className="input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ej. Mi Tienda Increíble" />
               </div>
 
               <div className={styles.formGroup}>
-                <label>Slug (https://qatalo.online/catalog/<span style={{ color: "red" }}>{formData.slug || '---'}</span>)<span className={styles.required}>*</span></label>
-                <input className="input" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="mi-tienda" />
+                <label htmlFor="biz-slug">Enlace del catálogo (https://qatalo.online/catalog/<span className={styles.slugPart}>{formData.slug || '---'}</span>)<span className={styles.required}>*</span></label>
+                <input id="biz-slug" className="input" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="mi-tienda" />
               </div>
 
               <div className={styles.formGroup}>
-                <label>Teléfono de Contacto<span className={styles.required}>*</span></label>
-                <input className="input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 234 567 8900" />
+                <label htmlFor="biz-phone">Teléfono de contacto<span className={styles.required}>*</span></label>
+                <input id="biz-phone" className="input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 234 567 8900" />
               </div>
 
               <div className={styles.formGroup}>
-                <label>Descripción</label>
-                <textarea className="input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Cuéntale a tus clientes de qué trata tu negocio..." rows="4"></textarea>
+                <label htmlFor="biz-description">Descripción</label>
+                <textarea id="biz-description" className="input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Cuéntale a tus clientes de qué trata tu negocio..." rows="4"></textarea>
               </div>
 
               <div className={styles.formGroup}>
-                <label>Logo del Negocio</label>
+                <label htmlFor="biz-logo">Logo del negocio</label>
                 <div className={styles.fileUploadWrapper}>
-                  <input type="file" onChange={handleFileChange} accept="image/png,image/jpeg" />
+                  <input id="biz-logo" type="file" onChange={handleFileChange} accept="image/png,image/jpeg" />
                 </div>
                 {(logoPreview || formData.logo_url) && (
-                  <div style={{ marginTop: ".6rem", display: "flex", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
+                  <div className={styles.logoPreviewRow}>
                     <img
                       src={logoPreview || formData.logo_url}
-                      alt="Logo"
-                      style={{ height: 64, width: "auto", maxWidth: 160, objectFit: "contain", borderRadius: 8, border: "1px solid #eef0f3", background: "#fff", padding: 4 }}
+                      alt="Logo actual"
+                      className={styles.logoPreview}
                     />
                     {logoFile && (
-                      <span style={{ fontSize: ".8rem", color: "#b54708", fontWeight: 600 }}>
-                        Nuevo logo — se subirá al guardar.
+                      <span className={styles.pendingNote}>
+                        Nuevo logo. Se subirá al guardar.
                       </span>
                     )}
                   </div>
@@ -415,64 +404,66 @@ const Business = () => {
             </div>
 
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}><TbMapPin /> Localidades de disponibilidad</h2>
-              <p style={{ color: "#667085", fontSize: ".9rem", marginTop: "-.5rem", marginBottom: "1rem" }}>
+              <h2 className={styles.sectionTitle}><MapPin size={20} aria-hidden="true" /> Localidades de disponibilidad</h2>
+              <p className={styles.sectionDesc}>
                 Define las localidades donde entregas. Luego asignas a cada producto en cuáles está disponible
                 (si un producto no tiene ninguna asignada, estará disponible en todas).
               </p>
-              <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+              <div className={styles.inlineAdd}>
+                <label htmlFor="biz-locality" className={styles.srOnly}>Nueva localidad</label>
                 <input
-                  className="input"
-                  style={{ flex: 1, minWidth: 200 }}
+                  id="biz-locality"
+                  className={`input ${styles.inlineAddInput}`}
                   value={localityInput}
                   onChange={(e) => setLocalityInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLocality(); } }}
                   placeholder="Ej. Santo Domingo"
                 />
-                <button type="button" className={styles.resetBtn} onClick={addLocality}>Agregar</button>
+                <Button variant="secondary" onClick={addLocality}>Agregar</Button>
               </div>
               {(formData.localities || []).length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", marginTop: "1rem" }}>
+                <div className={styles.chipList}>
                   {formData.localities.map((loc) => (
-                    <span key={loc} style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", background: "#eef2f7", color: "#113f67", borderRadius: "999px", padding: ".35rem .75rem", fontSize: ".88rem", fontWeight: 600 }}>
+                    <span key={loc} className={styles.chip}>
                       {loc}
-                      <button type="button" onClick={() => removeLocality(loc)} style={{ border: "none", background: "transparent", color: "#d92d20", cursor: "pointer", fontSize: "1rem", lineHeight: 1 }} aria-label={`Quitar ${loc}`}>×</button>
+                      <button type="button" className={styles.chipRemove} onClick={() => removeLocality(loc)} aria-label={`Quitar ${loc}`} title={`Quitar ${loc}`}><X size={16} aria-hidden="true" /></button>
                     </span>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        )}
+        </TabPanel>
 
-        {activeTab === "appearance" && (
-          <div className={styles.tabPanel}>
+        <TabPanel idPrefix="business" id="appearance" value={activeTab} className={styles.tabPanel}>
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}><TbLayoutDashboard /> Estilo</h2>
-              <div className={styles.templateGrid}>
+              <h2 className={styles.sectionTitle} id="biz-template-label"><LayoutTemplate size={20} aria-hidden="true" /> Estilo</h2>
+              <div className={styles.templateGrid} role="group" aria-labelledby="biz-template-label">
                 {PREDEFINED_TEMPLATES.map((tpl) => (
-                  <div
+                  <button
+                    type="button"
                     key={tpl.id}
+                    aria-pressed={formData.templateId === tpl.id}
                     className={`${styles.templateCard} ${formData.templateId === tpl.id ? styles.selected : ""}`}
                     onClick={() => setFormData({ ...formData, templateId: tpl.id })}
                   >
                     {tpl.name}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
 
             <div className={styles.section}>
               <div className={styles.sectionTitleRow}>
-                <h2 className={styles.sectionTitle}><TbPalette /> Colores</h2>
-                <button type="button" className={styles.resetBtn} onClick={resetPalette}>
+                <h2 className={styles.sectionTitle}><Palette size={20} aria-hidden="true" /> Colores</h2>
+                <Button variant="ghost" size="sm" onClick={resetPalette}>
                   Restaurar tema guardado
-                </button>
+                </Button>
               </div>
 
-              <div className={styles.themeTypeToggle}>
+              <div className={styles.themeTypeToggle} role="group" aria-label="Tipo de paleta">
                 <button
                   type="button"
+                  aria-pressed={formData.themeType === "predefined"}
                   className={`${styles.toggleBtn} ${formData.themeType === "predefined" ? styles.toggleBtnActive : ""}`}
                   onClick={() => setFormData((p) => ({ ...p, themeType: "predefined" }))}
                 >
@@ -480,6 +471,7 @@ const Business = () => {
                 </button>
                 <button
                   type="button"
+                  aria-pressed={formData.themeType === "custom"}
                   className={`${styles.toggleBtn} ${formData.themeType === "custom" ? styles.toggleBtnActive : ""}`}
                   onClick={() => setFormData((p) => ({ ...p, themeType: "custom" }))}
                 >
@@ -490,32 +482,36 @@ const Business = () => {
               {formData.themeType === "predefined" ? (
                 <div className={styles.paletteGrid}>
                   {PREDEFINED_PALETTES.map((palette) => (
-                    <div
+                    <button
+                      type="button"
                       key={palette.id}
+                      aria-pressed={isPaletteActive(palette)}
                       className={`${styles.paletteCard} ${isPaletteActive(palette) ? styles.paletteCardSelected : ""}`}
                       onClick={() => selectPalette(palette)}
                     >
-                      <div className={styles.paletteSwatches}>
+                      <span className={styles.paletteSwatches} aria-hidden="true">
                         {Object.values(palette.colors).map((c, i) => (
                           <span key={i} className={styles.swatch} style={{ backgroundColor: c }} />
                         ))}
-                      </div>
+                      </span>
                       <span className={styles.paletteName}>{palette.name}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
                 <div className={styles.customColors}>
                   {PALETTE_FIELDS.map(({ key, label }) => (
                     <div key={key} className={styles.colorRow}>
-                      <span>{label}</span>
+                      <label htmlFor={`biz-color-${key}`}>{label}</label>
                       <div className={styles.colorInputs}>
                         <input
                           type="color"
+                          aria-label={`${label}: selector de color`}
                           value={formData.themePalette?.[key] || "#000000"}
                           onChange={(e) => updateColor(key, e.target.value)}
                         />
                         <input
+                          id={`biz-color-${key}`}
                           className="input"
                           value={formData.themePalette?.[key] || ""}
                           onChange={(e) => updateColor(key, e.target.value)}
@@ -529,15 +525,15 @@ const Business = () => {
             </div>
 
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}><TbTypography /> Tipografía</h2>
+              <h2 className={styles.sectionTitle}><Type size={20} aria-hidden="true" /> Tipografía</h2>
               <p className={styles.sectionDesc}>
                 Elige las fuentes de tu catálogo. Deja "Predeterminada del tema" para usar la tipografía
                 que trae la plantilla.
               </p>
 
               <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Fuente de títulos</label>
+                <div className={styles.formGroup} role="group" aria-labelledby="biz-font-heading">
+                  <span id="biz-font-heading" className={styles.label}>Fuente de títulos</span>
                   <Select
                     value={formData.fontHeading}
                     onChange={(v) => setFormData((p) => ({ ...p, fontHeading: v }))}
@@ -545,8 +541,8 @@ const Business = () => {
                     placeholder="Seleccionar fuente"
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>Fuente del texto</label>
+                <div className={styles.formGroup} role="group" aria-labelledby="biz-font-body">
+                  <span id="biz-font-body" className={styles.label}>Fuente del texto</span>
                   <Select
                     value={formData.fontBody}
                     onChange={(v) => setFormData({ ...formData, fontBody: v })}
@@ -554,8 +550,8 @@ const Business = () => {
                     placeholder="Seleccionar fuente"
                   />
                 </div>
-                <div className={styles.formGroup} style={{ maxWidth: 220 }}>
-                  <label>Tamaño de fuente</label>
+                <div className={`${styles.formGroup} ${styles.narrow}`} role="group" aria-labelledby="biz-font-scale">
+                  <span id="biz-font-scale" className={styles.label}>Tamaño de fuente</span>
                   <Select
                     value={formData.fontScale}
                     onChange={(v) => setFormData((p) => ({ ...p, fontScale: v }))}
@@ -583,13 +579,13 @@ const Business = () => {
             </div>
 
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}><TbPhoto /> Logo</h2>
+              <h2 className={styles.sectionTitle}><ImageIcon size={20} aria-hidden="true" /> Logo</h2>
               <p className={styles.sectionDesc}>
                 Ajusta el tamaño con el que se muestra tu logo en el catálogo. Puedes ver el
                 resultado en la previsualización de abajo.
               </p>
-              <div className={styles.formGroup} style={{ maxWidth: 220 }}>
-                <label>Tamaño del logo</label>
+              <div className={`${styles.formGroup} ${styles.narrow}`} role="group" aria-labelledby="biz-logo-scale">
+                <span id="biz-logo-scale" className={styles.label}>Tamaño del logo</span>
                 <Select
                   value={formData.logoScale}
                   onChange={(v) => setFormData((p) => ({ ...p, logoScale: v }))}
@@ -601,7 +597,7 @@ const Business = () => {
             </div>
 
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}><TbTypography /> Buscador y descripción del producto</h2>
+              <h2 className={styles.sectionTitle}><Type size={20} aria-hidden="true" /> Buscador y descripción del producto</h2>
               <p className={styles.sectionDesc}>
                 Personaliza el color y tamaño del texto del buscador y de la descripción que se muestra
                 al abrir un producto. Si no configuras nada, se usa el estilo normal del tema.
@@ -616,32 +612,34 @@ const Business = () => {
                 const pxKey = `${prefix}_size_px`;
                 const cs = formData.custom_style || {};
                 return (
-                  <div key={prefix} style={{ marginBottom: "1.5rem" }}>
-                    <h4 style={{ margin: "0 0 .6rem", fontSize: ".95rem", color: "#344054" }}>{title}</h4>
+                  <div key={prefix} className={styles.subBlock}>
+                    <h3 className={styles.subTitle}>{title}</h3>
                     <div className={styles.formRow}>
-                      <div className={styles.formGroup} style={{ maxWidth: 260 }}>
-                        <label>Color (opcional)</label>
+                      <div className={`${styles.formGroup} ${styles.narrowWide}`}>
+                        <label htmlFor={`biz-${prefix}-color`}>Color (opcional)</label>
                         <div className={styles.colorInputs}>
                           <input
                             type="color"
+                            aria-label={`${title}: selector de color`}
                             value={cs[colorKey] || "#000000"}
                             onChange={(e) => updateCustomStyle(colorKey, e.target.value)}
                           />
                           <input
+                            id={`biz-${prefix}-color`}
                             className="input"
                             value={cs[colorKey] || ""}
                             onChange={(e) => updateCustomStyle(colorKey, e.target.value)}
                             placeholder="Igual que el tema"
                           />
                           {cs[colorKey] && (
-                            <button type="button" className={styles.resetBtn} onClick={() => updateCustomStyle(colorKey, "")}>
+                            <Button variant="ghost" size="sm" onClick={() => updateCustomStyle(colorKey, "")}>
                               Quitar
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </div>
-                      <div className={styles.formGroup} style={{ maxWidth: 220 }}>
-                        <label>Tamaño</label>
+                      <div className={`${styles.formGroup} ${styles.narrow}`} role="group" aria-labelledby={`biz-${prefix}-size`}>
+                        <span id={`biz-${prefix}-size`} className={styles.label}>Tamaño</span>
                         <Select
                           value={cs[modeKey] || "theme"}
                           onChange={(v) => updateCustomStyle(modeKey, v)}
@@ -650,9 +648,10 @@ const Business = () => {
                         />
                       </div>
                       {cs[modeKey] === "custom" && (
-                        <div className={styles.formGroup} style={{ maxWidth: 140 }}>
-                          <label>Tamaño en px</label>
+                        <div className={`${styles.formGroup} ${styles.narrowSm}`}>
+                          <label htmlFor={`biz-${prefix}-px`}>Tamaño en px</label>
                           <input
+                            id={`biz-${prefix}-px`}
                             type="number"
                             min="10"
                             max="40"
@@ -672,7 +671,7 @@ const Business = () => {
             <div className={styles.previewSection}>
               <div className={styles.previewHeader}>
                 <h2 className={styles.sectionTitle}>Previsualización en tiempo real</h2>
-                <div className={styles.deviceToggle}>
+                <div className={styles.deviceToggle} role="group" aria-label="Dispositivo de la previsualización">
                   {DEVICES.map((d) => {
                     const Icon = d.icon;
                     return (
@@ -681,10 +680,11 @@ const Business = () => {
                         type="button"
                         className={`${styles.deviceBtn} ${device === d.id ? styles.deviceBtnActive : ""}`}
                         onClick={() => setDevice(d.id)}
-                        title={d.label}
-                        aria-label={`Ver en ${d.label}`}
+                        title={`Ver en ${d.label}`}
+                        aria-pressed={device === d.id}
                       >
-                        <Icon /> <span className={styles.deviceBtnLabel}>{d.label}</span>
+                        <Icon size={18} aria-hidden="true" /> <span className={styles.deviceBtnLabel}>{d.label}</span>
+                        <span className={styles.srOnly}>{` (ver en ${d.label})`}</span>
                       </button>
                     );
                   })}
@@ -693,7 +693,7 @@ const Business = () => {
 
               {!hasOwnProducts && (
                 <p className={styles.demoNotice}>
-                  🎨 Mostrando productos de ejemplo. Cuando agregues tus propios productos,
+                  <Palette size={16} aria-hidden="true" /> Mostrando productos de ejemplo. Cuando agregues tus propios productos,
                   aparecerán aquí automáticamente.
                 </p>
               )}
@@ -712,13 +712,11 @@ const Business = () => {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+        </TabPanel>
 
-        {activeTab === "hours" && (
-          <div className={styles.tabPanel}>
+        <TabPanel idPrefix="business" id="hours" value={activeTab} className={styles.tabPanel}>
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}><TbClock /> Horario de atención</h2>
+              <h2 className={styles.sectionTitle}><Clock size={20} aria-hidden="true" /> Horario de atención</h2>
               <p className={styles.sectionDesc}>
                 Define cuándo tu negocio recibe pedidos. Se calcula con la hora de República Dominicana.
               </p>
@@ -728,20 +726,19 @@ const Business = () => {
                 onChange={(patch) => setFormData((p) => ({ ...p, ...patch }))}
               />
             </div>
-          </div>
-        )}
+        </TabPanel>
 
-        {activeTab === "billing" && (
-          <div className={styles.tabPanel}>
+        <TabPanel idPrefix="business" id="billing" value={activeTab} className={styles.tabPanel}>
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>🧾 Datos fiscales</h3>
+              <h2 className={styles.sectionTitle}><Receipt size={20} aria-hidden="true" /> Datos fiscales</h2>
               <p className={styles.sectionDesc}>
                 Estos datos aparecerán en las facturas y recibos que emitas a tus clientes.
               </p>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>RNC del negocio (opcional)</label>
+                  <label htmlFor="biz-rnc">RNC del negocio (opcional)</label>
                   <input
+                    id="biz-rnc"
                     className="input"
                     value={formData.rnc}
                     onChange={(e) => setFormData({ ...formData, rnc: e.target.value.trim() })}
@@ -749,9 +746,10 @@ const Business = () => {
                   />
                   <span className={styles.hint}>Si lo configuras, aparecerá en el encabezado del comprobante.</span>
                 </div>
-                <div className={styles.formGroup} style={{ maxWidth: 200 }}>
-                  <label>Tasa de ITBIS (%)</label>
+                <div className={`${styles.formGroup} ${styles.narrow}`}>
+                  <label htmlFor="biz-itbis">Tasa de ITBIS (%)</label>
                   <input
+                    id="biz-itbis"
                     type="number"
                     min="0"
                     max="100"
@@ -766,7 +764,7 @@ const Business = () => {
             </div>
 
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>📄 Comprobantes Fiscales (NCF)</h3>
+              <h2 className={styles.sectionTitle}><FileText size={20} aria-hidden="true" /> Comprobantes fiscales (NCF)</h2>
               <p className={styles.sectionDesc}>
                 Activa los NCF para poder emitir <strong>facturas con valor fiscal</strong>. Si está desactivado,
                 solo podrás emitir <strong>recibos de pago</strong> simples.
@@ -774,6 +772,7 @@ const Business = () => {
               <label className={styles.toggleLabel}>
                 <input
                   type="checkbox"
+                  role="switch"
                   checked={formData.ncf_enabled}
                   onChange={(e) => setFormData({ ...formData, ncf_enabled: e.target.checked })}
                 />
@@ -787,14 +786,14 @@ const Business = () => {
                       <strong>{ncfAvailable}</strong>
                       <span>Disponibles</span>
                     </div>
-                    <div className={styles.ncfStat} style={{ opacity: 0.7 }}>
+                    <div className={`${styles.ncfStat} ${styles.ncfStatMuted}`}>
                       <strong>{ncfUsed}</strong>
                       <span>Usados</span>
                     </div>
                   </div>
                   {ncfAvailable === 0 && (
-                    <p className={styles.ncfWarning}>
-                      ⚠️ No tienes NCF disponibles. Carga una secuencia para poder emitir facturas.
+                    <p className={styles.ncfWarning} role="status">
+                      <AlertTriangle size={16} aria-hidden="true" /> No tienes NCF disponibles. Carga una secuencia para poder emitir facturas.
                     </p>
                   )}
 
@@ -802,18 +801,18 @@ const Business = () => {
                     <span className={styles.ncfLoaderTitle}>Cargar secuencia por rango</span>
                     <div className={styles.ncfRangeRow}>
                       <div className={styles.ncfField}>
-                        <label>Prefijo</label>
-                        <input className="input" value={ncfPrefix} onChange={(e) => setNcfPrefix(e.target.value.toUpperCase())} placeholder="B01" />
+                        <label htmlFor="biz-ncf-prefix">Prefijo</label>
+                        <input id="biz-ncf-prefix" className="input" value={ncfPrefix} onChange={(e) => setNcfPrefix(e.target.value.toUpperCase())} placeholder="B01" />
                       </div>
                       <div className={styles.ncfField}>
-                        <label>Desde</label>
-                        <input type="number" min="1" className="input" value={ncfFrom} onChange={(e) => setNcfFrom(e.target.value)} placeholder="1" />
+                        <label htmlFor="biz-ncf-from">Desde</label>
+                        <input id="biz-ncf-from" type="number" min="1" className="input" value={ncfFrom} onChange={(e) => setNcfFrom(e.target.value)} placeholder="1" />
                       </div>
                       <div className={styles.ncfField}>
-                        <label>Hasta</label>
-                        <input type="number" min="1" className="input" value={ncfTo} onChange={(e) => setNcfTo(e.target.value)} placeholder="50" />
+                        <label htmlFor="biz-ncf-to">Hasta</label>
+                        <input id="biz-ncf-to" type="number" min="1" className="input" value={ncfTo} onChange={(e) => setNcfTo(e.target.value)} placeholder="50" />
                       </div>
-                      <button type="button" className={styles.resetBtn} onClick={addNcfRange}>Generar</button>
+                      <Button variant="secondary" onClick={addNcfRange}>Generar</Button>
                     </div>
                     <span className={styles.hint}>
                       Ej: prefijo <strong>B01</strong>, desde <strong>1</strong> hasta <strong>50</strong> → genera B0100000001 … B0100000050.
@@ -821,17 +820,20 @@ const Business = () => {
                   </div>
 
                   <div className={styles.ncfLoader}>
-                    <span className={styles.ncfLoaderTitle}>O pega una lista manual</span>
+                    <label htmlFor="biz-ncf-manual" className={styles.ncfLoaderTitle}>O pega una lista manual</label>
                     <textarea
+                      id="biz-ncf-manual"
                       className="input"
                       rows={3}
                       value={ncfManual}
                       onChange={(e) => setNcfManual(e.target.value)}
                       placeholder="Un NCF por línea o separados por coma&#10;B0100000001&#10;B0100000002"
                     />
-                    <button type="button" className={styles.resetBtn} style={{ marginTop: ".5rem" }} onClick={addNcfManual}>
-                      Agregar lista
-                    </button>
+                    <div className={styles.ncfManualActions}>
+                      <Button variant="secondary" onClick={addNcfManual}>
+                        Agregar lista
+                      </Button>
+                    </div>
                   </div>
 
                   {ncfPool.length > 0 && (
@@ -844,7 +846,7 @@ const Business = () => {
                             {n.used ? (
                               <span className={styles.ncfUsedTag}>usado</span>
                             ) : (
-                              <button type="button" onClick={() => removeNcf(n.ncf)} aria-label={`Quitar ${n.ncf}`}>×</button>
+                              <button type="button" className={styles.chipRemove} onClick={() => removeNcf(n.ncf)} aria-label={`Quitar ${n.ncf}`} title={`Quitar ${n.ncf}`}><X size={14} aria-hidden="true" /></button>
                             )}
                           </span>
                         ))}
@@ -854,20 +856,19 @@ const Business = () => {
                 </div>
               )}
             </div>
-          </div>
-        )}
+        </TabPanel>
 
-        {activeTab === "notifications" && (
-          <div className={styles.tabPanel}>
+        <TabPanel idPrefix="business" id="notifications" value={activeTab} className={styles.tabPanel}>
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>🔔 Alertas de inventario</h3>
+              <h2 className={styles.sectionTitle}><Bell size={20} aria-hidden="true" /> Alertas de inventario</h2>
               <p className={styles.sectionDesc}>
                 Recibirás un correo de Qatalo cuando el stock de cualquier producto caiga por debajo de este número.
                 Puedes ajustarlo individualmente por producto. Pon <strong>0</strong> para desactivar las alertas.
               </p>
-              <div className={styles.formGroup} style={{ maxWidth: 260 }}>
-                <label>Umbral global de stock bajo (unidades)</label>
+              <div className={`${styles.formGroup} ${styles.narrowWide}`}>
+                <label htmlFor="biz-low-stock">Umbral global de stock bajo (unidades)</label>
                 <input
+                  id="biz-low-stock"
                   type="number"
                   min="0"
                   className="input"
@@ -877,14 +878,14 @@ const Business = () => {
                 />
                 <span className={styles.hint}>
                   {Number(formData.low_stock_threshold) === 0
-                    ? "⚠️ Alertas desactivadas para todos los productos"
+                    ? "Alertas desactivadas para todos los productos"
                     : `Recibirás alerta cuando queden ≤ ${formData.low_stock_threshold} unidades`}
                 </span>
               </div>
             </div>
 
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>🗓️ Recordatorio de entregas</h3>
+              <h2 className={styles.sectionTitle}><CalendarClock size={20} aria-hidden="true" /> Recordatorio de entregas</h2>
               <p className={styles.sectionDesc}>
                 Recibirás un correo cada mañana con el resumen de todas las órdenes
                 aprobadas que tienen fecha de entrega ese día.
@@ -892,20 +893,21 @@ const Business = () => {
               <label className={styles.toggleLabel}>
                 <input
                   type="checkbox"
+                  role="switch"
                   checked={formData.delivery_reminder_enabled}
                   onChange={e => setFormData({ ...formData, delivery_reminder_enabled: e.target.checked })}
                 />
                 <span>Activar recordatorio diario de entregas</span>
               </label>
               {formData.delivery_reminder_enabled && (
-                <p className={styles.hint}>
-                  ✓ Te avisaremos cada día a las 8:00 AM si tienes entregas programadas.
+                <p className={`${styles.hint} ${styles.hintOk}`}>
+                  <Check size={14} aria-hidden="true" /> Te avisaremos cada día a las 8:00 AM si tienes entregas programadas.
                 </p>
               )}
             </div>
 
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>📊 Marketing & Analytics</h3>
+              <h2 className={styles.sectionTitle}><BarChart3 size={20} aria-hidden="true" /> Marketing y analítica</h2>
               <p className={styles.sectionDesc}>
                 Conecta tu catálogo con tus herramientas de análisis para medir visitas,
                 productos vistos y ventas. Las IDs son visibles públicamente en el código de tu catálogo.
@@ -913,10 +915,11 @@ const Business = () => {
 
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>
+                  <label htmlFor="biz-ga">
                     Google Analytics 4 (GA4)
                   </label>
                   <input
+                    id="biz-ga"
                     className="input"
                     value={formData.ga_tracking_id}
                     onChange={(e) => setFormData({ ...formData, ga_tracking_id: e.target.value.trim() })}
@@ -933,10 +936,11 @@ const Business = () => {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>
+                  <label htmlFor="biz-meta">
                     Meta Pixel (Facebook / Instagram)
                   </label>
                   <input
+                    id="biz-meta"
                     className="input"
                     value={formData.meta_pixel_id}
                     onChange={(e) => setFormData({ ...formData, meta_pixel_id: e.target.value.trim() })}
@@ -954,20 +958,19 @@ const Business = () => {
               </div>
 
               {(formData.ga_tracking_id || formData.meta_pixel_id) && (
-                <div className={styles.trackingActive}>
-                  ✅ Tracking activo:
+                <div className={styles.trackingActive} role="status">
+                  <CheckCircle2 size={16} aria-hidden="true" /> Seguimiento activo:
                   {formData.ga_tracking_id && <span>GA4 ({formData.ga_tracking_id})</span>}
                   {formData.meta_pixel_id && <span>Meta Pixel ({formData.meta_pixel_id})</span>}
                 </div>
               )}
             </div>
-          </div>
-        )}
+        </TabPanel>
 
         <div className={styles.saveBar}>
-          <PrimaryButton type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Guardando..." : "Guardar Cambios"}
-          </PrimaryButton>
+          <Button type="submit" loading={saving}>
+            {isLoading ? loadingMessage : mutation.isPending ? "Guardando..." : "Guardar cambios"}
+          </Button>
         </div>
       </form>
     </div>

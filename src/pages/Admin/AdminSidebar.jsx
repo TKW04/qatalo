@@ -1,13 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { IoIosCog } from "react-icons/io";
-import { FiPackage } from "react-icons/fi";
-import { IoQrCode } from "react-icons/io5";
-import { LuCalendarSync, LuKeyRound, LuCirclePower } from "react-icons/lu";
-import { FaFolderOpen, FaDollarSign, FaUsers, FaChartBar, FaTag, FaClipboardList } from "react-icons/fa";
-import { FaUserSecret } from "react-icons/fa6";
-
+import {
+  Settings, FolderOpen, Package, Wallet, Users, ClipboardList, Tag, ChartColumn,
+  QrCode, CalendarSync, KeyRound, Power, ShieldCheck, X,
+} from "lucide-react";
 
 import { logout } from "../../services/authenticate";
 import { getTokenInfo } from "../../helpers/token";
@@ -49,23 +46,29 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   const isRoot = groups.includes("root");
 
   const menuItems = [
-    { id: "business", label: "Configuración", icon: <IoIosCog size={22} className={styles.menuIcon} /> },
-    { id: "categories", label: "Categorías", icon: <FaFolderOpen size={20} className={styles.menuIcon} /> },
-    { id: "products", label: "Productos", icon: <FiPackage size={20} className={styles.menuIcon} /> },
-    { id: "paymentMethods", label: "Métodos de Pago", icon: <FaDollarSign size={20} className={styles.menuIcon} /> },
-    { id: "customers", label: "Clientes", icon: <FaUsers size={20} className={styles.menuIcon} /> },
-    { id: "orders", label: "Órdenes", icon: <FaClipboardList size={20} className={styles.menuIcon} /> },  // ← nuevo
-    { id: "offers", label: "Ofertas", icon: <FaTag size={20} className={styles.menuIcon} /> },
-    { id: "reports", label: "Reportes", icon: <FaChartBar size={20} className={styles.menuIcon} /> },
-    { id: "qr", label: "Código QR", icon: <IoQrCode size={20} className={styles.menuIcon} /> },
-    { id: "subscription", label: "Suscripción", icon: <LuCalendarSync size={20} className={styles.menuIcon} /> },
-    { id: "changepassword", label: "Cambiar Contraseña", icon: <LuKeyRound size={20} className={styles.menuIcon} /> },
+    { id: "business", label: "Configuración", icon: Settings },
+    { id: "categories", label: "Categorías", icon: FolderOpen },
+    { id: "products", label: "Productos", icon: Package },
+    { id: "paymentMethods", label: "Métodos de pago", icon: Wallet },
+    { id: "customers", label: "Clientes", icon: Users },
+    { id: "orders", label: "Órdenes", icon: ClipboardList },
+    { id: "offers", label: "Ofertas", icon: Tag },
+    { id: "reports", label: "Reportes", icon: ChartColumn },
+    { id: "qr", label: "Código QR", icon: QrCode },
+    { id: "subscription", label: "Suscripción", icon: CalendarSync },
+    { id: "changepassword", label: "Cambiar contraseña", icon: KeyRound },
   ];
 
   const handleItemClick = (itemId) => {
     onTabChange(itemId);
     if (window.innerWidth <= 992) onClose();
   };
+
+  // Al abrir el menú móvil, el foco entra al panel (botón cerrar)
+  const closeRef = useRef(null);
+  useEffect(() => {
+    if (isOpen && window.innerWidth <= 992) closeRef.current?.focus();
+  }, [isOpen]);
 
   useEffect(() => {
     if (!subscribed && activeTab !== "subscription") {
@@ -88,48 +91,65 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
   };
 
   return (
-    <aside className={`${styles.adminSidebar} ${isOpen ? styles.open : ""}`}>
+    <aside
+      id="admin-sidebar"
+      className={`${styles.adminSidebar} ${isOpen ? styles.open : ""}`}
+      aria-label="Menú del panel"
+    >
       <div className={styles.logoContainer}>
         <img
           src="https://qatalo.s3.us-east-1.amazonaws.com/qatalo.png"
-          alt="Qatalo Logo"
+          alt="Qatalo"
           className={styles.logo}
           loading="lazy"
         />
+        <button
+          ref={closeRef}
+          type="button"
+          className={styles.closeButton}
+          onClick={onClose}
+          aria-label="Cerrar menú"
+        >
+          <X size={22} aria-hidden="true" />
+        </button>
       </div>
 
-      <nav style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+      <nav className={styles.nav} aria-label="Secciones">
         <ul className={styles.adminNav}>
-          {menuItems.map((item) => (
-            <li key={item.id} className={styles.menuItem}>
-              <button
-                onClick={() => handleItemClick(item.id)}
-                className={`${styles.menuButton} ${activeTab === item.id ? styles.active : ""}`}
-                disabled={!setEnabled(item.id)}
-                aria-label={item.label}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            </li>
-          ))}
+          {menuItems.map(({ id, label, icon }) => {
+            const Icon = icon;
+            const isActive = activeTab === id;
+            return (
+              <li key={id} className={styles.menuItem}>
+                <button
+                  type="button"
+                  onClick={() => handleItemClick(id)}
+                  className={`${styles.menuButton} ${isActive ? styles.active : ""}`}
+                  disabled={!setEnabled(id)}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <Icon size={20} className={styles.menuIcon} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
 
         {isRoot && (
           <ul className={styles.adminNav}>
             <li className={styles.menuItem}>
-              <NavLink to="/root"
-                className={styles.menuButton}
-              ><FaUserSecret size={22} className={styles.menuIcon} />
-                <span>Panel Root</span></NavLink>
-
+              <NavLink to="/root" className={styles.menuButton}>
+                <ShieldCheck size={20} className={styles.menuIcon} aria-hidden="true" />
+                <span>Panel Root</span>
+              </NavLink>
             </li>
           </ul>
         )}
 
         <div className={styles.logoutContainer}>
-          <button onClick={() => logout()} className={styles.logoutButton}>
-            <LuCirclePower size={22} className={styles.menuIcon} />
+          <button type="button" onClick={() => logout()} className={styles.logoutButton}>
+            <Power size={20} className={styles.menuIcon} aria-hidden="true" />
             <span>Cerrar sesión</span>
           </button>
         </div>

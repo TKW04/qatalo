@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { GiCancel } from "react-icons/gi";
@@ -17,6 +17,8 @@ const Footer = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const { showError, showSuccess } = useNotification();
+  const uid = useId();
+  const year = new Date().getFullYear();
 
   const contact = useMutation({
     mutationFn: () => contactTeam({ name, email, message }),
@@ -46,17 +48,17 @@ const Footer = () => {
           onHide={() => setShowContactDialog(false)}
         >
           <form onSubmit={handleContactSubmit} className={styles.formContainer}>
-            <div>
-              <label className="form-label">Nombre Completo:</label>
-              <input className={styles.inputField} value={name} onChange={(e) => setName(e.target.value)} required />
+            <div className={styles.field}>
+              <label className="form-label" htmlFor={`${uid}-name`}>Nombre completo</label>
+              <input id={`${uid}-name`} className={styles.inputField} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
             </div>
-            <div>
-              <label className="form-label">Correo Electrónico:</label>
-              <input className={styles.inputField} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <div className={styles.field}>
+              <label className="form-label" htmlFor={`${uid}-email`}>Correo electrónico</label>
+              <input id={`${uid}-email`} className={styles.inputField} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
             </div>
-            <div>
-              <label className="form-label">Mensaje:</label>
-              <textarea className={styles.inputField} rows="5" value={message} onChange={(e) => setMessage(e.target.value)} required />
+            <div className={styles.field}>
+              <label className="form-label" htmlFor={`${uid}-message`}>Mensaje</label>
+              <textarea id={`${uid}-message`} className={styles.inputField} rows="5" value={message} onChange={(e) => setMessage(e.target.value)} required />
             </div>
 
             <div className={styles.actions}>
@@ -73,13 +75,21 @@ const Footer = () => {
       )}
 
       <footer className={styles.footer}>
-        <div className={styles.links}>
-          <Link to="/termsandconditions" className={styles.link}>Términos</Link> |
-          <Link to="/privacypolicy" className={styles.link}>Privacidad</Link> |
-          <Link to="/refundpolicy" className={styles.link}>Reembolso</Link> |
-          <span className={styles.link} onClick={() => setShowContactDialog(true)}>Contacto</span>
+        <div className={styles.inner}>
+          <nav aria-label="Enlaces legales y contacto">
+            <ul className={styles.links}>
+              <li><Link to="/termsandconditions" className={styles.link}>Términos</Link></li>
+              <li><Link to="/privacypolicy" className={styles.link}>Privacidad</Link></li>
+              <li><Link to="/refundpolicy" className={styles.link}>Reembolso</Link></li>
+              <li>
+                <button type="button" className={styles.link} onClick={() => setShowContactDialog(true)}>
+                  Contacto
+                </button>
+              </li>
+            </ul>
+          </nav>
+          <p className={styles.copy}>&copy; {year} Qatalo. Todos los derechos reservados.</p>
         </div>
-        <p>&copy; 2025 Qatalo. Todos los derechos reservados.</p>
       </footer>
     </>
   );

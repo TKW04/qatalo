@@ -1,0 +1,279 @@
+/* =========================================================================
+   Catálogo público — contrato de tokens + piezas compartidas.
+   Todo se deriva de la paleta del negocio (--theme-*). NO usar tokens de
+   color/fuente de la marca Qatalo aquí; solo easing/duraciones/espaciado.
+   ========================================================================= */
+
+.themeRoot {
+  --cat-bg: var(--theme-background, #f7fafc);
+  --cat-text: var(--theme-secondary, #2d3e50);
+  --cat-primary: var(--theme-primary, #0b3d62);
+  --cat-accent: var(--theme-accent, #f4b400);
+  --cat-on-primary: var(--theme-on-primary, #ffffff);
+  --cat-on-accent: var(--theme-on-accent, #141414);
+
+  /* Esquema claro (por defecto): tarjetas casi blancas teñidas del fondo */
+  --cat-surface: color-mix(in srgb, var(--cat-bg) 22%, #ffffff);
+  --cat-surface-2: color-mix(in srgb, var(--cat-text) 5%, var(--cat-bg));
+  --cat-border: color-mix(in srgb, var(--cat-text) 13%, var(--cat-bg));
+  --cat-text-muted: color-mix(in srgb, var(--cat-text) 72%, var(--cat-bg));
+  --cat-shadow: color-mix(in srgb, var(--cat-text) 14%, transparent);
+  --cat-scrim: rgba(0, 0, 0, 0.45);
+  --cat-focus: var(--cat-primary);
+
+  /* Badge "Agotado": neutro oscuro legible sobre cualquier foto/paleta */
+  --cat-soldout-bg: rgba(20, 20, 20, 0.82);
+  --cat-soldout-fg: #ffffff;
+
+  color-scheme: light;
+  width: 100%;
+  min-height: 100%;
+}
+
+.themeRoot[data-scheme="dark"] {
+  --cat-surface: color-mix(in srgb, var(--cat-bg) 90%, #ffffff);
+  --cat-surface-2: color-mix(in srgb, var(--cat-bg) 84%, #ffffff);
+  --cat-border: color-mix(in srgb, var(--cat-text) 18%, var(--cat-bg));
+  --cat-text-muted: color-mix(in srgb, var(--cat-text) 74%, var(--cat-bg));
+  --cat-shadow: rgba(0, 0, 0, 0.45);
+  --cat-scrim: rgba(0, 0, 0, 0.62);
+  color-scheme: dark;
+}
+
+/* ── Utilidades ─────────────────────────────────────────────────────────── */
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Botón "estirado": cubre toda la tarjeta con su ::after (sin botones anidados).
+   Requiere que la tarjeta tenga position:relative y que entre ella y el botón
+   no haya otro ancestro posicionado. */
+.cardLink {
+  all: unset;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  overflow-wrap: anywhere;
+}
+
+.cardLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+}
+
+.cardLink:focus-visible {
+  outline: none;
+}
+
+.cardLink:focus-visible::after {
+  outline: 3px solid var(--cat-focus);
+  outline-offset: 3px;
+}
+
+/* ── Badges de tarjeta (estrella arriba-izq, "Agotado" arriba-der) ─────── */
+.badgeStar,
+.badgeSoldOut {
+  position: absolute;
+  top: 10px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.badgeStar {
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--cat-surface);
+  color: var(--cat-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+}
+
+.badgeSoldOut {
+  right: 10px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--cat-soldout-bg);
+  color: var(--cat-soldout-fg);
+  font-size: calc(0.75rem * var(--font-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+}
+
+/* ── Barras de horario y localidad (antes estilos inline) ──────────────── */
+.hoursBar {
+  --hours-tone: #10b981;
+  background: color-mix(in srgb, var(--hours-tone) 16%, var(--cat-bg));
+  color: var(--cat-text);
+  padding: 0.6rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  flex-wrap: wrap;
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+
+.hoursBar[data-level="closing_soon"] {
+  --hours-tone: #f59e0b;
+}
+
+.hoursBar[data-level="closed"] {
+  --hours-tone: #ef4444;
+}
+
+.hoursDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--hours-tone);
+}
+
+.hoursHint {
+  font-weight: 500;
+  color: var(--cat-text-muted);
+}
+
+.localityBar {
+  background: var(--cat-bg);
+  color: var(--cat-text);
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--cat-border);
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+
+.localityLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ── Imagen de respaldo (logo del negocio) ─────────────────────────────── */
+.thumbFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--cat-surface-2);
+}
+
+.thumbFallbackLogo {
+  max-width: 55%;
+  max-height: 55%;
+  object-fit: contain;
+  opacity: 0.75;
+}
+
+/* ── Skeleton de carga ─────────────────────────────────────────────────── */
+.skeleton {
+  min-height: 100vh;
+  background: var(--cat-bg);
+  padding: 2rem 1rem 4rem;
+}
+
+.skeletonInner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.skBlock {
+  background: var(--cat-surface-2);
+  border-radius: 10px;
+  animation: skPulse 1.4s ease-in-out infinite alternate;
+}
+
+.skHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.skLogo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.skLines {
+  flex: 1;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.skLine {
+  height: 14px;
+}
+
+.skSearch {
+  height: 44px;
+  max-width: 500px;
+  margin-bottom: 1.25rem;
+}
+
+.skPills {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.skPill {
+  width: 84px;
+  height: 34px;
+  border-radius: 999px;
+}
+
+.skGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+}
+
+.skCard {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.skImage {
+  aspect-ratio: 1 / 1;
+}
+
+@keyframes skPulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skBlock {
+    animation: none;
+  }
+}

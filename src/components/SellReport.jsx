@@ -7,17 +7,36 @@ import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
 import styles from "./SellReport.module.css";
 import Select from "./Select";
+import DatePicker from "./DatePicker";
+import { Download } from "lucide-react";
+import { Button, StatusBadge, statusColor, useChartAnimation, useAnimatedNumber, SortableHeader, useSortableData } from "./admin";
+
+// Cifra de KPI: interpola (<=250ms) solo cuando cambia un filtro; al montar muestra el valor final.
+const KpiValue = ({ value, format = (v) => Math.round(v), className }) => {
+  const shown = useAnimatedNumber(value);
+  return <strong className={className}>{format(shown)}</strong>;
+};
 
 const PAID = ["Aprobada", "Entregada"];
-const STATUS_COLORS = {
-  "Pendiente de pago": "#F59E0B",
-  "Pendiente de validación": "#3B82F6",
-  Aprobada: "#10B981",
-  Entregada: "#0E7490",
-  Cancelada: "#EF4444",
-};
-const BAR_COLORS = ["#113F67", "#34699A", "#0E7490", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#6B7280"];
+// Un solo color de marca para barras; estados con tokens --state-*.
+const BAR_COLOR = "var(--color-interactive)";
+const GRID_COLOR = "var(--color-line)";
+const AXIS_TICK = { fill: "var(--color-ink-soft)", fontSize: 11 };
 const NO_LOC = "Sin especificar";
+
+// Columnas ordenables del detalle: valores crudos (no el texto formateado).
+const SORT_COLUMNS = {
+  full_name: { type: "text" },
+  product_name: { type: "text", value: (r) => (r.product_name === "—" ? "" : r.product_name) },
+  quantity: { type: "number" },
+  price: { type: "number" },
+  total: { type: "number" },
+  status: { type: "text" },
+  locality: { type: "text" },
+  date: { type: "date" },
+  offer: { type: "text", value: (r) => r.offer_code || r.offer_name },
+  discount_amount: { type: "number" },
+};
 
 const flatten = (customers) => {
   const rows = [];
@@ -60,6 +79,7 @@ const SellReport = ({ customers = [] }) => {
   const [to, setTo] = useState("");
   const [offerFilter, setOfferFilter] = useState("all");
 
+  const anim = useChartAnimation();
   const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
   const curSym = currency === "all" ? "" : symbol(currency);
 
@@ -118,6 +138,10 @@ const SellReport = ({ customers = [] }) => {
     };
   }, [rows]);
 
+  // Orden por columna (sin columna activa = orden original de las órdenes)
+  const sort = useSortableData(rows, SORT_COLUMNS);
+  const sortedRows = sort.sorted;
+
   const offerOptions = useMemo(() =>
     [...new Set(allRows.filter(r => r.offer_name || r.offer_code).map(r => r.offer_name || r.offer_code))],
     [allRows]);
@@ -128,7 +152,7 @@ const SellReport = ({ customers = [] }) => {
     if (hasLocalities) header.splice(7, 0, "Localidad");
     const wsData = [
       header,
-      ...rows.map((r) => {
+      ...sortedRows.map((r) => {
         const base = [r.full_name, r.product_name, r.quantity, r.currency, r.price, r.total, r.status, r.date, r.offer_code || r.offer_name || "", r.discount_amount || 0];
         if (hasLocalities) base.splice(7, 0, r.locality || NO_LOC);
         return base;
@@ -143,7 +167,9 @@ const SellReport = ({ customers = [] }) => {
     saveAs(new Blob([buffer], { type: "application/octet-stream" }), "Ventas.xlsx");
   };
 
-  const colSpan = hasLocalities ? 9 : 8;
+  const colSpan = hasLocalities ? 10 : 9;
+  const filtersActive = !!from || !!to || locality !== "all" || offerFilter !== "all";
+  const clearFilters = () => { setFrom(""); setTo(""); setLocality("all"); setOfferFilter("all"); };
 
   return (
     <div>
@@ -171,9 +197,15 @@ const SellReport = ({ customers = [] }) => {
             />
           </label>
         )}
-        <label className={styles.filter}>Desde<input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-        <label className={styles.filter}>Hasta<input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} /></label>
-        <button className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</button>
+        <div className={styles.filter}>
+          <span id="sell-report-from-label">Desde</span>
+          <DatePicker className="input" aria-labelledby="sell-report-from-label" value={from} max={to || undefined} onChange={(v) => setFrom(v)} />
+        </div>
+        <div className={styles.filter}>
+          <span id="sell-report-to-label">Hasta</span>
+          <DatePicker className="input" aria-labelledby="sell-report-to-label" value={to} min={from || undefined} onChange={(v) => setTo(v)} />
+        </div>
+        <Button variant="secondary" icon={Download} className={styles.exportBtn} onClick={exportToExcel}>Exportar a Excel</Button>
       </div>
 
       {/* KPIs: ingresos separados por moneda */}
@@ -181,15 +213,15 @@ const SellReport = ({ customers = [] }) => {
         {Object.entries(stats.revByCur).map(([cur, val]) => (
           <div key={cur} className={styles.kpi}>
             <span>Ingresos {cur} (cobrados)</span>
-            <strong>{symbol(cur)} {formatted(val)}</strong>
+            <KpiValue value={val} format={(v) => `${symbol(cur)} ${formatted(v)}`} />
           </div>
         ))}
-        <div className={styles.kpi}><span>Órdenes</span><strong>{stats.orders}</strong></div>
-        <div className={styles.kpi}><span>Conversión (entregadas)</span><strong>{stats.conversion}%</strong></div>
-        <div className={styles.kpi}><span>Cancelación</span><strong>{stats.cancellation}%</strong></div>
+        <div className={styles.kpi}><span>Órdenes</span><KpiValue value={stats.orders} /></div>
+        <div className={styles.kpi}><span>Tasa de entrega</span><KpiValue value={stats.conversion} format={(v) => `${Math.round(v)}%`} /></div>
+        <div className={styles.kpi}><span>Cancelación</span><KpiValue value={stats.cancellation} format={(v) => `${Math.round(v)}%`} /></div>
       </div>
       {stats.totalDiscounted > 0 && (
-        <div className={styles.kpi}><span>Total descontado</span><strong style={{ color: "#067647" }}>- {curSym} {formatted(stats.totalDiscounted)}</strong></div>
+        <div className={`${styles.kpi} ${styles.kpiStandalone}`}><span>Total descontado</span><strong className={styles.positive}>- {curSym} {formatted(stats.totalDiscounted)}</strong></div>
       )}
 
       <div className={styles.chartsGrid}>
@@ -197,12 +229,12 @@ const SellReport = ({ customers = [] }) => {
           <h3>Ingresos por día{hasMultiCurrency && currency === "all" ? " (todas las monedas sumadas)" : curSym ? ` (${currency})` : ""}</h3>
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={stats.byDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34699A" stopOpacity={0.6} /><stop offset="95%" stopColor="#34699A" stopOpacity={0} /></linearGradient></defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
-              <XAxis dataKey="date" fontSize={11} />
-              <YAxis fontSize={11} />
+              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-interactive)" stopOpacity={0.35} /><stop offset="95%" stopColor="var(--color-interactive)" stopOpacity={0} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
+              <XAxis dataKey="date" tick={AXIS_TICK} stroke={GRID_COLOR} />
+              <YAxis tick={AXIS_TICK} stroke={GRID_COLOR} />
               <Tooltip formatter={(v) => `${curSym || ""} ${formatted(v)}`} />
-              <Area type="monotone" dataKey="total" stroke="#113F67" fill="url(#rev)" strokeWidth={2} />
+              <Area type="monotone" dataKey="total" stroke="var(--color-brand)" fill="url(#rev)" strokeWidth={2} {...anim} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -211,8 +243,8 @@ const SellReport = ({ customers = [] }) => {
           <h3>Órdenes por estado</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              <Pie data={stats.byStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
-                {stats.byStatus.map((s) => (<Cell key={s.name} fill={STATUS_COLORS[s.name] || "#6B7280"} />))}
+              <Pie data={stats.byStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2} {...anim}>
+                {stats.byStatus.map((s) => (<Cell key={s.name} fill={statusColor(s.name)} />))}
               </Pie>
               <Tooltip /><Legend fontSize={11} />
             </PieChart>
@@ -223,13 +255,11 @@ const SellReport = ({ customers = [] }) => {
           <h3>Top productos (por ingreso)</h3>
           <ResponsiveContainer width="100%" height={Math.max(220, stats.topProducts.length * 42)}>
             <BarChart data={stats.topProducts} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
-              <XAxis type="number" fontSize={11} />
-              <YAxis type="category" dataKey="name" width={140} fontSize={11} />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
+              <XAxis type="number" tick={AXIS_TICK} stroke={GRID_COLOR} />
+              <YAxis type="category" dataKey="name" width={120} tick={AXIS_TICK} stroke={GRID_COLOR} />
               <Tooltip formatter={(v) => `${curSym || ""} ${formatted(v)}`} />
-              <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
-                {stats.topProducts.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
-              </Bar>
+              <Bar dataKey="revenue" radius={[0, 6, 6, 0]} fill={BAR_COLOR} {...anim} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -239,13 +269,11 @@ const SellReport = ({ customers = [] }) => {
             <h3>Ventas por localidad (ingreso cobrado)</h3>
             <ResponsiveContainer width="100%" height={Math.max(220, stats.byLocality.length * 42)}>
               <BarChart data={stats.byLocality} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" />
-                <XAxis type="number" fontSize={11} />
-                <YAxis type="category" dataKey="name" width={140} fontSize={11} />
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
+                <XAxis type="number" tick={AXIS_TICK} stroke={GRID_COLOR} />
+                <YAxis type="category" dataKey="name" width={120} tick={AXIS_TICK} stroke={GRID_COLOR} />
                 <Tooltip formatter={(v, n) => n === "revenue" ? `${curSym || ""} ${formatted(v)}` : v} />
-                <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
-                  {stats.byLocality.map((_, i) => (<Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />))}
-                </Bar>
+                <Bar dataKey="revenue" radius={[0, 6, 6, 0]} fill={BAR_COLOR} {...anim} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -258,27 +286,41 @@ const SellReport = ({ customers = [] }) => {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Cliente</th><th>Producto</th><th>Cant</th><th>Precio</th><th>Total</th>
-                <th>Estado</th>{hasLocalities && <th>Localidad</th>}<th>Fecha</th>
-                <th>Oferta</th><th>Descuento</th>
+                <SortableHeader sortKey="full_name" sort={sort}>Cliente</SortableHeader>
+                <SortableHeader sortKey="product_name" sort={sort}>Producto</SortableHeader>
+                <SortableHeader sortKey="quantity" sort={sort}>Cant</SortableHeader>
+                <SortableHeader sortKey="price" sort={sort}>Precio</SortableHeader>
+                <SortableHeader sortKey="total" sort={sort}>Total</SortableHeader>
+                <SortableHeader sortKey="status" sort={sort}>Estado</SortableHeader>
+                {hasLocalities && <SortableHeader sortKey="locality" sort={sort}>Localidad</SortableHeader>}
+                <SortableHeader sortKey="date" sort={sort}>Fecha</SortableHeader>
+                <SortableHeader sortKey="offer" sort={sort}>Oferta</SortableHeader>
+                <SortableHeader sortKey="discount_amount" sort={sort}>Descuento</SortableHeader>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {sortedRows.map((r, i) => (
                 <tr key={i}>
                   <td>{r.full_name}</td><td>{r.product_name}</td><td>{r.quantity}</td>
                   <td>{symbol(r.currency)} {formatted(r.price)}</td>
                   <td>{symbol(r.currency)} {formatted(r.total)}</td>
-                  <td><span className={styles.badge} style={{ background: (STATUS_COLORS[r.status] || "#6B7280") + "22", color: STATUS_COLORS[r.status] || "#6B7280" }}>{r.status}</span></td>
+                  <td><StatusBadge status={r.status} /></td>
                   {hasLocalities && <td>{r.locality || NO_LOC}</td>}
                   <td>{new Date(r.date).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
                   <td>{r.offer_code || r.offer_name || "—"}</td>
-                  <td style={{ color: (r.discount_amount || 0) > 0 ? "#067647" : "inherit" }}>
+                  <td className={(r.discount_amount || 0) > 0 ? styles.positive : undefined}>
                     {(r.discount_amount || 0) > 0 ? `− ${symbol(r.currency)} ${formatted(r.discount_amount)}` : "—"}
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={colSpan} className={styles.tableEmpty}>Sin ventas en el rango seleccionado.</td></tr>}
+              {rows.length === 0 && (
+                <tr><td colSpan={colSpan} className={styles.tableEmpty}>
+                  Sin ventas con estos filtros.
+                  {filtersActive && (
+                    <div><Button variant="ghost" size="sm" onClick={clearFilters}>Quitar filtros</Button></div>
+                  )}
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>

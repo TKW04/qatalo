@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getTokenInfo } from "../../../helpers/token";
-import Loading from "../../../components/UI/Loading";
 import { formatDate, formatted } from "../../../helpers/utils";
 import { fetchSubscription, fetchReactivationPrices } from "../../../services/subscriptionApi";
 import PaddleCheckoutButton from "../../../components/PaddleCheckoutButton";
-import adminStyles from "../AdminDashboard.module.css";
+import { PageHeader, SkeletonForm, Skeleton, EmptyState } from "../../../components/admin";
+import { CreditCard } from "lucide-react";
 import styles from "./Subscription.module.css";
 
 const STATUS_LABEL = {
   trialing: "En prueba", canceled: "Cancelado", expired: "Expirado",
   paused: "En pausa", pending: "Pendiente", active: "Activo",
+};
+// Tono visual del estado (tokens --state-*)
+const STATUS_TONE = {
+  trialing: "approved", active: "approved", pending: "pending",
+  paused: "pending", canceled: "cancelled", expired: "cancelled",
 };
 const INTERVAL_LABEL = { month: "Mes", year: "Año", week: "Semana", day: "Día" };
 
@@ -63,25 +68,36 @@ const Subscription = () => {
   const pluralDays = (n, interval) =>
     `${n} ${getInterval(interval)}${n > 1 && interval === "day" ? "s" : ""}`;
 
-  if (isLoading) return <Loading message="Cargando suscripción..." />;
+  if (isLoading) {
+    return (
+      <div>
+        <PageHeader title="Suscripción" />
+        <SkeletonForm fields={4} label="Cargando suscripción..." />
+      </div>
+    );
+  }
 
   const hasSub = subscription && subscription.subscription_id;
 
   return (
     <div>
-      <div className={adminStyles.adminHeader}>
-        <h1>Gestión de Suscripción</h1>
-      </div>
+      <PageHeader title="Suscripción" />
 
+      {!hasSub ? (
+        <EmptyState
+          icon={CreditCard}
+          title="No tienes una suscripción activa"
+          description="Cuando actives un plan, aquí verás su estado, la próxima factura y el monto."
+        />
+      ) : (
       <div className={styles.card}>
-        {!hasSub ? (
-          <p className={styles.empty}>No tienes una suscripción activa.</p>
-        ) : (
           <>
             <div className={styles.grid}>
               <div className={styles.item}>
                 <span className={styles.label}>Estado</span>
-                <span className={styles.value}>{getStatus(subscription.status)}</span>
+                <span className={`${styles.badge} ${styles[`tone-${STATUS_TONE[subscription.status] || "neutral"}`] || ""}`}>
+                  {getStatus(subscription.status)}
+                </span>
               </div>
 
               {subscription.status === "trialing" && (
@@ -149,20 +165,25 @@ const Subscription = () => {
               <div className={styles.reactivateBox}>
                 <p className={styles.reactivateText}>
                   Tu suscripción está {getStatus(subscription.status).toLowerCase()}.
-                  Elige un plan y reactívala — el pago se procesa de inmediato, sin periodo de prueba.
+                  Elige un plan y reactívala. El pago se procesa de inmediato, sin periodo de prueba.
                 </p>
 
                 {reactPlans.length === 0 ? (
-                  <p className={styles.empty}>Cargando planes...</p>
+                  <div className={styles.planGrid} aria-busy="true">
+                    <span className={styles.srOnly} role="status">Cargando planes...</span>
+                    <Skeleton height={72} radius={8} style={{ flex: 1, minWidth: 120 }} />
+                    <Skeleton height={72} radius={8} style={{ flex: 1, minWidth: 120 }} />
+                  </div>
                 ) : (
                   <>
-                    <div className={styles.planGrid}>
+                    <div className={styles.planGrid} role="radiogroup" aria-label="Planes disponibles">
                       {reactPlans.map((p) => (
                         <label
                           key={p.price_id}
                           className={`${styles.planCard} ${selectedPlan === p.price_id ? styles.planCardActive : ""}`}
                         >
                           <input
+                            className={styles.srOnly}
                             type="radio"
                             name="reactPlan"
                             checked={selectedPlan === p.price_id}
@@ -195,8 +216,8 @@ const Subscription = () => {
               </div>
             )}
           </>
-        )}
       </div>
+      )}
     </div>
   );
 };

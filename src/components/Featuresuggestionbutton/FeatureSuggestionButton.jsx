@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Lightbulb, X, Send, Check } from "lucide-react";
+import { Lightbulb, Send, Check, Sparkles, Bug, MessageCircle } from "lucide-react";
+import { Modal, Button, Field } from "../admin";
 import { useNotification } from "../UI/NotificationProvider";
 import { createSuggestion } from "../../services/suggestionsApi";
 import styles from "./FeatureSuggestionButton.module.css";
 
 const TYPES = [
-  { value: "improvement", label: "💡 Mejora" },
-  { value: "feature", label: "✨ Nueva función" },
-  { value: "bug", label: "🐞 Problema / error" },
-  { value: "other", label: "💬 Otra idea" },
+  { value: "improvement", label: "Mejora", icon: Lightbulb },
+  { value: "feature", label: "Nueva función", icon: Sparkles },
+  { value: "bug", label: "Problema o error", icon: Bug },
+  { value: "other", label: "Otra idea", icon: MessageCircle },
 ];
 
 const MAX_TITLE = 120;
@@ -51,6 +52,8 @@ const FeatureSuggestionButton = () => {
     mutation.mutate();
   };
 
+  const pending = mutation.isPending;
+
   return (
     <>
       <button
@@ -60,84 +63,83 @@ const FeatureSuggestionButton = () => {
         aria-label="Sugerir una mejora"
         title="Sugerir una mejora"
       >
-        <Lightbulb size={18} />
+        <Lightbulb size={18} aria-hidden="true" />
         <span className={styles.fabLabel}>Sugerir</span>
       </button>
 
-      {open && (
-        <div className={styles.overlay} onClick={close}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.close} onClick={close} aria-label="Cerrar"><X size={18} /></button>
-
-            {sent ? (
-              <div className={styles.doneState}>
-                <div className={styles.doneIcon}><Check size={28} strokeWidth={2.5} /></div>
-                <h3 className={styles.doneTitle}>¡Sugerencia enviada!</h3>
-                <p className={styles.doneDesc}>Gracias por ayudarnos a mejorar Qatalo. Leemos todas las ideas.</p>
-                <button className={styles.primaryBtn} onClick={close}>Cerrar</button>
-              </div>
-            ) : (
-              <>
-                <div className={styles.head}>
-                  <Lightbulb size={20} className={styles.headIcon} />
-                  <div>
-                    <h3 className={styles.title}>Sugerir una mejora</h3>
-                    <p className={styles.subtitle}>¿Qué te gustaría ver en Qatalo? Tu idea nos ayuda a priorizar.</p>
-                  </div>
-                </div>
-
-                <div className={styles.field}>
-                  <label>Tipo</label>
-                  <div className={styles.pills}>
-                    {TYPES.map((t) => (
-                      <button
-                        type="button"
-                        key={t.value}
-                        className={`${styles.pill} ${form.type === t.value ? styles.pillActive : ""}`}
-                        onClick={() => set("type", t.value)}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.field}>
-                  <label>Título</label>
-                  <input
-                    className={styles.input}
-                    value={form.title}
-                    onChange={(e) => set("title", e.target.value.slice(0, MAX_TITLE))}
-                    placeholder="Ej. Poder duplicar un producto"
-                    maxLength={MAX_TITLE}
-                  />
-                  <span className={styles.counter}>{form.title.length}/{MAX_TITLE}</span>
-                </div>
-
-                <div className={styles.field}>
-                  <label>Descripción</label>
-                  <textarea
-                    className={styles.textarea}
-                    rows={5}
-                    value={form.description}
-                    onChange={(e) => set("description", e.target.value.slice(0, MAX_DESC))}
-                    placeholder="Cuéntanos qué necesitas y por qué te ayudaría. Mientras más detalle, mejor."
-                    maxLength={MAX_DESC}
-                  />
-                  <span className={styles.counter}>{form.description.length}/{MAX_DESC}</span>
-                </div>
-
-                <div className={styles.actions}>
-                  <button className={styles.ghostBtn} onClick={close} disabled={mutation.isPending}>Cancelar</button>
-                  <button className={styles.primaryBtn} onClick={submit} disabled={mutation.isPending}>
-                    {mutation.isPending ? "Enviando…" : <><Send size={15} /> Enviar sugerencia</>}
-                  </button>
-                </div>
-              </>
-            )}
+      <Modal
+        open={open}
+        onClose={close}
+        dismissible={!pending}
+        size="sm"
+        title={sent ? undefined : "Sugerir una mejora"}
+        description={sent ? undefined : "¿Qué te gustaría ver en Qatalo? Tu idea nos ayuda a priorizar."}
+        footer={
+          sent ? (
+            <Button onClick={close} block>Cerrar</Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={close} disabled={pending}>Cancelar</Button>
+              <Button onClick={submit} loading={pending} icon={Send}>
+                {pending ? "Enviando..." : "Enviar sugerencia"}
+              </Button>
+            </>
+          )
+        }
+      >
+        {sent ? (
+          <div className={styles.doneState} role="status">
+            <div className={styles.doneIcon} aria-hidden="true"><Check size={28} strokeWidth={2.5} /></div>
+            <h3 className={styles.doneTitle}>¡Sugerencia enviada!</h3>
+            <p className={styles.doneDesc}>Gracias por ayudarnos a mejorar Qatalo. Leemos todas las ideas.</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <>
+            <fieldset className={styles.fieldset}>
+              <legend className={styles.legend}>Tipo</legend>
+              <div className={styles.pills}>
+                {TYPES.map(({ value, label, icon }) => {
+                  const Icon = icon;
+                  const active = form.type === value;
+                  return (
+                    <button
+                      type="button"
+                      key={value}
+                      className={`${styles.pill} ${active ? styles.pillActive : ""}`}
+                      aria-pressed={active}
+                      onClick={() => set("type", value)}
+                    >
+                      <Icon size={16} aria-hidden="true" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <Field label="Título" hint={`${form.title.length}/${MAX_TITLE}`}>
+              <input
+                className={styles.input}
+                value={form.title}
+                onChange={(e) => set("title", e.target.value.slice(0, MAX_TITLE))}
+                placeholder="Ej. Poder duplicar un producto"
+                maxLength={MAX_TITLE}
+              />
+            </Field>
+
+            <Field label="Descripción" hint={`${form.description.length}/${MAX_DESC}`}>
+              <textarea
+                className={styles.textarea}
+                rows={5}
+                value={form.description}
+                onChange={(e) => set("description", e.target.value.slice(0, MAX_DESC))}
+                placeholder="Cuéntanos qué necesitas y por qué te ayudaría. Mientras más detalle, mejor."
+                maxLength={MAX_DESC}
+              />
+            </Field>
+          </>
+        )}
+      </Modal>
     </>
   );
 };

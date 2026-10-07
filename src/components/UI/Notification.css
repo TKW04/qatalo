@@ -1,288 +1,222 @@
-/* Notification Styles */
+/* Notification (toasts) — abajo, sin tapar menú ni FAB.
+   Entrada/salida: transiciones (interrumpibles) con --ease-out / --dur-base.
+   La salida debe durar menos que el timeout de NotificationProvider (300ms). */
 .notification-container {
   position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 9999;
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 400px;
+  gap: var(--space-2);
+  width: min(400px, calc(100vw - 2 * var(--space-4)));
   pointer-events: none;
+  font-family: var(--font-ui);
 }
 
 .notification {
-  background: #fcecdd;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 128, 157, 0.15);
-  border-left: 4px solid;
-  overflow: hidden;
-  transform: translateX(-100%);
-  opacity: 0;
-  animation: slideInLeft 0.4s ease-out forwards;
-  pointer-events: auto;
+  --tone: var(--color-info);
+  --tone-bg: var(--color-info-bg);
   position: relative;
-  min-width: 320px;
+  overflow: hidden;
+  pointer-events: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-2);
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
 }
 
-@keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
+@starting-style {
+  .notification {
     opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+    transform: translateY(12px);
   }
 }
 
 .notification.removing {
-  animation: slideOutLeft 0.3s ease-in forwards;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
 }
 
-@keyframes slideOutLeft {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-}
-
-/* Notification Types */
+/* Tonos por tipo (tokens de estado) */
 .notification-success {
-  border-left-color: #28a745;
+  --tone: var(--color-success);
+  --tone-bg: var(--color-success-bg);
 }
 
 .notification-error {
-  border-left-color: #dc3545;
+  --tone: var(--color-danger);
+  --tone-bg: var(--color-danger-bg);
 }
 
 .notification-warning {
-  border-left-color: #ff7601;
+  --tone: var(--color-warning);
+  --tone-bg: var(--color-warning-bg);
 }
 
 .notification-info {
-  border-left-color: #00809d;
+  --tone: var(--color-info);
+  --tone-bg: var(--color-info-bg);
 }
 
 /* Content */
 .notification-content {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-4) var(--space-4);
 }
 
 .notification-icon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: var(--tone-bg);
+  color: var(--tone);
 }
 
-.notification-success .notification-icon {
-  color: #28a745;
-}
-
-.notification-error .notification-icon {
-  color: #dc3545;
-}
-
-.notification-warning .notification-icon {
-  color: #ff7601;
-}
-
-.notification-info .notification-icon {
-  color: #00809d;
+.notification-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .notification-text {
   flex: 1;
   min-width: 0;
+  padding-top: 5px;
 }
 
 .notification-title {
-  color: #00809d;
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  line-height: 1.4;
+  color: var(--color-ink-strong);
+  font-size: 0.9375rem;
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  margin-bottom: 2px;
 }
 
 .notification-message {
-  color: #00809d;
-  font-size: 13px;
-  line-height: 1.4;
-  opacity: 0.8;
-  word-wrap: break-word;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .notification-close {
+  position: relative;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: -2px -2px 0 0;
+  padding: 0;
   background: none;
   border: none;
-  color: #f3a26d;
+  border-radius: var(--radius-control);
+  color: var(--color-ink-soft);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  margin-top: -2px;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
-.notification-close:hover {
-  background: rgba(243, 162, 109, 0.1);
-  color: #ff7601;
-  transform: scale(1.1);
+/* área táctil de 44px sin agrandar el icono */
+.notification-close::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
 }
 
 .notification-close:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
-/* Progress Bar */
+.notification-close:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .notification-close:hover {
+    background: var(--color-surface-sunken);
+    color: var(--color-ink-strong);
+  }
+}
+
+/* Barra de tiempo restante (lineal, una sola vez) */
 .notification-progress {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(243, 162, 109, 0.2);
+  background: var(--tone-bg);
   overflow: hidden;
 }
 
 .notification-progress-bar {
   height: 100%;
   width: 100%;
+  background: var(--tone);
   transform-origin: left;
-  animation: progressBar 4.5s linear forwards;
+  animation: notificationProgress 4.5s linear forwards;
 }
 
-.notification-success .notification-progress-bar {
-  background: #28a745;
-}
-
-.notification-error .notification-progress-bar {
-  background: #dc3545;
-}
-
-.notification-warning .notification-progress-bar {
-  background: #ff7601;
-}
-
-.notification-info .notification-progress-bar {
-  background: #00809d;
-}
-
-@keyframes progressBar {
+@keyframes notificationProgress {
   from {
     transform: scaleX(1);
   }
+
   to {
     transform: scaleX(0);
   }
 }
 
-.notification:hover {
-  transform: translateX(8px);
-  box-shadow: 0 12px 32px rgba(0, 128, 157, 0.2);
-}
-
-/* Responsive Design */
+/* Móvil: ancho completo, dejando libre la columna derecha del FAB */
 @media (max-width: 768px) {
   .notification-container {
-    left: 16px;
-    right: 16px;
-    max-width: none;
-  }
-
-  .notification {
-    min-width: auto;
-  }
-
-  .notification-content {
-    padding: 14px 16px;
-  }
-
-  .notification-title {
-    font-size: 13px;
-  }
-
-  .notification-message {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .notification-container {
-    left: 12px;
-    right: 12px;
-    top: 16px;
-  }
-
-  .notification-content {
-    padding: 12px 14px;
-    gap: 10px;
-  }
-
-  .notification-icon {
-    width: 18px;
-    height: 18px;
+    left: var(--space-3);
+    right: 76px;
+    bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    transform: none;
   }
 }
 
 /* High contrast mode */
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .notification {
-    border: 2px solid;
-    border-left-width: 6px;
-  }
-
-  .notification-success {
-    border-color: #28a745;
-  }
-
-  .notification-error {
-    border-color: #dc3545;
-  }
-
-  .notification-warning {
-    border-color: #ff7601;
-  }
-
-  .notification-info {
-    border-color: #00809d;
+    border: 2px solid var(--tone);
   }
 }
 
-/* Reduced motion */
+/* Reduced motion: solo fundido, sin desplazamiento ni barra animada */
 @media (prefers-reduced-motion: reduce) {
-  .notification {
-    animation: none;
-    transform: translateX(0);
-    opacity: 1;
-  }
-
+  .notification,
   .notification.removing {
-    animation: none;
-    opacity: 0;
-  }
-
-  .notification:hover {
     transform: none;
   }
 
-  .notification-progress-bar {
-    animation: none;
+  @starting-style {
+    .notification {
+      transform: none;
+    }
   }
-}
 
-/* Focus states for accessibility */
-.notification-close:focus {
-  outline: 2px solid #ff7601;
-  outline-offset: 2px;
+  .notification-progress {
+    display: none;
+  }
 }
 
 /* Print styles */
@@ -290,50 +224,4 @@
   .notification-container {
     display: none;
   }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .notification {
-    background: #fcecdd;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  }
-}
-
-/* Multiple notifications stacking */
-.notification:nth-child(1) {
-  z-index: 10;
-}
-
-.notification:nth-child(2) {
-  z-index: 9;
-  margin-top: -4px;
-}
-
-.notification:nth-child(3) {
-  z-index: 8;
-  margin-top: -8px;
-}
-
-.notification:nth-child(4) {
-  z-index: 7;
-  margin-top: -12px;
-}
-
-.notification:nth-child(n + 5) {
-  display: none;
-}
-
-/* Smooth transitions */
-.notification-container > * {
-  transition: all 0.3s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .notification,
-  .notification.removing,
-  .notification-progress-bar {
-    animation: none;
-  }
-  .notification { transform: none; opacity: 1; }
 }

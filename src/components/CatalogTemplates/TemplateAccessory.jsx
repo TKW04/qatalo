@@ -1,7 +1,12 @@
-import { Search, Share2, ShoppingBag, Star } from "lucide-react";
+import { Share2, ShoppingBag } from "lucide-react";
 import styles from "./TemplateAccessory.module.css";
-import { curSymbol } from "../../helpers/utils";
+import shared from "./catalogShared.module.css";
 import ProductThumb from "./ProductThumb";
+import CardBadges from "./CardBadges";
+import SearchBar from "./SearchBar";
+import CategoryPills from "./CategoryPills";
+import CollectionsGrid from "./CollectionsGrid";
+import { cardPriceLabel, PRIORITY_IMAGES } from "./catalogPrice";
 
 /**
  * TemplateAccessory (Accesorios)
@@ -22,12 +27,6 @@ export default function TemplateAccessory({
   showCollections = false,
   onSelectCollection,
 }) {
-  const formatPrice = (price) =>
-    Number(price).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -48,137 +47,88 @@ export default function TemplateAccessory({
             </div>
           </div>
           <button
+            type="button"
             onClick={onShare}
             className={styles.shareBtn}
             aria-label="Compartir catálogo"
           >
-            <Share2 size={18} strokeWidth={1.5} />
+            <Share2 size={18} strokeWidth={1.5} aria-hidden="true" />
           </button>
         </div>
 
         {/* Controles de Búsqueda y Filtros Minimalistas */}
         <div className={styles.controls}>
-          <div className={styles.searchBox}>
-            <Search size={16} className={styles.searchIcon} strokeWidth={1.5} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Buscar..."
-              className={styles.searchInput}
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={onSearchChange}
+            placeholder="Buscar..."
+            label="Buscar artículos"
+            className={styles.searchBox}
+            iconClassName={styles.searchIcon}
+            inputClassName={styles.searchInput}
+            iconSize={16}
+          />
 
-          <nav className={styles.categoryNav}>
-            <button
-              className={`${styles.catBtn} ${
-                selectedCategory === "all" ? styles.activeCat : ""
-              }`}
-              onClick={() => onCategoryChange("all")}
-            >
-              Todos
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.category_id}
-                className={`${styles.catBtn} ${
-                  selectedCategory === cat.category_id ? styles.activeCat : ""
-                }`}
-                onClick={() => onCategoryChange(cat.category_id)}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </nav>
+          <CategoryPills
+            categories={categories}
+            selected={selectedCategory}
+            onChange={onCategoryChange}
+            allLabel="Todos"
+            className={styles.categoryNav}
+            pillClassName={styles.catBtn}
+            activeClassName={styles.activeCat}
+          />
         </div>
       </header>
 
       {showCollections && (
-        <section className={styles.collections} aria-label="Colecciones">
-          <div className={styles.collectionsGrid}>
-            {collections.map((c) => {
-              const useLogo = c.cover && c.cover === business?.logo_url;
-              return (
-                <button
-                  key={c.category_id}
-                  type="button"
-                  className={styles.collectionCard}
-                  onClick={() => onSelectCollection?.(c.category_id)}
-                >
-                  <div className={styles.collectionMedia}>
-                    {c.cover ? (
-                      <img
-                        src={c.cover}
-                        alt={c.name}
-                        loading="lazy"
-                        className={useLogo ? styles.collectionLogo : styles.collectionImg}
-                      />
-                    ) : null}
-                  </div>
-                  <div className={styles.collectionBody}>
-                    <span className={styles.collectionName}>{c.name}</span>
-                    <span className={styles.collectionCount}>{c.count} producto{c.count !== 1 ? "s" : ""}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <CollectionsGrid
+          collections={collections}
+          business={business}
+          onSelect={onSelectCollection}
+          styles={styles}
+        />
       )}
 
       {!(showCollections && products.length === 0) && (products.length === 0 ? (
         <div className={styles.emptyState}>
-          <ShoppingBag size={40} strokeWidth={1} />
+          <ShoppingBag size={40} strokeWidth={1} aria-hidden="true" />
           <p>No hay artículos disponibles</p>
         </div>
       ) : (
         <section className={styles.grid} aria-label="Accesorios">
-          {products.map((product) => (
-            <article
-              key={product.product_id}
-              className={styles.card}
-              onClick={() => onProductClick(product)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onProductClick(product);
-                }
-              }}
-            >
+          {products.map((product, index) => (
+            <article key={product.product_id} className={styles.card}>
               <div className={styles.media}>
                 <ProductThumb
                   product={product}
                   business={business}
                   imgClassName={styles.image}
                   placeholderClassName={styles.imagePlaceholder}
+                  priority={index < PRIORITY_IMAGES}
                 />
 
-                {product.featured && (
-                  <span className={styles.featuredStar} aria-label="Destacado">
-                    <Star size={16} strokeWidth={2} fill="currentColor" />
-                  </span>
-                )}
-
-                {product.is_available !== "available" && (
-                  <span className={styles.soldOutBadge}>Agotado</span>
-                )}
-
-                <div className={styles.overlay}>
-                  <button type="button" className={styles.quick}>
-                    Vista rápida
-                  </button>
+                <div className={styles.overlay} aria-hidden="true">
+                  <span className={styles.quick}>Vista rápida</span>
                 </div>
+
+                <CardBadges
+                  featured={product.featured}
+                  soldOut={product.is_available !== "available"}
+                  starClassName={styles.star}
+                  soldOutClassName={styles.soldOutBadge}
+                />
               </div>
               <div className={styles.body}>
-                <h2 className={styles.productName}>{product.name}</h2>
+                <h2 className={styles.productName}>
+                  <button type="button" className={shared.cardLink} onClick={() => onProductClick(product)}>
+                    {product.name}
+                  </button>
+                </h2>
                 {product.description && (
                   <p className={styles.productDesc}>{product.description}</p>
                 )}
-                <span className={styles.price}>
-                  {curSymbol(product.currency)} {formatPrice(product.price)}
-                </span>
+                <span className={styles.price}>{cardPriceLabel(product)}</span>
               </div>
             </article>
           ))}

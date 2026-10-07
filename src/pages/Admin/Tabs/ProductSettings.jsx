@@ -4,7 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNotification } from "../../../components/UI/NotificationProvider";
 import { getTokenInfo } from "../../../helpers/token";
 import { saveBusinessData } from "../../../services/businessApi";
-import PrimaryButton from "../../../components/PrimaryButton";
+import { Button, EmptyState } from "../../../components/admin";
+import { Store } from "lucide-react";
 import Select from "../../../components/Select";
 import { OUT_OF_STOCK_OPTIONS, HOME_MODE_OPTIONS } from "../../../helpers/productSettings";
 import styles from "./Products.module.css";
@@ -46,30 +47,30 @@ const ProductSettings = ({ business }) => {
 
   if (!business?.business_id) {
     return (
-      <div className={styles.card}>
-        <p style={{ color: "#667085" }}>
-          Primero crea tu negocio en Configuración para ajustar estas opciones.
-        </p>
-      </div>
+      <EmptyState
+        icon={Store}
+        title="Primero crea tu negocio"
+        description="Completa tu negocio en Configuración para ajustar estas opciones."
+      />
     );
   }
 
   return (
-    <div className={styles.card}>
-      <h2>Configuración general de productos</h2>
+    <section className={styles.card} aria-labelledby="product-settings-title">
+      <h2 id="product-settings-title">Configuración general</h2>
       <p className={styles.requiredNote}>
         Estas opciones aplican a todo tu catálogo público.
       </p>
 
       <div className={styles.formGroup}>
-        <label>Al entrar al catálogo, mostrar</label>
+        <span className={styles.groupLabel}>Al entrar al catálogo, mostrar</span>
         <Select
           value={homeMode}
           onChange={setHomeMode}
           options={HOME_MODE_OPTIONS}
           searchable={false}
         />
-        <span style={{ fontSize: ".8rem", color: "#667085", marginTop: ".35rem", display: "block", lineHeight: 1.5 }}>
+        <span className={styles.hint}>
           {homeMode === "all"
             ? "Se muestran todos los productos al entrar (comportamiento normal)."
             : homeMode === "featured"
@@ -79,14 +80,14 @@ const ProductSettings = ({ business }) => {
       </div>
 
       <div className={styles.formGroup}>
-        <label>Productos agotados</label>
+        <span className={styles.groupLabel}>Productos agotados</span>
         <Select
           value={outOfStock}
           onChange={setOutOfStock}
           options={OUT_OF_STOCK_OPTIONS}
           searchable={false}
         />
-        <span style={{ fontSize: ".8rem", color: "#667085", marginTop: ".35rem", display: "block", lineHeight: 1.5 }}>
+        <span className={styles.hint}>
           {outOfStock === "normal"
             ? "Los productos agotados se muestran como cualquier otro, según su orden."
             : outOfStock === "end"
@@ -96,11 +97,11 @@ const ProductSettings = ({ business }) => {
       </div>
 
       <div className={styles.formActions}>
-        <PrimaryButton type="button" disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+        <Button loading={saveM.isPending} onClick={() => saveM.mutate()}>
           {saveM.isPending ? "Guardando..." : "Guardar configuración"}
-        </PrimaryButton>
+        </Button>
       </div>
-    </div>
+    </section>
   );
 };
 
