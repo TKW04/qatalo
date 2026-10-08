@@ -63,7 +63,7 @@ const FAQS = [
     a: (
       <>
         <p>
-          Desde la app de iOS, en <strong>Ajustes &gt; Eliminar cuenta</strong>, o escribiendo a{" "}
+          Desde la app de iOS, en <strong>Más &gt; Ajustes &gt; pestaña Cuenta &gt; Eliminar cuenta</strong>, o escribiendo a{" "}
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> desde el correo asociado a tu cuenta.
         </p>
         <p>

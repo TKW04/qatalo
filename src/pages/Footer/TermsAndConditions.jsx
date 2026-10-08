@@ -82,7 +82,7 @@ const TermsAndConditions = () => {
 
             <h2>8. Eliminación de Cuenta</h2>
             <ul>
-              <li>El usuario puede eliminar su cuenta en cualquier momento desde la app de iOS (Ajustes &gt; Eliminar cuenta) o escribiendo a <strong>info@qatalo.online</strong>.</li>
+              <li>El usuario puede eliminar su cuenta en cualquier momento desde la app de iOS (Más &gt; Ajustes &gt; pestaña Cuenta &gt; Eliminar cuenta) o escribiendo a <strong>info@qatalo.online</strong>.</li>
               <li>Al eliminarla, el catálogo se desactiva de inmediato y la suscripción se cancela, sin reembolso del periodo en curso.</li>
               <li>Los datos de la cuenta se eliminan en un plazo máximo de 30 días, salvo los comprobantes fiscales que deban conservarse por obligación legal, según se detalla en la <Link to="/privacypolicy">Política de Privacidad</Link>.</li>
             </ul>

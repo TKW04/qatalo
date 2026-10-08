@@ -133,7 +133,7 @@ const PrivacyNotice = () => {
               cualquier momento:
             </p>
             <ul>
-              <li>Desde la app de iOS, en <strong>Ajustes &gt; Eliminar cuenta</strong>.</li>
+              <li>Desde la app de iOS, en <strong>Más &gt; Ajustes &gt; pestaña Cuenta &gt; Eliminar cuenta</strong>.</li>
               <li>Escribiendo a <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> desde el correo asociado a tu cuenta.</li>
             </ul>
             <p>Al eliminar la cuenta:</p>
