@@ -3,6 +3,7 @@
 // Salida: filas con antigüedad, última venta, producto favorito, LTV por moneda y # de órdenes.
 
 import { parseLocalDateTime } from "../components/DatePicker/dateUtils";
+import { txTotal } from "./orderTotals";
 
 const PAID_STATUSES = new Set(["Aprobada", "Entregada"]);
 
@@ -18,10 +19,8 @@ const ltvByCurrency = (paid) => {
   for (const t of paid) {
     const cur = t.currency || (t.payment_method?.currency) || "";
     if (!cur) continue;
-    const line = (Number(t.price) || 0) * (Number(t.quantity) || 1);
-    const deliv = Number(t.delivery_price) || 0;
-    const disc = Number(t.discount_amount) || 0;
-    map[cur] = (map[cur] || 0) + line + deliv - disc;
+    // price ya viene descontado → no restar discount_amount otra vez
+    map[cur] = (map[cur] || 0) + txTotal(t);
   }
   return map;
 };

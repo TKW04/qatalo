@@ -10,6 +10,7 @@ import { getTokenInfo } from "../../../helpers/token";
 import { Bike, Gift, Users, SearchX } from "lucide-react";
 import { PageHeader, Button, IconButton, Modal, EmptyState, StatusBadge, OrderStepper, SkeletonList } from "../../../components/admin";
 import { currencies, formatted } from "../../../helpers/utils";
+import { txTotal } from "../../../helpers/orderTotals";
 import { fetchBusinessData } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { fetchPaymentMethods } from "../../../services/paymentMethodsApi";
@@ -198,6 +199,7 @@ const Customers = () => {
       price: t.price ?? "", quantity: t.quantity ?? 1, delivery_day: t.delivery_day || "",
       payment_method_id: t.payment_method?.payment_method_id || "",
       locality: t.locality || "",
+      initial_price: t.price ?? "", discount_amount: t.discount_amount || 0,
     });
     setTxErrors({});
   };
@@ -230,11 +232,6 @@ const Customers = () => {
       </div>
     );
   }
-
-  const txTotal = (t) =>
-    (Number(t.price) || 0) * (Number(t.quantity) || 1)
-    + (Number(t.delivery_price) || 0)
-    - (Number(t.discount_amount) || 0);
 
   return (
     <div>
@@ -459,6 +456,9 @@ const Customers = () => {
                 <label htmlFor="tx-price">Precio <span className={styles.required}>*</span></label>
                 <input id="tx-price" type="number" step="0.01" min="0" inputMode="decimal" className="input" value={txForm.price} onChange={(e) => setTxForm({ ...txForm, price: e.target.value })} placeholder="1850.00" />
                 {txErrors.price && <span className={styles.err}>{txErrors.price}</span>}
+                {Number(txForm.discount_amount) > 0 && Number(txForm.price) !== Number(txForm.initial_price) && (
+                  <span className={styles.warnHint} role="status">Al cambiar el precio se quita el descuento de esta línea.</span>
+                )}
               </div>
               <div className={styles.formGroup}>
                 <label htmlFor="tx-qty">Cantidad <span className={styles.required}>*</span></label>

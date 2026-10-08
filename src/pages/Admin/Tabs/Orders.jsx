@@ -18,6 +18,7 @@ import { fetchBusinessData } from "../../../services/businessApi";
 import { fetchProducts } from "../../../services/productsApi";
 import { fetchOffers } from "../../../services/offersApi";
 import { isOfferApplicable, calcDiscount, distributeDiscount } from "../../../helpers/offerEngine";
+import { orderTotals } from "../../../helpers/orderTotals";
 import Select from "../../../components/Select";
 import { Bike, Store, CalendarDays, Clock, AlertTriangle, Siren, Pencil, Gift, Receipt, Truck, MapPin, MessageSquare, Ruler, FileText, X, ClipboardList, SearchX } from "lucide-react";
 import { PageHeader, StatusBadge, OrderStepper, SkeletonList, EmptyState, Button } from "../../../components/admin";
@@ -684,10 +685,8 @@ const Orders = () => {
         const firstTx = items[0];
         const status = firstTx?.status || "";
         const cur = sym(firstTx?.currency || firstTx?.payment_method?.currency || "");
-        const subtotal = items.reduce((s, t) => s + (Number(t.price) || 0) * (Number(t.quantity) || 1), 0);
-        const deliveryAmt = items.reduce((s, t) => s + (Number(t.delivery_price) || 0), 0);
-        const discountAmt = items.reduce((s, t) => s + (Number(t.discount_amount) || 0), 0);
-        const total = subtotal + deliveryAmt - discountAmt;
+        // price ya viene descontado: total = Σ price·qty + envío (no restar el descuento otra vez)
+        const { subtotal, delivery: deliveryAmt, discount: discountAmt, total } = orderTotals(items);
         const existingNcf = items.find(t => t.ncf_used)?.ncf_used || "";
         const isPayLinkPending =
           firstTx?.payment_method?.payment_type === "payment_link" &&
