@@ -1,0 +1,53 @@
+/* Página de descarga del APK de Android. Reutiliza los tokens globales de la web. */
+.downloadBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  margin: 1rem 0 1.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-canvas);
+  text-align: center;
+}
+
+.downloadButton {
+  composes: button primary from "../../components/PrimaryButton.module.css";
+}
+
+/* Más específico que `.content a` para conservar el estilo del botón primario. */
+.downloadBox a.downloadButton {
+  color: var(--color-yellow);
+  text-decoration: none;
+}
+
+.meta {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-ink-strong);
+}
+
+.hash {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-strong);
+}
+
+.notice {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--color-yellow);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.notice p:last-child {
+  margin-bottom: 0;
+}

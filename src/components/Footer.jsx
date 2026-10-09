@@ -82,6 +82,7 @@ const Footer = () => {
               <li><Link to="/privacypolicy" className={styles.link}>Privacidad</Link></li>
               <li><Link to="/refundpolicy" className={styles.link}>Reembolso</Link></li>
               <li><Link to="/soporte" className={styles.link}>Soporte</Link></li>
+              <li><Link to="/android" className={styles.link}>Android</Link></li>
               <li>
                 <button type="button" className={styles.link} onClick={() => setShowContactDialog(true)}>
                   Contacto
