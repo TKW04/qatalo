@@ -5,11 +5,11 @@ import styles from "./TermsAndConditions.module.css";
 import own from "./AndroidDownload.module.css";
 
 // Datos de la versión publicada: actualizar aquí en cada release del APK.
-export const APK_URL = "https://qatalo.online/downloads/qatalo.apk";
+export const APK_URL = "https://qatalo.s3.us-east-1.amazonaws.com/downloads/qatalo.apk";
 export const APK_VERSION = "1.0.0";
 export const APK_RELEASE_DATE = "2026-10-09";
 // Rellenar al publicar con: shasum -a 256 qatalo.apk
-export const APK_SHA256 = "PENDIENTE — rellenar con el SHA-256 del APK publicado";
+export const APK_SHA256 = "f2ec1cc7c9dc89d4c03bffbb44b79cfb19131fd7046c4c44922b179a64c54a29";
 
 const CONTACT_EMAIL = "info@qatalo.online";
 
