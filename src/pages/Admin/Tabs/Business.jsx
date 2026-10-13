@@ -56,6 +56,10 @@ const Business = () => {
     ncf_enabled: false,
     itbis_rate: 18,
     ncf_pool: [],
+    // Emisor de recibos sin NCF
+    issuerName: "",
+    issuerId: "",
+    issuerIdType: "cedula",
     fontHeading: "default",
     fontBody: "default",
     fontScale: "medium",
@@ -143,9 +147,19 @@ const Business = () => {
         hours_mode: businessData.hours_mode || "inform",
         business_hours: businessData.business_hours || defaultBusinessHours(),
         locality_hours: businessData.locality_hours || {},
+        issuerName: businessData.issuerName || "",
+        issuerId: businessData.issuerId || "",
+        issuerIdType: businessData.issuerIdType || "cedula",
       }));
     }
   }, [businessData]);
+
+  // Cédula: 11 dígitos (acepta guiones/espacios). RNC no se valida.
+  const issuerIdDigits = (formData.issuerId || "").replace(/[\s-]/g, "");
+  const issuerIdError =
+    formData.issuerIdType === "cedula" && issuerIdDigits && !/^\d{11}$/.test(issuerIdDigits)
+      ? "La cédula debe tener 11 dígitos."
+      : "";
 
   useEffect(() => {
     loadCatalogFonts([formData.fontHeading, formData.fontBody].filter((k) => !isCustomKey(k)));
@@ -271,6 +285,10 @@ const Business = () => {
     if (!formData.name || !formData.slug) {
       setActiveTab("general");
       return showError("Error", "Campos obligatorios faltantes");
+    }
+    if (issuerIdError) {
+      setActiveTab("billing");
+      return showError("Error", issuerIdError);
     }
 
     let dataToSave = formData;
@@ -759,6 +777,51 @@ const Business = () => {
                     placeholder="18"
                   />
                   <span className={styles.hint}>En RD el estándar es 18%.</span>
+                </div>
+              </div>
+
+              <h3 className={styles.subTitle}>Emisor de facturas informales</h3>
+              <p className={styles.sectionDesc}>Se imprime en los recibos sin comprobante fiscal.</p>
+              <div className={styles.formGroup}>
+                <label htmlFor="biz-issuer-name">Nombre completo (opcional)</label>
+                <input
+                  id="biz-issuer-name"
+                  className="input"
+                  maxLength={120}
+                  value={formData.issuerName}
+                  onChange={(e) => setFormData({ ...formData, issuerName: e.target.value })}
+                  placeholder="Ej. María Elena Pérez"
+                />
+              </div>
+              <div className={styles.formRow}>
+                <div className={`${styles.formGroup} ${styles.narrow}`}>
+                  <label htmlFor="biz-issuer-id-type">Tipo de documento</label>
+                  <select
+                    id="biz-issuer-id-type"
+                    className="input"
+                    value={formData.issuerIdType}
+                    onChange={(e) => setFormData({ ...formData, issuerIdType: e.target.value })}
+                  >
+                    <option value="cedula">Cédula</option>
+                    <option value="rnc">RNC</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="biz-issuer-id">Número de documento</label>
+                  <input
+                    id="biz-issuer-id"
+                    className="input"
+                    inputMode={formData.issuerIdType === "cedula" ? "numeric" : undefined}
+                    maxLength={20}
+                    value={formData.issuerId}
+                    onChange={(e) => setFormData({ ...formData, issuerId: e.target.value })}
+                    placeholder={formData.issuerIdType === "cedula" ? "001-1234567-8" : "1-31-XXXXX-X"}
+                    aria-invalid={issuerIdError ? "true" : undefined}
+                    aria-describedby="biz-issuer-id-hint"
+                  />
+                  <span id="biz-issuer-id-hint" className={styles.hint}>
+                    {issuerIdError || (formData.issuerIdType === "cedula" ? "11 dígitos, con o sin guiones." : "Tal como aparece en tu registro.")}
+                  </span>
                 </div>
               </div>
             </div>

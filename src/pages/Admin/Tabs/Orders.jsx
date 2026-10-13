@@ -44,7 +44,8 @@ const STATUS_BAR = [
 
 const APPROVABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 const CANCELLABLE = (s) => ["Pendiente de pago", "Pendiente de validación", "Aprobada"].includes(s);
-const INVOICEABLE = (s) => ["Aprobada", "Entregada"].includes(s);
+const INVOICEABLE = (s) => ["Pendiente de pago", "Pendiente de validación", "Aprobada", "Entregada"].includes(s);
+const UNPAID = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 const DISCOUNTABLE = (s) => ["Pendiente de pago", "Pendiente de validación"].includes(s);
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const sym = (code) => currencies.find(c => c.code === code)?.symbol || code || "";
@@ -983,6 +984,7 @@ const Orders = () => {
         const isFactura = invoiceType === "factura";
         const noNcfLeft = isFactura && !existingNcf && !ncfManual.trim() && ncfAvailable === 0;
         const busy = invoiceM.isPending;
+        const unpaid = UNPAID(items[0]?.status || "");
 
         return (
           <div className={styles.overlay} onClick={closeInvoice}>
@@ -999,12 +1001,18 @@ const Orders = () => {
                 </div>
               )}
 
+              {unpaid && (
+                <div className={styles.invoiceNotice}>
+                  <FileText size={14} aria-hidden="true" /> La orden aún no está pagada; el documento saldrá marcado como <strong>PENDIENTE DE PAGO</strong>.
+                </div>
+              )}
+
               <div className={styles.invoiceOptions}>
                 <label className={`${styles.invoiceOption} ${!isFactura ? styles.invoiceOptionActive : ""}`}>
                   <input type="radio" name="invtype" checked={!isFactura}
                     onChange={() => setInvoiceType("recibo")} disabled={!!existingNcf} />
                   <div>
-                    <div className={styles.invoiceOptTitle}><FileText size={16} aria-hidden="true" /> Recibo de pago</div>
+                    <div className={styles.invoiceOptTitle}><FileText size={16} aria-hidden="true" /> {unpaid ? "Factura informal (pendiente de pago)" : "Recibo de pago"}</div>
                     <div className={styles.invoiceOptDesc}>Comprobante simple sin valor fiscal.</div>
                   </div>
                 </label>

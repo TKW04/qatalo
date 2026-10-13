@@ -69,6 +69,10 @@ export const saveBusinessData = async (tenantId, businessData) => {
     ncf_enabled: businessData.ncf_enabled ?? false,
     itbis_rate: businessData.itbis_rate ?? 18,
     ncf_pool: businessData.ncf_pool || [],
+    // Emisor de recibos sin NCF
+    issuerName: (businessData.issuerName || "").trim(),
+    issuerId: (businessData.issuerId || "").trim(),
+    issuerIdType: businessData.issuerIdType || "cedula",
   };
 
   const isUpdating = businessData.business_id && businessData.business_id !== "";
