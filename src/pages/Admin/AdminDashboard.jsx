@@ -14,6 +14,7 @@ import QrTab from "./Tabs/QrTab";
 import Subscription from "./Tabs/Subscription";
 import Password from "./Tabs/Password";
 import Orders from "./Tabs/Orders";
+import Production from "./Tabs/Production";
 import WelcomeModal from "./WelcomeModal";
 
 import { isNotValidToken, removeToken, setToken, getTokenInfo } from "../../helpers/token";
@@ -128,6 +129,7 @@ const AdminDashboard = () => {
           {activeTab === "paymentMethods" && <PaymentMethods setActiveTab={setActiveTab} />}
           {activeTab === "customers" && <Customers setActiveTab={setActiveTab} />}
           {activeTab === "orders" && <Orders />}
+          {activeTab === "production" && <Production />}
           {activeTab === "offers" && <Offers />}
           {activeTab === "reports" && <Reports />}
           {activeTab === "qr" && <QrTab setActiveTab={setActiveTab} />}

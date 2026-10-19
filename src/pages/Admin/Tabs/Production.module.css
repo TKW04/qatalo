@@ -1,0 +1,171 @@
+.card {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-1);
+}
+
+.card h2,
+.listHeader h2 {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--color-brand);
+}
+
+.card h2 {
+  margin-bottom: var(--space-4);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin-bottom: var(--space-4);
+}
+
+.groupLabel {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--color-ink-strong);
+}
+
+.required {
+  margin-left: 2px;
+  color: var(--color-danger);
+  font-weight: var(--fw-bold);
+}
+
+.err {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-danger);
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.listHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.listTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.filterSelect {
+  min-width: 220px;
+}
+
+.actionsCell {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.negative {
+  color: var(--color-danger-fg) !important;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.errorText {
+  margin: 0;
+  color: var(--color-danger-fg);
+}
+
+.footnote {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-ink-soft);
+}
+
+.modalText {
+  margin: 0;
+  line-height: var(--lh-body);
+  color: var(--color-ink);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Detalle Producción: matriz fecha × producto */
+.matrix th,
+.matrix td {
+  border-right: 1px solid var(--color-line);
+}
+
+.matrix th:last-child,
+.matrix td:last-child {
+  border-right: 0;
+}
+
+.groupHead {
+  text-align: center !important;
+}
+
+.numCell {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.rowHead {
+  font-weight: var(--fw-semibold) !important;
+  color: var(--color-ink-strong) !important;
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* Columna Fecha fija al desplazar horizontalmente en móvil */
+.stickyCol {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  .formRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .listTools,
+  .filterSelect {
+    width: 100%;
+    min-width: 0;
+  }
+}

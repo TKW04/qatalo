@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   Settings, FolderOpen, Package, Wallet, Users, ClipboardList, Tag, ChartColumn,
-  QrCode, CalendarSync, KeyRound, Power, ShieldCheck, X,
+  QrCode, CalendarSync, KeyRound, Power, ShieldCheck, X, Factory,
 } from "lucide-react";
 
 import { logout } from "../../services/authenticate";
@@ -52,6 +52,7 @@ const AdminSidebar = ({ activeTab, onTabChange, isOpen, onClose }) => {
     { id: "paymentMethods", label: "Métodos de pago", icon: Wallet },
     { id: "customers", label: "Clientes", icon: Users },
     { id: "orders", label: "Órdenes", icon: ClipboardList },
+    { id: "production", label: "Producción", icon: Factory },
     { id: "offers", label: "Ofertas", icon: Tag },
     { id: "reports", label: "Reportes", icon: ChartColumn },
     { id: "qr", label: "Código QR", icon: QrCode },
