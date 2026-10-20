@@ -193,6 +193,7 @@ const Orders = () => {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [year, setYear] = useState("all");
   const [sortBy, setSortBy] = useState(readOrderSort);
   const [viewOrder, setViewOrder] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -214,15 +215,38 @@ const Orders = () => {
 
   const orders = useMemo(() => buildOrders(customers), [customers]);
 
+  // Órdenes del año seleccionado: base para los contadores de estado y la lista.
+  const yearOrders = useMemo(
+    () => (year === "all" ? orders : orders.filter(o => (o.create_date || "").slice(0, 4) === year)),
+    [orders, year]
+  );
   const statusCounts = useMemo(() => {
     const c = {};
-    orders.forEach(o => { const s = o.items[0]?.status || ""; c[s] = (c[s] || 0) + 1; });
+    yearOrders.forEach(o => { const s = o.items[0]?.status || ""; c[s] = (c[s] || 0) + 1; });
     return c;
+  }, [yearOrders]);
+  // Al cambiar de año, si el estado elegido no tiene órdenes en ese año, volver a "all".
+  const changeYear = (y) => {
+    setYear(y);
+    if (statusFilter === "all") return;
+    const has = orders.some(o =>
+      (y === "all" || (o.create_date || "").slice(0, 4) === y) && o.items[0]?.status === statusFilter);
+    if (!has) setStatusFilter("all");
+  };
+
+  // Años disponibles (desc) derivados de create_date ("YYYY-..."). Si el año elegido desaparece, volver a "all".
+  const years = useMemo(() => {
+    const set = new Set();
+    orders.forEach(o => { const y = (o.create_date || "").slice(0, 4); if (/^\d{4}$/.test(y)) set.add(y); });
+    return [...set].sort((a, b) => b.localeCompare(a));
   }, [orders]);
+  useEffect(() => {
+    if (year !== "all" && !years.includes(year)) setYear("all");
+  }, [years, year]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return orders.filter(o => {
+    return yearOrders.filter(o => {
       const matchSearch = !term ||
         (o.customer.full_name || "").toLowerCase().includes(term) ||
         (`${o.customer.given_name} ${o.customer.family_name}`).toLowerCase().includes(term) ||
@@ -230,7 +254,7 @@ const Orders = () => {
       const matchStatus = statusFilter === "all" || o.items[0]?.status === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [orders, search, statusFilter]);
+  }, [yearOrders, search, statusFilter]);
 
   // Orden en cliente sobre lo ya cargado ("recent" = orden original de buildOrders)
   const sorted = useMemo(() => (sortBy === "delivery" ? sortByNextDelivery(filtered) : filtered), [filtered, sortBy]);
@@ -546,6 +570,15 @@ const Orders = () => {
             {o.label}
           </button>
         ))}
+        {years.length > 1 && (
+          <div className={styles.yearSelect} aria-label="Filtrar órdenes por año">
+            <Select
+              value={year}
+              onChange={changeYear}
+              options={[{ value: "all", label: "Todos los años" }, ...years.map(y => ({ value: y, label: y }))]}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Lista ── */}
@@ -561,8 +594,8 @@ const Orders = () => {
           <EmptyState
             icon={SearchX}
             title="No hay órdenes que coincidan"
-            description="Prueba con otro nombre o quita el filtro de estado."
-            action={<Button variant="secondary" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Quitar filtros</Button>}
+            description="Prueba con otro nombre o quita los filtros de estado y año."
+            action={<Button variant="secondary" onClick={() => { setSearch(""); setStatusFilter("all"); setYear("all"); }}>Quitar filtros</Button>}
           />
         )
       ) : (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2, RefreshCw, Factory, Plus, ArrowDownUp } from "lucide-react";
 
@@ -58,6 +58,49 @@ const monthStartISO = () => {
   return toISODate(new Date(n.getFullYear(), n.getMonth(), 1));
 };
 
+// Años disponibles (desc) a partir de fechas "YYYY-...".
+const yearsFrom = (dates) => {
+  const set = new Set();
+  dates.forEach((d) => { const y = (d || "").slice(0, 4); if (/^\d{4}$/.test(y)) set.add(y); });
+  return [...set].sort((a, b) => b.localeCompare(a));
+};
+const yearOptions = (years) => [{ value: "all", label: "Todos los años" }, ...years.map((y) => ({ value: y, label: y }))];
+
+// Selector de año para filtros por rango: fija Desde/Hasta al año completo (dispara el fetch existente).
+// Si el usuario edita las fechas a mano, el selector vuelve a "Todos".
+// Siempre visible: "all" aquí significa rango manual (Desde/Hasta), no "sin filtro".
+const YearRangeFilter = ({ idPrefix, years, year, onSelect }) => {
+  if (years.length === 0) return null;
+  return (
+    <div className={reportStyles.filter}>
+      <span id={`${idPrefix}-year-label`}>Año</span>
+      <div className={styles.filterSelect} aria-labelledby={`${idPrefix}-year-label`}>
+        <Select
+          value={year}
+          onChange={onSelect}
+          options={[{ value: "all", label: "Rango personalizado" }, ...years.map((y) => ({ value: y, label: y }))]}
+        />
+      </div>
+    </div>
+  );
+};
+
+const useYearRange = (years) => {
+  const [from, setFromRaw] = useState(monthStartISO);
+  const [to, setToRaw] = useState(todayISO);
+  const [year, setYear] = useState("all");
+  useEffect(() => {
+    if (year !== "all" && !years.includes(year)) setYear("all");
+  }, [years, year]);
+  const selectYear = (y) => {
+    setYear(y);
+    if (y !== "all") { setFromRaw(`${y}-01-01`); setToRaw(`${y}-12-31`); }
+  };
+  const setFrom = (v) => { setYear("all"); setFromRaw(v); };
+  const setTo = (v) => { setYear("all"); setToRaw(v); };
+  return { from, to, year, setFrom, setTo, selectYear };
+};
+
 const EMPTY_FORM = { product_id: "", quantity: "", date: "", note: "" };
 
 const diffClass = (v) => (v > 0 ? reportStyles.positive : v < 0 ? styles.negative : undefined);
@@ -71,6 +114,7 @@ const ProductionLog = ({ tenantId, products, productsLoading }) => {
   const [form, setForm] = useState(() => ({ ...EMPTY_FORM, date: todayISO() }));
   const [errors, setErrors] = useState({});
   const [productFilter, setProductFilter] = useState("all");
+  const [year, setYear] = useState("all");
   const [toDelete, setToDelete] = useState(null);
 
   const productOptions = useMemo(
@@ -93,7 +137,17 @@ const ProductionLog = ({ tenantId, products, productsLoading }) => {
     retry: false,
   });
 
-  const logSort = useSortableData(logs, LOG_SORT);
+  // Años disponibles (desc) derivados de date. Si el año elegido desaparece, volver a "all".
+  const years = useMemo(() => yearsFrom(logs.map((l) => l.date)), [logs]);
+  useEffect(() => {
+    if (year !== "all" && !years.includes(year)) setYear("all");
+  }, [years, year]);
+  const yearLogs = useMemo(
+    () => (year === "all" ? logs : logs.filter((l) => (l.date || "").slice(0, 4) === year)),
+    [logs, year]
+  );
+
+  const logSort = useSortableData(yearLogs, LOG_SORT);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["production", tenantId] });
@@ -215,6 +269,11 @@ const ProductionLog = ({ tenantId, products, productsLoading }) => {
       <div className={styles.listHeader}>
         <h2>Registros de fabricación</h2>
         <div className={styles.listTools}>
+          {years.length > 1 && (
+            <div className={styles.filterSelect} aria-label="Filtrar registros por año">
+              <Select value={year} onChange={setYear} options={yearOptions(years)} />
+            </div>
+          )}
           {productOptions.length > 0 && (
             <div className={styles.filterSelect}>
               <Select
@@ -232,12 +291,16 @@ const ProductionLog = ({ tenantId, products, productsLoading }) => {
 
       {isLoading ? (
         <SkeletonTable rows={5} label="Cargando registros..." />
-      ) : logs.length === 0 ? (
+      ) : yearLogs.length === 0 ? (
         <EmptyState
           icon={Factory}
-          title={productFilter === "all" ? "Aún no registras fabricación" : "Sin registros para este producto"}
+          title={productFilter === "all" && year === "all" ? "Aún no registras fabricación" : "Sin registros para este filtro"}
           description="Cada registro suma la cantidad fabricada al stock del producto."
-          action={productFilter === "all" ? <Button icon={Plus} onClick={focusForm}>Registrar fabricación</Button> : null}
+          action={
+            productFilter === "all" && year === "all"
+              ? <Button icon={Plus} onClick={focusForm}>Registrar fabricación</Button>
+              : <Button variant="secondary" onClick={() => { setProductFilter("all"); setYear("all"); }}>Quitar filtros</Button>
+          }
         />
       ) : (
         <div className={reportStyles.tableCard}>
@@ -317,9 +380,8 @@ const formatDayLabel = (iso, withYear) => {
   return withYear ? `${base}/${d.getFullYear()}` : base;
 };
 
-const ProductionDetail = ({ tenantId }) => {
-  const [from, setFrom] = useState(monthStartISO);
-  const [to, setTo] = useState(todayISO);
+const ProductionDetail = ({ tenantId, years }) => {
+  const { from, to, year, setFrom, setTo, selectYear } = useYearRange(years);
   const [descending, setDescending] = useState(false);
 
   const { data: logs = [], isLoading, isError, error, refetch, isFetching } = useQuery({
@@ -375,6 +437,7 @@ const ProductionDetail = ({ tenantId }) => {
           <span id="production-detail-to-label">Hasta</span>
           <DatePicker className="input" aria-labelledby="production-detail-to-label" value={to} min={from || undefined} onChange={(v) => setTo(v)} />
         </div>
+        <YearRangeFilter idPrefix="production-detail" years={years} year={year} onSelect={selectYear} />
       </div>
 
       {isLoading ? (
@@ -452,9 +515,16 @@ const ProductionDetail = ({ tenantId }) => {
 };
 
 /* ---------- Reporte Fabricados vs Vendidos ---------- */
-const ProductionReport = ({ tenantId }) => {
-  const [from, setFrom] = useState(monthStartISO);
-  const [to, setTo] = useState(todayISO);
+// Disponible = is_available === "available"; Agotado = cualquier otro valor o producto inexistente. El backend lo envía como `active`.
+const AVAILABILITY_OPTIONS = [
+  { value: "all", label: "Todos" },
+  { value: "available", label: "Disponible" },
+  { value: "unavailable", label: "Agotado" },
+];
+
+const ProductionReport = ({ tenantId, years }) => {
+  const { from, to, year, setFrom, setTo, selectYear } = useYearRange(years);
+  const [availability, setAvailability] = useState("all");
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["production-report", tenantId, from, to],
@@ -463,11 +533,23 @@ const ProductionReport = ({ tenantId }) => {
     retry: false,
   });
 
+  // Un backend antiguo no envía `active`: sin ese dato no se puede filtrar, así que el filtro se oculta y se trata como "Todos".
+  const rawItems = useMemo(() => data?.items || [], [data]);
+  const canFilterAvailability = rawItems.length === 0 || rawItems.some((it) => typeof it.active === "boolean");
+  const effectiveAvailability = canFilterAvailability ? availability : "all";
+
   const items = useMemo(
-    () => [...(data?.items || [])].sort((a, b) => (Number(b.produced) || 0) - (Number(a.produced) || 0)),
-    [data]
+    () => rawItems
+      .filter((it) => effectiveAvailability === "all" || (effectiveAvailability === "available" ? it.active === true : it.active !== true))
+      .sort((a, b) => (Number(b.produced) || 0) - (Number(a.produced) || 0)),
+    [rawItems, effectiveAvailability]
   );
-  const totals = data?.totals || { produced: 0, sold: 0, difference: 0 };
+  // Totales recalculados sobre los productos filtrados.
+  const totals = useMemo(() => {
+    const produced = items.reduce((acc, it) => acc + (Number(it.produced) || 0), 0);
+    const sold = items.reduce((acc, it) => acc + (Number(it.sold) || 0), 0);
+    return { produced, sold, difference: produced - sold };
+  }, [items]);
   const reportSort = useSortableData(items, REPORT_SORT);
 
   return (
@@ -482,6 +564,15 @@ const ProductionReport = ({ tenantId }) => {
           <span id="production-report-to-label">Hasta</span>
           <DatePicker className="input" aria-labelledby="production-report-to-label" value={to} min={from || undefined} onChange={(v) => setTo(v)} />
         </div>
+        <YearRangeFilter idPrefix="production-report" years={years} year={year} onSelect={selectYear} />
+        {canFilterAvailability && (
+          <div className={reportStyles.filter}>
+            <span id="production-report-availability-label">Disponibilidad</span>
+            <div className={styles.filterSelect} aria-labelledby="production-report-availability-label">
+              <Select value={availability} onChange={setAvailability} options={AVAILABILITY_OPTIONS} />
+            </div>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -526,7 +617,11 @@ const ProductionReport = ({ tenantId }) => {
                     </tr>
                   ))}
                   {items.length === 0 && (
-                    <tr><td colSpan={4} className={reportStyles.tableEmpty}>Sin fabricación ni ventas en el rango seleccionado.</td></tr>
+                    <tr><td colSpan={4} className={reportStyles.tableEmpty}>
+                      {effectiveAvailability === "all"
+                        ? "Sin fabricación ni ventas en el rango seleccionado."
+                        : `Sin productos ${effectiveAvailability === "available" ? "disponibles" : "agotados"} con fabricación o ventas en el rango seleccionado.`}
+                    </td></tr>
                   )}
                   {items.length > 0 && (
                     <tr className={reportStyles.totalRow}>
@@ -562,6 +657,21 @@ const Production = () => {
     retry: false,
   });
 
+  // misma queryKey que el Registro sin filtro de producto → caché compartido; de aquí salen los años
+  const { data: allLogs = [] } = useQuery({
+    queryKey: ["production", tenantId, "all"],
+    queryFn: () => fetchProductionLogs({ product_id: "" }),
+    enabled: !!tenantId,
+    retry: false,
+  });
+  // Años para los filtros por rango: los de la bitácora + el actual y los 4 anteriores (las ventas pueden
+  // existir en años sin producción registrada), igual que los chips de la app.
+  const productionYears = useMemo(() => {
+    const y = new Date().getFullYear();
+    const recent = Array.from({ length: 5 }, (_, i) => `${y - i}-01-01`);
+    return yearsFrom([...allLogs.map((l) => l.date), ...recent]);
+  }, [allLogs]);
+
   return (
     <div>
       <PageHeader title="Producción" description="Registra lo que fabricas y compáralo con lo vendido." />
@@ -576,10 +686,10 @@ const Production = () => {
         />
       </TabPanel>
       <TabPanel idPrefix="production" id="detail" value={tab}>
-        <ProductionDetail tenantId={tenantId} />
+        <ProductionDetail tenantId={tenantId} years={productionYears} />
       </TabPanel>
       <TabPanel idPrefix="production" id="report" value={tab}>
-        <ProductionReport tenantId={tenantId} />
+        <ProductionReport tenantId={tenantId} years={productionYears} />
       </TabPanel>
       <TabPanel idPrefix="production" id="recipes" value={tab}>
         <Recipes tenantId={tenantId} />

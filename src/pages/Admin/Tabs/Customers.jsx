@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaPen, FaTrashCan, FaEye, FaArrowsRotate, FaPlus, FaWhatsapp,
@@ -52,6 +52,7 @@ const Customers = () => {
   const [expanded, setExpanded] = useState({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [year, setYear] = useState("all");
 
   const [txCustomer, setTxCustomer] = useState(null);
   const [txForm, setTxForm] = useState(emptyTx);
@@ -89,23 +90,38 @@ const Customers = () => {
   const mergeA = customers.find((c) => c.customer_id === mergeSelection[0]) || null;
   const mergeB = customers.find((c) => c.customer_id === mergeSelection[1]) || null;
 
+  // Años disponibles (desc) derivados de create_date de las transacciones. Si el año elegido desaparece, volver a "all".
+  const years = useMemo(() => {
+    const set = new Set();
+    customers.forEach((c) => (c.transactions || []).forEach((t) => {
+      const y = (t.create_date || "").slice(0, 4);
+      if (/^\d{4}$/.test(y)) set.add(y);
+    }));
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [customers]);
+  useEffect(() => {
+    if (year !== "all" && !years.includes(year)) setYear("all");
+  }, [years, year]);
+
   const filteredCustomers = useMemo(() => {
     const term = search.trim().toLowerCase();
     return customers
       .map((c) => ({
         ...c,
-        _txs: statusFilter === "all"
-          ? (c.transactions || [])
-          : (c.transactions || []).filter((t) => t.status === statusFilter),
+        _txs: (c.transactions || []).filter((t) =>
+          (statusFilter === "all" || t.status === statusFilter) &&
+          (year === "all" || (t.create_date || "").slice(0, 4) === year)
+        ),
       }))
       .filter((c) => {
         const matchesName = !term ||
           (c.full_name || "").toLowerCase().includes(term) ||
           (c.email || "").toLowerCase().includes(term);
-        const matchesStatus = statusFilter === "all" || c._txs.length > 0;
-        return matchesName && matchesStatus;
+        // Con filtro de estado o año: solo clientes con ≥1 transacción que coincida
+        const matchesTx = (statusFilter === "all" && year === "all") || c._txs.length > 0;
+        return matchesName && matchesTx;
       });
-  }, [customers, search, statusFilter]);
+  }, [customers, search, statusFilter, year]);
 
   // ---- Mutaciones ----
   const saveCustomer = useMutation({
@@ -320,6 +336,15 @@ const Customers = () => {
             ]}
           />
         </div>
+        {years.length > 1 && (
+          <div className={styles.statusSelect} aria-label="Filtrar clientes por año">
+            <Select
+              value={year}
+              onChange={setYear}
+              options={[{ value: "all", label: "Todos los años" }, ...years.map((y) => ({ value: y, label: y }))]}
+            />
+          </div>
+        )}
       </div>
 
       {filteredCustomers.length === 0 ? (
@@ -334,8 +359,8 @@ const Customers = () => {
           <EmptyState
             icon={SearchX}
             title="No hay clientes que coincidan"
-            description="Prueba con otro nombre o quita el filtro de estado."
-            action={<Button variant="secondary" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Quitar filtros</Button>}
+            description="Prueba con otro nombre o quita los filtros de estado y año."
+            action={<Button variant="secondary" onClick={() => { setSearch(""); setStatusFilter("all"); setYear("all"); }}>Quitar filtros</Button>}
           />
         )
       ) : (

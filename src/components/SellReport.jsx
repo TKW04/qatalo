@@ -79,6 +79,19 @@ const SellReport = ({ customers = [] }) => {
   const [to, setTo] = useState("");
   const [offerFilter, setOfferFilter] = useState("all");
 
+  // Filtro por año: atajo que fija Desde/Hasta al año completo. Se deriva de las fechas,
+  // así que editar Desde/Hasta a mano vuelve a "Todos" (y si el año ya no existe, también).
+  const years = useMemo(
+    () => [...new Set(allRows.map((r) => r.date.slice(0, 4)).filter((y) => /^\d{4}$/.test(y)))].sort((a, b) => b.localeCompare(a)),
+    [allRows]
+  );
+  const yearMatch = /^(\d{4})-01-01$/.exec(from);
+  const year = yearMatch && to === `${yearMatch[1]}-12-31` && years.includes(yearMatch[1]) ? yearMatch[1] : "all";
+  const selectYear = (y) => {
+    if (y === "all") { setFrom(""); setTo(""); }
+    else { setFrom(`${y}-01-01`); setTo(`${y}-12-31`); }
+  };
+
   const anim = useChartAnimation();
   const symbol = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
   const curSym = currency === "all" ? "" : symbol(currency);
@@ -195,6 +208,13 @@ const SellReport = ({ customers = [] }) => {
             <Select value={offerFilter} onChange={setOfferFilter}
               options={[{ value: "all", label: "Todas" }, ...offerOptions.map(n => ({ value: n, label: n }))]}
             />
+          </label>
+        )}
+        {years.length > 1 && (
+          <label className={styles.filter}>Año
+            <Select value={year} onChange={selectYear}
+              options={[{ value: "all", label: "Todos" }, ...years.map((y) => ({ value: y, label: y }))]}
+              searchable={false} />
           </label>
         )}
         <div className={styles.filter}>

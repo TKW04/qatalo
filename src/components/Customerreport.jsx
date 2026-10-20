@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { saveAs } from "file-saver";
 import { currencies, formatted } from "../helpers/utils";
-import { buildCustomerReport, fmtDate, timeAgo } from "../helpers/customerReport";
+import { buildCustomerReport, fmtDate, timeAgo, isPaid } from "../helpers/customerReport";
 import { parseLocalDateTime } from "./DatePicker/dateUtils";
 import styles from "./SellReport.module.css";
 import Select from "./Select";
@@ -11,16 +11,39 @@ import { Button, SortableHeader, useSortableData } from "./admin";
 const sym = (code) => currencies.find((c) => c.code === code)?.symbol || code || "";
 
 const CustomerReport = ({ customers = [] }) => {
-  const allRows = useMemo(() => buildCustomerReport(customers), [customers]);
+  // Años con compras pagadas (create_date de transacciones Aprobada/Entregada), de más reciente a más antiguo
+  const years = useMemo(() => {
+    const set = new Set();
+    customers.forEach((c) => (c.transactions || []).filter(isPaid).forEach((t) => {
+      const y = (t.create_date || "").slice(0, 4);
+      if (/^\d{4}$/.test(y)) set.add(y);
+    }));
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [customers]);
 
-  // Todas las monedas presentes en el reporte
+  const [yearState, setYear] = useState("all");
+  // Si el año elegido deja de existir en los datos, volver a "Todos"
+  const year = yearState !== "all" && years.includes(yearState) ? yearState : "all";
+
+  // Con año: solo transacciones pagadas (Aprobada/Entregada) de ese año y solo clientes que compraron en él; el resto se recalcula
+  const allRows = useMemo(() => {
+    if (year === "all") return buildCustomerReport(customers);
+    const scoped = customers
+      .map((c) => ({ ...c, transactions: (c.transactions || []).filter((t) => isPaid(t) && (t.create_date || "").slice(0, 4) === year) }))
+      .filter((c) => c.transactions.length > 0);
+    return buildCustomerReport(scoped);
+  }, [customers, year]);
+
+  // Monedas presentes en el reporte (siguen al año elegido)
   const allCurrencies = useMemo(() => {
     const set = new Set();
     allRows.forEach((r) => Object.keys(r.ltv || {}).forEach((c) => set.add(c)));
     return [...set];
   }, [allRows]);
 
-  const [filterCurrency, setFilterCurrency] = useState("all");
+  const [filterCurrencyState, setFilterCurrency] = useState("all");
+  // Si la moneda elegida no existe en el año/datos actuales, volver a "Todas"
+  const filterCurrency = filterCurrencyState !== "all" && allCurrencies.includes(filterCurrencyState) ? filterCurrencyState : "all";
   const [search, setSearch] = useState("");
 
   // Rows filtradas por búsqueda y moneda; orden inicial: mayor gasto (en la moneda filtrada)
@@ -124,6 +147,14 @@ const CustomerReport = ({ customers = [] }) => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Nombre, correo o producto" />
         </label>
+
+        {years.length > 1 && (
+          <label className={styles.filter}>Año de compra
+            <Select value={year} onChange={setYear}
+              options={[{ value: "all", label: "Todos" }, ...years.map((y) => ({ value: y, label: y }))]}
+              searchable={false} />
+          </label>
+        )}
 
         {allCurrencies.length > 1 && (
           <label className={styles.filter}>Filtrar por moneda

@@ -5,7 +5,8 @@
 import { parseLocalDateTime } from "../components/DatePicker/dateUtils";
 import { txTotal } from "./orderTotals";
 
-const PAID_STATUSES = new Set(["Aprobada", "Entregada"]);
+export const PAID_STATUSES = new Set(["Aprobada", "Entregada"]);
+export const isPaid = (t) => PAID_STATUSES.has(t.status);
 
 const countOrders = (txs) => {
   const groups = new Set();
@@ -28,7 +29,7 @@ const ltvByCurrency = (paid) => {
 export const buildCustomerReport = (customers = []) => {
   return customers.map((c) => {
     const txs = c.transactions || [];
-    const paid = txs.filter((t) => PAID_STATUSES.has(t.status));
+    const paid = txs.filter(isPaid);
 
     // Última venta (solo pagadas)
     let lastSale = "";
