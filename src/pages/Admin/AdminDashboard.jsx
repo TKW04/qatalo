@@ -10,6 +10,7 @@ import PaymentMethods from "./Tabs/PaymentMethods";
 import Customers from "./Tabs/Customers";
 import Offers from "./Tabs/Offers";
 import Reports from "./Tabs/Reports";
+import Summary from "./Tabs/Summary";
 import QrTab from "./Tabs/QrTab";
 import Subscription from "./Tabs/Subscription";
 import Password from "./Tabs/Password";
@@ -131,6 +132,7 @@ const AdminDashboard = () => {
           {activeTab === "orders" && <Orders />}
           {activeTab === "production" && <Production />}
           {activeTab === "offers" && <Offers />}
+          {activeTab === "summary" && <Summary />}
           {activeTab === "reports" && <Reports />}
           {activeTab === "qr" && <QrTab setActiveTab={setActiveTab} />}
           {activeTab === "subscription" && <Subscription setActiveTab={setActiveTab} />}
