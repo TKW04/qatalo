@@ -5,13 +5,18 @@ const API_URL = import.meta.env.VITE_APP_API_URL;
 const handle = async (res) => {
   if (!res.ok) {
     let msg = "La operación no se pudo completar";
+    let code;
     try {
       const data = await res.json();
       if (data?.message) msg = data.message;
+      code = data?.code;
     } catch {
       /* respuesta sin JSON */
     }
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.status = res.status;
+    err.code = code;
+    throw err;
   }
   try {
     return await res.json();
@@ -50,11 +55,13 @@ export const forgotPassword = (email) =>
     headers: { "Content-Type": "application/json" },
   }).then(handle);
 
+// token: el token firmado del enlace /reset-password/:token (no el email ni el sub).
+// Errores: err.code === "invalid_token" (enlace inválido/caducado/usado) | "invalid_password".
 export const resetPassword = (token, password) =>
   fetch(`${API_URL}users/change-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: token, password }),
+    body: JSON.stringify({ token, password }),
   }).then(handle);
 
 export const activateUser = (userId) =>
