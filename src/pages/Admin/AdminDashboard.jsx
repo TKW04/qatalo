@@ -22,6 +22,7 @@ import { isNotValidToken, removeToken, setToken, getTokenInfo } from "../../help
 import { getCurrentSession } from "../../services/authenticate";
 import userpoolMerchants from "../../services/userpoolMerchants";
 import { fetchBusinessData } from "../../services/businessApi";
+import IosAppBanner from "../../components/admin/IosAppBanner/IosAppBanner";
 import FeatureSuggestionButton from "../../components/Featuresuggestionbutton/FeatureSuggestionButton";
 
 import styles from "./AdminDashboard.module.css";
@@ -124,6 +125,7 @@ const AdminDashboard = () => {
         />
 
         <main className={styles.adminMain}>
+          <IosAppBanner />
           {activeTab === "business" && <Business />}
           {activeTab === "categories" && <Categories setActiveTab={setActiveTab} />}
           {activeTab === "products" && <Products setActiveTab={setActiveTab} />}
